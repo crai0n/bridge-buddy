@@ -1,9 +1,13 @@
+
+use crate::card::Card;
+
 struct Hand {
-    cards: Card[] 
+    cards: [Card; 13] 
 }
 
 impl Hand {
-    fn contains(card: Card) -> bool {
+    fn contains(&self, card: &Card) -> bool {
         self.cards.contains(card)
     }
+
 }
