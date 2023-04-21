@@ -1,4 +1,4 @@
-class Card {
+struct Card {
     denomination: Denomination,
     suit: Suit
 }
