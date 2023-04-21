@@ -23,6 +23,16 @@ impl Hand {
         self.cards.contains(card)
     }
 
+    pub fn high_card_points(&self) -> u8 {
+        self.cards.iter().fold(0, |acc, card| match card.denomination {
+            Denomination::Ace => acc + 4,
+            Denomination::King => acc + 3,
+            Denomination::Queen => acc + 2,
+            Denomination::Jack => acc + 1,
+            _ => acc,
+        })
+    }
+
     fn validate(&self) {
         for i in 0..13 {
             for j in i + 1..13 {
@@ -110,6 +120,7 @@ mod tests {
             suit: Diamonds,
             denomination: Ace
         }));
+        assert_eq!(hand.high_card_points(), 22);
     }
 
     #[test]
