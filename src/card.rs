@@ -1,35 +1,63 @@
+#[derive(Debug, PartialEq)]
 pub struct Card {
-    denomination: Denomination,
-    suit: Suit
+    pub denomination: Denomination,
+    pub suit: Suit,
 }
 
-#[derive(PartialEq)]
-enum Denomination {
-    Ace,
-    King,
-    Queen,
-    Jack,
-    Ten,
-    Nine,
-    Eight,
-    Seven,
-    Six,
-    Five,
-    Four,
+#[derive(Debug, PartialEq, PartialOrd)]
+pub enum Denomination {
+    Two,
     Three,
-    Two
+    Four,
+    Five,
+    Six,
+    Seven,
+    Eight,
+    Nine,
+    Ten,
+    Jack,
+    Queen,
+    King,
+    Ace,
 }
 
-#[derive(PartialEq)]
-enum Suit {
-    Spades,
-    Hearts,
+#[derive(Debug, PartialEq, PartialOrd)]
+pub enum Suit {
+    Clubs,
     Diamonds,
-    Clubs
+    Hearts,
+    Spades,
 }
 
-impl PartialEq for Card {
-    fn eq(&self, other: &Self) -> bool {
-        self.denomination == other.denomination && self.suit == other.suit
+#[cfg(test)]
+mod tests {
+    use super::Denomination::*;
+    use super::Suit::*;
+    use super::*;
+
+    #[test]
+    fn test_comparisons() {
+        assert_eq!(
+            Card {
+                denomination: Two,
+                suit: Spades
+            },
+            Card {
+                denomination: Two,
+                suit: Spades
+            }
+        );
+        assert_ne!(
+            Card {
+                denomination: Two,
+                suit: Diamonds
+            },
+            Card {
+                denomination: Two,
+                suit: Spades
+            }
+        );
+        assert!(Clubs < Diamonds);
+        assert!(King < Ace);
     }
 }
