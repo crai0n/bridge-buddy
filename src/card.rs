@@ -1,7 +1,7 @@
 
 
-#[derive(PartialEq, Clone)]
-enum Suit {
+#[derive(PartialEq, Clone, Debug, Copy)]
+pub enum Suit {
     Spades,
     Hearts,
     Diamonds,
@@ -20,14 +20,14 @@ impl Suit {
     }
 }
 
-
+#[derive(Clone, Debug)]
 pub struct Card {
-    denomination: Denomination,
-    suit: Option<Suit>
+    pub denomination: Denomination,
+    pub suit: Option<Suit>
 }
 
-#[derive(PartialEq, Clone)]
-enum Denomination {
+#[derive(PartialEq, Clone, Debug)]
+pub enum Denomination {
     Ace = 14,
     King = 13,
     Queen = 12, 
@@ -75,6 +75,7 @@ impl PartialEq for Card {
     }
 }
 
+
 impl Card {
     fn from_str(string: &str) -> Result<Card, ()>  {
         match Denomination::from_char(&string.chars().nth(0).unwrap()) {
@@ -88,8 +89,6 @@ impl Card {
 }
 
 
-
-impl Eq for Card {}
 
 #[cfg(test)]
 mod tests {

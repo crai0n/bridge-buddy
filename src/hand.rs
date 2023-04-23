@@ -16,7 +16,7 @@ impl Hand {
     }
 
     pub fn cards_in(&self, suit: Suit) -> impl Iterator<Item = &Card> {
-        self.cards.iter().filter(move |&x| x.suit == suit)
+        self.cards.iter().filter(move |&x| x.suit == Some(suit))
     }
 
     pub fn contains(&self, card: &Card) -> bool {
@@ -24,7 +24,7 @@ impl Hand {
     }
 
     pub fn high_card_points(&self) -> u8 {
-        self.cards.iter().fold(0, |acc, card| match card.denomination {
+        self.cards.iter().fold(0, |acc, card| match &card.denomination {
             Denomination::Ace => acc + 4,
             Denomination::King => acc + 3,
             Denomination::Queen => acc + 2,
