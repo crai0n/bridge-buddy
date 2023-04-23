@@ -52,72 +52,72 @@ mod tests {
     fn test_methods() {
         let hand = Hand::new([
             Card {
-                suit: Clubs,
+                suit: Some(Clubs),
                 denomination: Ace,
             },
             Card {
-                suit: Diamonds,
+                suit: Some(Diamonds),
                 denomination: Ace,
             },
             Card {
-                suit: Hearts,
+                suit: Some(Hearts),
                 denomination: Ace,
             },
             Card {
-                suit: Spades,
+                suit: Some(Spades),
                 denomination: Ace,
             },
             Card {
-                suit: Spades,
+                suit: Some(Spades),
                 denomination: King,
             },
             Card {
-                suit: Spades,
+                suit: Some(Spades),
                 denomination: Queen,
             },
             Card {
-                suit: Spades,
+                suit: Some(Spades),
                 denomination: Jack,
             },
             Card {
-                suit: Spades,
+                suit: Some(Spades),
                 denomination: Ten,
             },
             Card {
-                suit: Spades,
+                suit: Some(Spades),
                 denomination: Nine,
             },
             Card {
-                suit: Spades,
+                suit: Some(Spades),
                 denomination: Eight,
             },
             Card {
-                suit: Spades,
+                suit: Some(Spades),
                 denomination: Seven,
             },
             Card {
-                suit: Spades,
+                suit: Some(Spades),
                 denomination: Six,
             },
             Card {
-                suit: Spades,
+                suit: Some(Spades),
                 denomination: Two,
             },
         ]);
         assert_eq!(
             hand.cards()[1],
             Card {
-                suit: Diamonds,
+                suit: Some(Diamonds),
                 denomination: Ace,
             }
         );
         assert_eq!(hand.cards_in(Spades).count(), 10);
         assert!(!hand.contains(&Card {
-            suit: Diamonds,
+            suit: Some(Diamonds),
             denomination: King
         }));
         assert!(hand.contains(&Card {
-            suit: Diamonds,
+            suit: Some(Diamonds),
             denomination: Ace
         }));
         assert_eq!(hand.high_card_points(), 22);
@@ -128,55 +128,55 @@ mod tests {
     fn test_hand_validation() {
         Hand::new([
             Card {
-                suit: Diamonds,
+                suit: Some(Diamonds),
                 denomination: Two,
             },
             Card {
-                suit: Diamonds,
+                suit: Some(Diamonds),
                 denomination: Three,
             },
             Card {
-                suit: Diamonds,
+                suit: Some(Diamonds),
                 denomination: Four,
             },
             Card {
-                suit: Diamonds,
+                suit: Some(Diamonds),
                 denomination: Five,
             },
             Card {
-                suit: Diamonds,
+                suit: Some(Diamonds),
                 denomination: Six,
             },
             Card {
-                suit: Diamonds,
+                suit: Some(Diamonds),
                 denomination: Seven,
             },
             Card {
-                suit: Diamonds,
+                suit: Some(Diamonds),
                 denomination: Eight,
             },
             Card {
-                suit: Diamonds,
+                suit: Some(Diamonds),
                 denomination: Nine,
             },
             Card {
-                suit: Diamonds,
+                suit: Some(Diamonds),
                 denomination: Ten,
             },
             Card {
-                suit: Diamonds,
+                suit: Some(Diamonds),
                 denomination: Jack,
             },
             Card {
-                suit: Diamonds,
+                suit: Some(Diamonds),
                 denomination: Queen,
             },
             Card {
-                suit: Diamonds,
+                suit: Some(Diamonds),
                 denomination: King,
             },
             Card {
-                suit: Diamonds,
+                suit: Some(Diamonds),
                 denomination: Two,
             },
         ]);
