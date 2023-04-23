@@ -108,7 +108,7 @@ mod tests {
             hand.cards()[1],
             Card {
                 suit: Some(Diamonds),
-                denomination: Ace,
+                denomination: King,
             }
         );
         assert_eq!(hand.cards_in(Spades).count(), 10);
