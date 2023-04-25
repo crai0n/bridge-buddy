@@ -1,22 +1,27 @@
+use std::collections::BTreeSet;
+use std::ops::Bound::Included;
 use crate::card::*;
 
 pub struct Hand {
-    cards: [Card; 13],
+    cards: BTreeSet<Card>,
 }
 
 impl Hand {
     pub fn new(cards: [Card; 13]) -> Self {
-        let hand = Hand { cards };
+        let hand = Hand { cards: BTreeSet::from(cards) };
         hand.validate();
         hand
     }
 
-    pub fn cards(&self) -> &[Card; 13] {
-        &self.cards
+    pub fn cards(&self) -> impl Iterator<Item = &Card> {
+        self.cards.iter()
     }
 
-    pub fn cards_in(&self, suit: Suit) -> impl Iterator<Item = &Card> {
-        self.cards.iter().filter(move |&x| x.suit == suit)
+    pub fn cards_in(&self, suit: &Suit) -> impl Iterator<Item = &Card> {
+        let min = Card { suit: suit.clone(), denomination: Denomination::Two};
+        let max = Card { suit: suit.clone(), denomination: Denomination::Ace};
+        let rge = (Included(&min),Included(&max));
+        self.cards.range(rge)
     }
 
     pub fn contains(&self, card: &Card) -> bool {
@@ -34,11 +39,7 @@ impl Hand {
     }
 
     fn validate(&self) {
-        for i in 0..13 {
-            for j in i + 1..13 {
-                assert_ne!(self.cards[i], self.cards[j], "invalid hand - duplicate cards")
-            }
-        }
+        assert_eq!(self.cards.len(), 13, "invalid hand - incorrect number of cards")
     }
 }
 
@@ -105,13 +106,13 @@ mod tests {
             },
         ]);
         assert_eq!(
-            hand.cards()[1],
-            Card {
+            hand.cards().nth(1).unwrap(),
+            &Card {
                 suit: Diamonds,
                 denomination: Ace,
             }
         );
-        assert_eq!(hand.cards_in(Spades).count(), 10);
+        assert_eq!(hand.cards_in(&Spades).count(), 10);
         assert!(!hand.contains(&Card {
             suit: Diamonds,
             denomination: King
@@ -124,7 +125,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "invalid hand - duplicate cards")]
+    #[should_panic(expected = "invalid hand - incorrect number of cards")]
     fn test_hand_validation() {
         Hand::new([
             Card {
