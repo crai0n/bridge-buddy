@@ -1,6 +1,6 @@
+use crate::card::*;
 use std::collections::BTreeSet;
 use std::ops::Bound::Included;
-use crate::card::*;
 
 pub struct Hand {
     cards: BTreeSet<Card>,
