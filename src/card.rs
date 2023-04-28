@@ -29,6 +29,26 @@ pub enum Suit {
     Spades,
 }
 
+impl std::fmt::Display for Denomination {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Denomination::Ace => write!(f, "A"),
+            Denomination::King => write!(f, "K"),
+            Denomination::Queen => write!(f, "Q"),
+            Denomination::Jack => write!(f, "J"),
+            Denomination::Ten => write!(f, "T"),
+            Denomination::Nine => write!(f, "9"),
+            Denomination::Eight => write!(f, "8"),
+            Denomination::Seven => write!(f, "7"),
+            Denomination::Six => write!(f, "6"),
+            Denomination::Five => write!(f, "5"),
+            Denomination::Four => write!(f, "4"),
+            Denomination::Three => write!(f, "3"),
+            Denomination::Two => write!(f, "2"),
+        }
+    }
+}
+
 impl Denomination {
     fn from_char(char: &char) -> Result<Denomination, ()> {
         match char {
@@ -50,6 +70,17 @@ impl Denomination {
     }
 }
 
+impl std::fmt::Display for Suit {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Suit::Spades => write!(f, "S"),
+            Suit::Hearts => write!(f, "H"),
+            Suit::Diamonds => write!(f, "D"),
+            Suit::Clubs => write!(f, "C"),
+        }
+    }
+}
+
 impl Suit {
     fn from_char(char: &char) -> Result<Suit, ()> {
         match char {
@@ -59,6 +90,12 @@ impl Suit {
             'C' => Ok(Suit::Clubs),
             _ => Err(()),
         }
+    }
+}
+
+impl std::fmt::Display for Card {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}{}", self.denomination, self.suit)
     }
 }
 
@@ -110,5 +147,32 @@ mod tests {
         );
         assert!(Clubs < Diamonds);
         assert!(King < Ace);
+    }
+
+    #[test]
+    fn test_card_display() {
+        let nine_of_clubs = Card {
+            denomination: Nine,
+            suit: Clubs,
+        };
+        assert_eq!(format!("{}", nine_of_clubs), "9C");
+
+        let five_of_diamonds = Card {
+            denomination: Five,
+            suit: Diamonds,
+        };
+        assert_eq!(format!("{}", five_of_diamonds), "5D");
+
+        let queen_of_hearts = Card {
+            denomination: Queen,
+            suit: Hearts,
+        };
+        assert_eq!(format!("{}", queen_of_hearts), "QH");
+
+        let ace_of_spades = Card {
+            denomination: Ace,
+            suit: Spades,
+        };
+        assert_eq!(format!("{}", ace_of_spades), "AS");
     }
 }
