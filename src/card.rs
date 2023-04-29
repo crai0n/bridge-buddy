@@ -73,10 +73,17 @@ impl Denomination {
 impl std::fmt::Display for Suit {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
+<<<<<<< HEAD
             Suit::Spades => write!(f, "S"),
             Suit::Hearts => write!(f, "H"),
             Suit::Diamonds => write!(f, "D"),
             Suit::Clubs => write!(f, "C"),
+=======
+            Suit::Spades => write!(f, "♠️"),
+            Suit::Hearts => write!(f, "♥"),
+            Suit::Diamonds => write!(f, "♦️"),
+            Suit::Clubs => write!(f, "♣️"),
+>>>>>>> ab364ad (change display of card to use unicode playing card symbols)
         }
     }
 }
@@ -155,24 +162,40 @@ mod tests {
             denomination: Nine,
             suit: Clubs,
         };
+<<<<<<< HEAD
         assert_eq!(format!("{}", nine_of_clubs), "9C");
+=======
+        assert_eq!(format!("{}", nine_of_clubs), "9♣");
+>>>>>>> ab364ad (change display of card to use unicode playing card symbols)
 
         let five_of_diamonds = Card {
             denomination: Five,
             suit: Diamonds,
         };
+<<<<<<< HEAD
         assert_eq!(format!("{}", five_of_diamonds), "5D");
+=======
+        assert_eq!(format!("{}", five_of_diamonds), "5♦");
+>>>>>>> ab364ad (change display of card to use unicode playing card symbols)
 
         let queen_of_hearts = Card {
             denomination: Queen,
             suit: Hearts,
         };
+<<<<<<< HEAD
         assert_eq!(format!("{}", queen_of_hearts), "QH");
+=======
+        assert_eq!(format!("{}", queen_of_hearts), "Q♥");
+>>>>>>> ab364ad (change display of card to use unicode playing card symbols)
 
         let ace_of_spades = Card {
             denomination: Ace,
             suit: Spades,
         };
+<<<<<<< HEAD
         assert_eq!(format!("{}", ace_of_spades), "AS");
+=======
+        assert_eq!(format!("{}", ace_of_spades), "A♠");
+>>>>>>> ab364ad (change display of card to use unicode playing card symbols)
     }
 }
