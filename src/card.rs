@@ -51,7 +51,7 @@ impl std::fmt::Display for Denomination {
 }
 
 impl Denomination {
-    fn from_char(char: &char) -> Result<Denomination, ()> {
+    pub fn from_char(char: &char) -> Result<Denomination, ()> {
         match char {
             'A' => Ok(Denomination::Ace),
             'K' => Ok(Denomination::King),
@@ -83,12 +83,16 @@ impl std::fmt::Display for Suit {
 }
 
 impl Suit {
-    fn from_char(char: &char) -> Result<Suit, ()> {
+    pub fn from_char(char: &char) -> Result<Suit, ()> {
         match char {
             'S' => Ok(Suit::Spades),
+            '♠' => Ok(Suit::Spades),
             'H' => Ok(Suit::Hearts),
+            '♥' => Ok(Suit::Hearts),
             'D' => Ok(Suit::Diamonds),
+            '♦' => Ok(Suit::Diamonds),
             'C' => Ok(Suit::Clubs),
+            '♣' => Ok(Suit::Clubs),
             _ => Err(()),
         }
     }
@@ -101,7 +105,7 @@ impl std::fmt::Display for Card {
 }
 
 impl Card {
-    fn from_str(string: &str) -> Result<Card, ()> {
+    pub fn from_str(string: &str) -> Result<Card, ()> {
         if string.len() != 2 {
             return Err(());
         }
