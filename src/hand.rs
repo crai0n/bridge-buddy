@@ -19,11 +19,11 @@ impl Hand {
     pub fn from_str(string: &str) -> Result<Hand, ()> {
         let mut cards: Vec<Card> = vec![];
         for cards_in_suit in string.split(['\n', ',']) {
-            let (suit, denominations) = cards_in_suit.split_once(":").ok_or(())?;
+            let (suit, denominations) = cards_in_suit.split_once(':').ok_or(())?;
             for denomination in denominations.trim().chars() {
                 let card = Card {
-                    denomination: Denomination::from_char(&denomination)?,
-                    suit: Suit::from_char(&suit.trim().chars().nth(0).unwrap())?,
+                    denomination: Denomination::from_char(denomination)?,
+                    suit: Suit::from_char(suit.trim().chars().next().unwrap())?,
                 };
                 cards.push(card)
             }
@@ -67,7 +67,7 @@ impl std::fmt::Display for Hand {
         for suit in [Suit::Spades, Suit::Hearts, Suit::Diamonds, Suit::Clubs] {
             // Don't write a new line for the first suit: spades
             if suit != Suit::Spades {
-                write!(f, "\n")?;
+                writeln!(f)?;
             }
             write!(f, "{}: ", suit)?;
             for card in self.cards_in_rev(suit) {
