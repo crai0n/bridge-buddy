@@ -73,17 +73,10 @@ impl Denomination {
 impl std::fmt::Display for Suit {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-<<<<<<< HEAD
-            Suit::Spades => write!(f, "S"),
-            Suit::Hearts => write!(f, "H"),
-            Suit::Diamonds => write!(f, "D"),
-            Suit::Clubs => write!(f, "C"),
-=======
-            Suit::Spades => write!(f, "♠️"),
+            Suit::Spades => write!(f, "♠"),
             Suit::Hearts => write!(f, "♥"),
-            Suit::Diamonds => write!(f, "♦️"),
-            Suit::Clubs => write!(f, "♣️"),
->>>>>>> ab364ad (change display of card to use unicode playing card symbols)
+            Suit::Diamonds => write!(f, "♦"),
+            Suit::Clubs => write!(f, "♣"),
         }
     }
 }
