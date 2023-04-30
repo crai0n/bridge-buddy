@@ -1,17 +1,19 @@
 use crate::card::*;
-use std::collections::BTreeSet;
-use std::ops::Bound::Included;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Hand {
-    cards: BTreeSet<Card>,
+    cards: [Card; 13],
 }
 
 impl Hand {
-    pub fn new(cards: [Card; 13]) -> Self {
-        let hand = Hand { cards: BTreeSet::from(cards) };
-        assert_eq!(hand.cards.len(), 13, "invalid hand - incorrect number of cards");
-        hand
+    pub fn new(mut cards: [Card; 13]) -> Self {
+        cards.sort_unstable();
+        for i in 0..12 {
+            if cards[i] == cards[i + 1] {
+                panic!("invalid hand - duplicate cards");
+            }
+        }
+        Hand { cards }
     }
 
     pub fn from_str(string: &str) -> Result<Hand, ()> {
@@ -38,16 +40,7 @@ impl Hand {
     }
 
     pub fn cards_in(&self, suit: Suit) -> impl DoubleEndedIterator<Item = &Card> {
-        let min = Card {
-            suit: suit.clone(),
-            denomination: Denomination::Two,
-        };
-        let max = Card {
-            suit: suit.clone(),
-            denomination: Denomination::Ace,
-        };
-        let rge = (Included(&min), Included(&max));
-        self.cards.range(rge)
+        self.cards.iter().filter(move |&card| card.suit == suit)
     }
 
     pub fn cards_in_rev(&self, suit: Suit) -> impl DoubleEndedIterator<Item = &Card> {
@@ -103,8 +96,8 @@ mod tests {
                 denomination: Ace,
             },
             Card {
-                suit: Hearts,
-                denomination: Ace,
+                suit: Diamonds,
+                denomination: King,
             },
             Card {
                 suit: Spades,
@@ -151,25 +144,26 @@ mod tests {
             hand.cards().nth(1).unwrap(),
             &Card {
                 suit: Diamonds,
-                denomination: Ace,
+                denomination: King,
             }
         );
         assert_eq!(hand.cards_in(Spades).count(), 10);
+        assert_eq!(hand.cards_in(Hearts).count(), 0);
         assert!(!hand.contains(&Card {
             suit: Diamonds,
-            denomination: King
+            denomination: Queen
         }));
         assert!(hand.contains(&Card {
             suit: Diamonds,
             denomination: Ace
         }));
-        assert_eq!(hand.high_card_points(), 22);
-        assert_eq!(format!("{}", hand), "♠: AKQJT98762\n♥: A\n♦: A\n♣: A");
-        assert_eq!(hand, Hand::from_str("H:A, ♠:9J7A2T6K8Q,♦: A, C: A").unwrap())
+        assert_eq!(hand.high_card_points(), 21);
+        assert_eq!(format!("{}", hand), "♠: AKQJT98762\n♥: \n♦: AK\n♣: A");
+        assert_eq!(hand, Hand::from_str("H:, ♠:9J7A2T6K8Q,♦: AK, C: A").unwrap())
     }
 
     #[test]
-    #[should_panic(expected = "invalid hand - incorrect number of cards")]
+    #[should_panic(expected = "invalid hand - duplicate cards")]
     fn test_hand_validation() {
         Hand::new([
             Card {
