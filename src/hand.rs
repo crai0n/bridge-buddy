@@ -17,6 +17,10 @@ impl Hand {
         self.cards.iter()
     }
 
+    pub fn cards_rev(&self) -> impl Iterator<Item = &Card> {
+        self.cards.iter().rev()
+    }
+
     pub fn cards_in(&self, suit: Suit) -> impl Iterator<Item = &Card> {
         let min = Card { suit: suit.clone(), denomination: Denomination::Two};
         let max = Card { suit: suit.clone(), denomination: Denomination::Ace};
@@ -38,6 +42,12 @@ impl Hand {
         })
     }
 }
+
+// impl std::fmt::Display for Hand {
+//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+//         write!(f, "{}{}", self.denomination, self.suit)
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
