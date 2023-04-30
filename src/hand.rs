@@ -21,11 +21,17 @@ impl Hand {
         self.cards.iter().rev()
     }
 
-    pub fn cards_in(&self, suit: Suit) -> impl Iterator<Item = &Card> {
-        let min = Card { suit: suit.clone(), denomination: Denomination::Two};
-        let max = Card { suit: suit.clone(), denomination: Denomination::Ace};
-        let rge = (Included(&min),Included(&max));
-        self.cards.range(rge)
+    pub fn cards_in(&self, suit: &Suit) -> impl Iterator<Item = &Card> {
+        let min = Card {
+            suit: suit.clone(),
+            denomination: Denomination::Two,
+        };
+        let max = Card {
+            suit: suit.clone(),
+            denomination: Denomination::Ace,
+        };
+        let rge = (Included(&min), Included(&max));
+        self.cards.range(rge).rev()
     }
 
     pub fn contains(&self, card: &Card) -> bool {
@@ -43,11 +49,21 @@ impl Hand {
     }
 }
 
-// impl std::fmt::Display for Hand {
-//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-//         write!(f, "{}{}", self.denomination, self.suit)
-//     }
-// }
+impl std::fmt::Display for Hand {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        for suit in [Suit::Spades, Suit::Hearts, Suit::Diamonds, Suit::Clubs] {
+            // Don't write a new line for the first suit: spades
+            if suit != Suit::Spades {
+                write!(f, "\n")?;
+            }
+            write!(f, "{}: ", suit)?;
+            for card in self.cards_in(&suit) {
+                write!(f, "{}", card.denomination.clone())?;
+            }
+        }
+        Ok(())
+    }
+}
 
 #[cfg(test)]
 mod tests {
