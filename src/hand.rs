@@ -118,6 +118,7 @@ mod tests {
             denomination: Ace
         }));
         assert_eq!(hand.high_card_points(), 22);
+        assert_eq!(format!("{}", hand), "♠: AKQJT98762\n♥: A\n♦: A\n♣: A");
     }
 
     #[test]
