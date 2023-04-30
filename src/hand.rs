@@ -13,6 +13,21 @@ impl Hand {
         hand
     }
 
+    pub fn from_str(string: &str) -> Result<Hand, ()> {
+        let mut cards: Vec<Card> = vec![];
+        for cards_in_suit in string.split(['\n', ',']) {
+            let (suit, denominations) = cards_in_suit.split_once(":").ok_or(())?;
+            for denomination in denominations.trim().chars() {
+                let card = Card {
+                    denomination: Denomination::from_char(&denomination)?,
+                    suit: Suit::from_char(&suit.trim().chars().nth(0).unwrap())?,
+                };
+                cards.push(card)
+            }
+        }
+        Ok(Hand::new(cards.try_into().unwrap()))
+    }
+
     pub fn cards(&self) -> impl Iterator<Item = &Card> {
         self.cards.iter()
     }
