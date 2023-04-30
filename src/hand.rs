@@ -9,7 +9,7 @@ pub struct Hand {
 impl Hand {
     pub fn new(cards: [Card; 13]) -> Self {
         let hand = Hand { cards: BTreeSet::from(cards) };
-        hand.validate();
+        assert_eq!(hand.cards.len(), 13, "invalid hand - incorrect number of cards");
         hand
     }
 
@@ -17,7 +17,7 @@ impl Hand {
         self.cards.iter()
     }
 
-    pub fn cards_in(&self, suit: &Suit) -> impl Iterator<Item = &Card> {
+    pub fn cards_in(&self, suit: Suit) -> impl Iterator<Item = &Card> {
         let min = Card { suit: suit.clone(), denomination: Denomination::Two};
         let max = Card { suit: suit.clone(), denomination: Denomination::Ace};
         let rge = (Included(&min),Included(&max));
@@ -36,10 +36,6 @@ impl Hand {
             Denomination::Jack => acc + 1,
             _ => acc,
         })
-    }
-
-    fn validate(&self) {
-        assert_eq!(self.cards.len(), 13, "invalid hand - incorrect number of cards")
     }
 }
 
@@ -112,7 +108,7 @@ mod tests {
                 denomination: Ace,
             }
         );
-        assert_eq!(hand.cards_in(&Spades).count(), 10);
+        assert_eq!(hand.cards_in(Spades).count(), 10);
         assert!(!hand.contains(&Card {
             suit: Diamonds,
             denomination: King
