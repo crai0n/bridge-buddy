@@ -2,6 +2,7 @@ use crate::card::*;
 use std::collections::BTreeSet;
 use std::ops::Bound::Included;
 
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Hand {
     cards: BTreeSet<Card>,
 }
@@ -13,15 +14,44 @@ impl Hand {
         hand
     }
 
-    pub fn cards(&self) -> impl Iterator<Item = &Card> {
+    pub fn from_str(string: &str) -> Result<Hand, ()> {
+        let mut cards: Vec<Card> = vec![];
+        for cards_in_suit in string.split(['\n', ',']) {
+            let (suit, denominations) = cards_in_suit.split_once(":").ok_or(())?;
+            for denomination in denominations.trim().chars() {
+                let card = Card {
+                    denomination: Denomination::from_char(&denomination)?,
+                    suit: Suit::from_char(&suit.trim().chars().nth(0).unwrap())?,
+                };
+                cards.push(card)
+            }
+        }
+        Ok(Hand::new(cards.try_into().unwrap()))
+    }
+
+    pub fn cards(&self) -> impl DoubleEndedIterator<Item = &Card> {
         self.cards.iter()
     }
 
-    pub fn cards_in(&self, suit: Suit) -> impl Iterator<Item = &Card> {
-        let min = Card { suit: suit.clone(), denomination: Denomination::Two};
-        let max = Card { suit: suit.clone(), denomination: Denomination::Ace};
-        let rge = (Included(&min),Included(&max));
+    pub fn cards_rev(&self) -> impl DoubleEndedIterator<Item = &Card> {
+        self.cards().rev()
+    }
+
+    pub fn cards_in(&self, suit: Suit) -> impl DoubleEndedIterator<Item = &Card> {
+        let min = Card {
+            suit: suit.clone(),
+            denomination: Denomination::Two,
+        };
+        let max = Card {
+            suit: suit.clone(),
+            denomination: Denomination::Ace,
+        };
+        let rge = (Included(&min), Included(&max));
         self.cards.range(rge)
+    }
+
+    pub fn cards_in_rev(&self, suit: Suit) -> impl DoubleEndedIterator<Item = &Card> {
+        self.cards_in(suit).rev()
     }
 
     pub fn contains(&self, card: &Card) -> bool {
@@ -36,6 +66,22 @@ impl Hand {
             Denomination::Jack => acc + 1,
             _ => acc,
         })
+    }
+}
+
+impl std::fmt::Display for Hand {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        for suit in [Suit::Spades, Suit::Hearts, Suit::Diamonds, Suit::Clubs] {
+            // Don't write a new line for the first suit: spades
+            if suit != Suit::Spades {
+                write!(f, "\n")?;
+            }
+            write!(f, "{}: ", suit)?;
+            for card in self.cards_in_rev(suit) {
+                write!(f, "{}", card.denomination.clone())?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -118,6 +164,8 @@ mod tests {
             denomination: Ace
         }));
         assert_eq!(hand.high_card_points(), 22);
+        assert_eq!(format!("{}", hand), "♠: AKQJT98762\n♥: A\n♦: A\n♣: A");
+        assert_eq!(hand, Hand::from_str("H:A, ♠:9J7A2T6K8Q,♦: A, C: A").unwrap())
     }
 
     #[test]
