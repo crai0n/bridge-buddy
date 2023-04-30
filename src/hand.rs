@@ -37,7 +37,7 @@ impl Hand {
         self.cards.iter().rev()
     }
 
-    pub fn cards_in(&self, suit: &Suit) -> impl Iterator<Item = &Card> {
+    pub fn cards_in(&self, suit: Suit) -> impl Iterator<Item = &Card> {
         let min = Card {
             suit: suit.clone(),
             denomination: Denomination::Two,
@@ -73,7 +73,7 @@ impl std::fmt::Display for Hand {
                 write!(f, "\n")?;
             }
             write!(f, "{}: ", suit)?;
-            for card in self.cards_in(&suit) {
+            for card in self.cards_in(suit) {
                 write!(f, "{}", card.denomination.clone())?;
             }
         }
