@@ -10,7 +10,7 @@ pub struct Deck {
 }
 
 impl Deck {
-    fn new() -> Self {
+    pub fn new() -> Self {
         let cards = Vec::<Card>::from_iter(
             Suit::iter()
                 .cartesian_product(Denomination::iter())
@@ -20,12 +20,12 @@ impl Deck {
         Deck { cards }
     }
 
-    fn shuffle(&mut self) -> () {
+    pub fn shuffle(&mut self) -> () {
         let mut rng = thread_rng();
         self.cards.shuffle(&mut rng);
     }
 
-    fn shuffled(mut self) -> Self {
+    pub fn shuffled(mut self) -> Self {
         self.shuffle();
         self
     }
