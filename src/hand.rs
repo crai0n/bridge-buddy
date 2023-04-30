@@ -29,15 +29,15 @@ impl Hand {
         Ok(Hand::new(cards.try_into().unwrap()))
     }
 
-    pub fn cards(&self) -> impl Iterator<Item = &Card> {
+    pub fn cards(&self) -> impl DoubleEndedIterator<Item = &Card> {
         self.cards.iter()
     }
 
-    pub fn cards_rev(&self) -> impl Iterator<Item = &Card> {
-        self.cards.iter().rev()
+    pub fn cards_rev(&self) -> impl DoubleEndedIterator<Item = &Card> {
+        self.cards().rev()
     }
 
-    pub fn cards_in(&self, suit: Suit) -> impl Iterator<Item = &Card> {
+    pub fn cards_in(&self, suit: Suit) -> impl DoubleEndedIterator<Item = &Card> {
         let min = Card {
             suit: suit.clone(),
             denomination: Denomination::Two,
@@ -47,7 +47,11 @@ impl Hand {
             denomination: Denomination::Ace,
         };
         let rge = (Included(&min), Included(&max));
-        self.cards.range(rge).rev()
+        self.cards.range(rge)
+    }
+
+    pub fn cards_in_rev(&self, suit: Suit) -> impl DoubleEndedIterator<Item = &Card> {
+        self.cards_in(suit).rev()
     }
 
     pub fn contains(&self, card: &Card) -> bool {
@@ -73,7 +77,7 @@ impl std::fmt::Display for Hand {
                 write!(f, "\n")?;
             }
             write!(f, "{}: ", suit)?;
-            for card in self.cards_in(suit) {
+            for card in self.cards_in_rev(suit) {
                 write!(f, "{}", card.denomination.clone())?;
             }
         }
