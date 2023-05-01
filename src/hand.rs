@@ -16,7 +16,7 @@ pub enum HandType {
     ThreeSuiter(Suit, Suit, Suit),
     TwoSuiter(Suit, Suit),
     OneSuiter(Suit),
-    Balanced(Option<Suit>) // might contain a 5-card suit
+    Balanced(Option<Suit>), // might contain a 5-card suit
 }
 
 impl Hand {
@@ -29,22 +29,32 @@ impl Hand {
             }
         }
 
-        let mut sorted_suit_lengths = [(Suit::Clubs, 0), (Suit::Diamonds, 0), (Suit::Hearts, 0), (Suit::Spades, 0)];
+        let mut sorted_suit_lengths = [
+            (Suit::Clubs, 0),
+            (Suit::Diamonds, 0),
+            (Suit::Hearts, 0),
+            (Suit::Spades, 0),
+        ];
         for card in &cards {
-            match card.suit { // suit_lengths is in "intuitive order" of Suits
+            match card.suit {
+                // suit_lengths is in "intuitive order" of Suits
                 Suit::Clubs => sorted_suit_lengths[0].1 += 1,
                 Suit::Diamonds => sorted_suit_lengths[1].1 += 1,
                 Suit::Hearts => sorted_suit_lengths[2].1 += 1,
                 Suit::Spades => sorted_suit_lengths[3].1 += 1,
             };
         }
-        sorted_suit_lengths.sort_unstable_by(|x,y| x.1.cmp(&y.1)); //longest suit will be last
+        sorted_suit_lengths.sort_unstable_by(|x, y| x.1.cmp(&y.1)); //longest suit will be last
 
         // determine hand-type
         let hand_type: HandType;
         if sorted_suit_lengths[1].1 >= 4 {
             // three suits with at least 4 cards is a three-suiter
-            hand_type = HandType::ThreeSuiter(sorted_suit_lengths[3].0, sorted_suit_lengths[2].0, sorted_suit_lengths[1].0);
+            hand_type = HandType::ThreeSuiter(
+                sorted_suit_lengths[3].0,
+                sorted_suit_lengths[2].0,
+                sorted_suit_lengths[1].0,
+            );
         } else if sorted_suit_lengths[3].1 >= 5 && sorted_suit_lengths[2].1 >= 4 {
             // two-suiter
             hand_type = HandType::TwoSuiter(sorted_suit_lengths[3].0, sorted_suit_lengths[2].0);
@@ -61,9 +71,12 @@ impl Hand {
 
         let suit_lengths = BTreeMap::<Suit, u8>::from(sorted_suit_lengths);
 
-        Hand { cards, suit_lengths, hand_type}
+        Hand {
+            cards,
+            suit_lengths,
+            hand_type,
+        }
     }
-
 
     pub fn from_str(string: &str) -> Result<Hand, ()> {
         let mut cards: Vec<Card> = vec![];
@@ -113,7 +126,8 @@ impl Hand {
 
 impl std::fmt::Display for Hand {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        for suit in Suit::iter().rev() { // Spades, then Hearts, ...
+        for suit in Suit::iter().rev() {
+            // Spades, then Hearts, ...
             write!(f, "{}: ", suit)?;
             for card in self.cards_in_rev(suit) {
                 write!(f, "{}", card.denomination)?;
@@ -129,6 +143,7 @@ mod tests {
     use super::Denomination::*;
     use super::Suit::*;
     use super::*;
+    use test_case::test_case;
 
     #[test]
     fn test_hand_types() {
@@ -254,7 +269,10 @@ mod tests {
         );
         assert_eq!(hand.cards_in(Spades).count(), 10);
         assert_eq!(hand.cards_in(Hearts).count(), 0);
-        assert_eq!(hand.suit_lengths, BTreeMap::from([(Spades, 10), (Hearts, 0), (Diamonds, 2), (Clubs, 1)]));
+        assert_eq!(
+            hand.suit_lengths,
+            BTreeMap::from([(Spades, 10), (Hearts, 0), (Diamonds, 2), (Clubs, 1)])
+        );
         assert!(!hand.contains(&Card {
             suit: Diamonds,
             denomination: Queen
@@ -327,5 +345,20 @@ mod tests {
             },
         ]);
     }
-}
 
+    #[test_case("♠:AKQJT98765432", HandType::OneSuiter(Spades) ; "13-0-0-0")]
+    #[test_case("♥:AKQJT98765,♠:432", HandType::OneSuiter(Hearts) ; "10-3-0-0")]
+    #[test_case("♦:AKQJT9,♥:876,♠:54,♣:32", HandType::OneSuiter(Diamonds) ; "6-3-2-2")]
+    #[test_case("♠:AKQJT9876,♥:5432", HandType::TwoSuiter(Spades, Hearts) ; "9-4-0-0")]
+    #[test_case("♠:AKQJT,♦:9876,♥:543,♣:2", HandType::TwoSuiter(Spades, Diamonds); "5-4-3-1")]
+    #[test_case("♦:AKQJT,♣:9876,♠:54,♥:32", HandType::TwoSuiter(Diamonds, Clubs); "5-4-2-2")]
+    #[test_case("♠:AKQJT,♥:9876,♦:5432", HandType::ThreeSuiter(Spades, Hearts, Diamonds); "5-4-4-0")]
+    #[test_case("♣:AKQJ,♥:T987,♦:6543,♠:2", HandType::ThreeSuiter(Hearts, Diamonds, Clubs); "4-4-4-1")]
+    #[test_case("♠:AKQJT,♥:987,♦:654,♣:32", HandType::Balanced(Some(Spades)) ; "5-3-3-2")]
+    #[test_case("♠:AKQJ,♥:T98,♦:765,♣:432", HandType::Balanced(None); "4-3-3-3")]
+    #[test_case("♠:AKQJ,♥:T987,♦:654,♣:32", HandType::Balanced(None); "4-4-3-2")]
+    fn test_hand_type(hand: &str, expected_hand_type: HandType) {
+        let hand = Hand::from_str(hand).unwrap();
+        assert_eq!(hand.hand_type, expected_hand_type)
+    }
+}
