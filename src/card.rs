@@ -1,11 +1,11 @@
 use strum::EnumIter;
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Card {
     pub suit: Suit,
     pub denomination: Denomination,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
 pub enum Denomination {
     Two,
     Three,
@@ -22,7 +22,7 @@ pub enum Denomination {
     Ace,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
 pub enum Suit {
     Clubs,
     Diamonds,

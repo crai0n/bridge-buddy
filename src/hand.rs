@@ -1,10 +1,20 @@
 use crate::card::*;
+use itertools::Itertools;
 use strum::IntoEnumIterator;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Hand {
     cards: [Card; 13],
     suit_lengths: [u8;4],
+    hand_type: HandType,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum HandType {
+    ThreeSuiter(Suit, Suit, Suit),
+    TwoSuiter(Suit, Suit),
+    OneSuiter(Suit),
+    Balanced(Option<Suit>) // might contain a 5-card suit
 }
 
 impl Hand {
@@ -24,7 +34,30 @@ impl Hand {
                 Suit::Clubs => suit_lengths[3] += 1,
             };
         }
-        Hand { cards, suit_lengths }
+
+        // determine hand-type
+        let mut named_suit_lengths = suit_lengths.into_iter().zip(Suit::iter().rev()).collect::<Vec<(u8, Suit)>>();
+        named_suit_lengths.sort_unstable();
+
+
+        let hand_type: HandType;
+        if named_suit_lengths[1].0 >= 4 {
+            // three suits with at least 4 cards is a three-suiter
+            hand_type = HandType::ThreeSuiter(named_suit_lengths[3].1, named_suit_lengths[2].1, named_suit_lengths[1].1);
+        } else if named_suit_lengths[3].0 >= 5 && named_suit_lengths[2].0 >= 4 {
+            // two-suiter
+            hand_type = HandType::TwoSuiter(named_suit_lengths[3].1, named_suit_lengths[2].1);
+        } else if named_suit_lengths[3].0 >= 6 {
+            // one-suiter
+            hand_type = HandType::OneSuiter(named_suit_lengths[3].1);
+        } else {
+            // balanced
+            match named_suit_lengths[3].0 == 5 {
+                true => hand_type = HandType::Balanced(Some(named_suit_lengths[3].1)),
+                false => hand_type = HandType::Balanced(None),
+            }
+        }
+        Hand { cards, suit_lengths, hand_type }
     }
 
     pub fn from_str(string: &str) -> Result<Hand, ()> {
@@ -91,6 +124,65 @@ mod tests {
     use super::Denomination::*;
     use super::Suit::*;
     use super::*;
+
+    #[test]
+    fn test_hand_types() {
+        let hand = Hand::new([
+            Card {
+                suit: Clubs,
+                denomination: Ace,
+            },
+            Card {
+                suit: Clubs,
+                denomination: King,
+            },
+            Card {
+                suit: Diamonds,
+                denomination: King,
+            },
+            Card {
+                suit: Diamonds,
+                denomination: Ace,
+            },
+            Card {
+                suit: Diamonds,
+                denomination: Queen,
+            },
+            Card {
+                suit: Hearts,
+                denomination: Queen,
+            },
+            Card {
+                suit: Hearts,
+                denomination: Jack,
+            },
+            Card {
+                suit: Hearts,
+                denomination: Ten,
+            },
+            Card {
+                suit: Spades,
+                denomination: Nine,
+            },
+            Card {
+                suit: Spades,
+                denomination: Eight,
+            },
+            Card {
+                suit: Spades,
+                denomination: Seven,
+            },
+            Card {
+                suit: Spades,
+                denomination: Six,
+            },
+            Card {
+                suit: Spades,
+                denomination: Two,
+            },
+        ]);
+        assert_eq!(hand.hand_type, HandType::Balanced(Some(Spades)));
+    }
 
     #[test]
     fn test_methods() {
@@ -167,6 +259,7 @@ mod tests {
             denomination: Ace
         }));
         assert_eq!(hand.high_card_points(), 21);
+        assert_eq!(hand.hand_type, HandType::OneSuiter(Suit::Spades));
         assert_eq!(format!("{}", hand), "♠: AKQJT98762\n♥: \n♦: AK\n♣: A\n");
         assert_eq!(hand, Hand::from_str("H:, ♠:9J7A2T6K8Q,♦: AK, C: A").unwrap())
     }
@@ -230,3 +323,4 @@ mod tests {
         ]);
     }
 }
+
