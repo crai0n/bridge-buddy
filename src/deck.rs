@@ -6,17 +6,18 @@ use strum::IntoEnumIterator;
 
 #[derive(Debug)]
 pub struct Deck {
-    cards: Vec<Card>,
+    cards: [Card;52],
 }
 
 impl Deck {
     pub fn new() -> Self {
-        let cards = Vec::<Card>::from_iter(
+        let cards_vec = Vec::<Card>::from_iter(
             Suit::iter()
                 .cartesian_product(Denomination::iter())
                 .map(|(suit, denomination)| Card { suit, denomination }),
         );
-        assert_eq!(cards.len(), 52);
+        assert_eq!(cards_vec.len(), 52);
+        let cards: [Card; 52] = cards_vec.try_into().unwrap();
         Deck { cards }
     }
 
