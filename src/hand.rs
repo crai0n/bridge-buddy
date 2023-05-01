@@ -1,4 +1,5 @@
 use crate::card::*;
+use strum::IntoEnumIterator;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Hand {
@@ -64,15 +65,12 @@ impl Hand {
 
 impl std::fmt::Display for Hand {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        for suit in [Suit::Spades, Suit::Hearts, Suit::Diamonds, Suit::Clubs] {
-            // Don't write a new line for the first suit: spades
-            if suit != Suit::Spades {
-                writeln!(f)?;
-            }
+        for suit in Suit::iter().rev() { // Spades, then Hearts, ...
             write!(f, "{}: ", suit)?;
             for card in self.cards_in_rev(suit) {
-                write!(f, "{}", card.denomination.clone())?;
+                write!(f, "{}", card.denomination)?;
             }
+            write!(f, "\n");
         }
         Ok(())
     }
@@ -158,7 +156,7 @@ mod tests {
             denomination: Ace
         }));
         assert_eq!(hand.high_card_points(), 21);
-        assert_eq!(format!("{}", hand), "♠: AKQJT98762\n♥: \n♦: AK\n♣: A");
+        assert_eq!(format!("{}", hand), "♠: AKQJT98762\n♥: \n♦: AK\n♣: A\n");
         assert_eq!(hand, Hand::from_str("H:, ♠:9J7A2T6K8Q,♦: AK, C: A").unwrap())
     }
 
