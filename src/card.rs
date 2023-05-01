@@ -110,11 +110,11 @@ impl Card {
             return Err(());
         }
         let mut chars = string.chars();
-        match Denomination::from_char(chars.next().unwrap()) {
-            Ok(d) => match Suit::from_char(chars.next().unwrap()) {
-                Ok(s) => Ok(Card {
-                    denomination: d,
+        match Suit::from_char(chars.next().unwrap()) {
+            Ok(s) => match Denomination::from_char(chars.next().unwrap()) {
+                Ok(d) => Ok(Card {
                     suit: s,
+                    denomination: d,
                 }),
                 Err(e) => Err(e),
             },
