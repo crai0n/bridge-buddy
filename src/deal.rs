@@ -1,8 +1,18 @@
-use rand::random;
+use itertools::Itertools;
+use rand::{random, thread_rng};
+use rand::seq::SliceRandom;
+use strum::IntoEnumIterator;
+use crate::hand::Hand;
+use crate::card::*;
+
 
 pub struct Deal {
     deal_number: u8,
     vulnerable: Vulnerable,
+    north: Hand,
+    east: Hand,
+    south: Hand,
+    west: Hand
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -21,6 +31,7 @@ impl Deal {
     }
 
     pub fn new_from_number(deal_number: u8) -> Deal {
+        // calculate vulnerability
         let v = deal_number - 1;
         let vul = v + v / 4 ;
         let vulnerable = match vul % 4 {
@@ -29,7 +40,28 @@ impl Deal {
             2 => Vulnerable::EastWest,
             _ => Vulnerable::All,
         };
-        Deal {deal_number, vulnerable}
+
+        // create the cards for playing
+        let mut cards_vec = Vec::<Card>::from_iter(
+            Suit::iter()
+                .cartesian_product(Denomination::iter())
+                .map(|(suit, denomination)| Card { suit, denomination }),
+        );
+        assert_eq!(cards_vec.len(), 52);
+
+        // shuffle cards
+        let mut rng = thread_rng();
+        cards_vec.shuffle(&mut rng);
+
+
+        //distribute cards
+        let north = Hand::new(cards_vec.split_off(39).try_into().unwrap());
+        let east = Hand::new(cards_vec.split_off(26).try_into().unwrap());
+        let south = Hand::new(cards_vec.split_off(13).try_into().unwrap());
+        let west = Hand::new(cards_vec.try_into().unwrap());
+
+        Deal {deal_number, vulnerable, north, east, south, west}
+
     }
 }
 
@@ -37,6 +69,7 @@ impl Deal {
 mod tests {
     use super::Deal;
     use super::Vulnerable;
+    use super::*;
 
     #[test]
     fn test_vulnerability() {
@@ -63,6 +96,64 @@ mod tests {
         // Pattern repeats after 16 hands
         assert_eq!(Deal::new_from_number(17).vulnerable, Vulnerable::None);
         assert_eq!(Deal::new_from_number(18).vulnerable, Vulnerable::NorthSouth);
+    }
+
+    #[test]
+    fn test_deck_integrity() {
+        let deal = Deal::new();
+        let mut cards: Vec<Card> = Vec::with_capacity(52);
+
+        for card in deal.north.cards() {
+            cards.push(card.clone())
+        }
+        for card in deal.east.cards() {
+            cards.push(card.clone())
+        }
+        for card in deal.south.cards() {
+            cards.push(card.clone())
+        }
+        for card in deal.west.cards() {
+            cards.push(card.clone())
+        }
+
+        cards.sort_unstable();
+
+        assert_eq!(
+            cards.iter().nth(1).unwrap(),
+            &Card {
+                suit: Suit::Clubs,
+                denomination: Denomination::Three
+            }
+        );
+        assert_eq!(
+            cards.iter().nth(13).unwrap(),
+            &Card {
+                suit: Suit::Diamonds,
+                denomination: Denomination::Two
+            }
+        );
+        assert_eq!(
+            cards.iter().nth(17).unwrap(),
+            &Card {
+                suit: Suit::Diamonds,
+                denomination: Denomination::Six
+            }
+        );
+        assert_eq!(
+            cards.iter().nth(32).unwrap(),
+            &Card {
+                suit: Suit::Hearts,
+                denomination: Denomination::Eight
+            }
+        );
+        assert_eq!(
+            cards.iter().nth(48).unwrap(),
+            &Card {
+                suit: Suit::Spades,
+                denomination: Denomination::Jack
+            }
+        );
+
     }
 
 }
