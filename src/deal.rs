@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use itertools::Itertools;
 use rand::{random, thread_rng};
 use rand::seq::SliceRandom;
@@ -9,10 +11,7 @@ use crate::card::*;
 pub struct Deal {
     deal_number: u8,
     vulnerable: Vulnerable,
-    north: Hand,
-    east: Hand,
-    south: Hand,
-    west: Hand
+    cards: BTreeMap<PlayerPosition, Hand>
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -21,6 +20,14 @@ pub enum Vulnerable {
     NorthSouth,
     EastWest,
     All
+}
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum PlayerPosition {
+    North,
+    East,
+    South,
+    West,
 }
 
 
@@ -55,12 +62,13 @@ impl Deal {
 
 
         //distribute cards
-        let north = Hand::new(cards_vec.split_off(39).try_into().unwrap());
-        let east = Hand::new(cards_vec.split_off(26).try_into().unwrap());
-        let south = Hand::new(cards_vec.split_off(13).try_into().unwrap());
-        let west = Hand::new(cards_vec.try_into().unwrap());
+        let mut cards: BTreeMap<PlayerPosition, Hand>= BTreeMap::new();
+        cards.insert(PlayerPosition::North, Hand::new(cards_vec.split_off(39).try_into().unwrap()));
+        cards.insert(PlayerPosition::East, Hand::new(cards_vec.split_off(26).try_into().unwrap()));
+        cards.insert(PlayerPosition::South, Hand::new(cards_vec.split_off(13).try_into().unwrap()));
+        cards.insert(PlayerPosition::West, Hand::new(cards_vec.try_into().unwrap()));
 
-        Deal {deal_number, vulnerable, north, east, south, west}
+        Deal {deal_number, vulnerable, cards}
 
     }
 }
@@ -103,17 +111,10 @@ mod tests {
         let deal = Deal::new();
         let mut cards: Vec<Card> = Vec::with_capacity(52);
 
-        for card in deal.north.cards() {
-            cards.push(card.clone())
-        }
-        for card in deal.east.cards() {
-            cards.push(card.clone())
-        }
-        for card in deal.south.cards() {
-            cards.push(card.clone())
-        }
-        for card in deal.west.cards() {
-            cards.push(card.clone())
+        for hand in deal.cards.values() {
+            for &card in hand.cards() {
+                cards.push(card)
+            }
         }
 
         cards.sort_unstable();
