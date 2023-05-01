@@ -4,17 +4,27 @@ use strum::IntoEnumIterator;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Hand {
     cards: [Card; 13],
+    suit_lengths: [u8;4],
 }
 
 impl Hand {
     pub fn new(mut cards: [Card; 13]) -> Self {
         cards.sort_unstable();
+        let mut suit_lengths = [0;4];
         for i in 0..12 {
             if cards[i] == cards[i + 1] {
                 panic!("invalid hand - duplicate cards");
             }
         }
-        Hand { cards }
+        for card in &cards {
+            match card.suit { // suit_lengths is in "intuitive order" of Suits
+                Suit::Spades => suit_lengths[0] += 1,
+                Suit::Hearts => suit_lengths[1] += 1,
+                Suit::Diamonds => suit_lengths[2] += 1,
+                Suit::Clubs => suit_lengths[3] += 1,
+            };
+        }
+        Hand { cards, suit_lengths }
     }
 
     pub fn from_str(string: &str) -> Result<Hand, ()> {
@@ -147,6 +157,7 @@ mod tests {
         );
         assert_eq!(hand.cards_in(Spades).count(), 10);
         assert_eq!(hand.cards_in(Hearts).count(), 0);
+        assert_eq!(hand.suit_lengths, [10,0,2,1]);
         assert!(!hand.contains(&Card {
             suit: Diamonds,
             denomination: Queen
