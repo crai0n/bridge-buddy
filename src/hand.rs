@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use crate::card::*;
 use itertools::Itertools;
 use strum::IntoEnumIterator;
@@ -5,7 +7,7 @@ use strum::IntoEnumIterator;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Hand {
     cards: [Card; 13],
-    suit_lengths: [u8;4],
+    suit_lengths: BTreeMap<Suit, u8>,
     hand_type: HandType,
 }
 
@@ -20,45 +22,48 @@ pub enum HandType {
 impl Hand {
     pub fn new(mut cards: [Card; 13]) -> Self {
         cards.sort_unstable();
-        let mut suit_lengths = [0;4];
+
         for i in 0..12 {
             if cards[i] == cards[i + 1] {
                 panic!("invalid hand - duplicate cards");
             }
         }
+
+        let mut sorted_suit_lengths = [(Suit::Clubs, 0), (Suit::Diamonds, 0), (Suit::Hearts, 0), (Suit::Spades, 0)];
         for card in &cards {
             match card.suit { // suit_lengths is in "intuitive order" of Suits
-                Suit::Spades => suit_lengths[0] += 1,
-                Suit::Hearts => suit_lengths[1] += 1,
-                Suit::Diamonds => suit_lengths[2] += 1,
-                Suit::Clubs => suit_lengths[3] += 1,
+                Suit::Clubs => sorted_suit_lengths[0].1 += 1,
+                Suit::Diamonds => sorted_suit_lengths[1].1 += 1,
+                Suit::Hearts => sorted_suit_lengths[2].1 += 1,
+                Suit::Spades => sorted_suit_lengths[3].1 += 1,
             };
         }
+        sorted_suit_lengths.sort_unstable_by(|x,y| x.1.cmp(&y.1)); //longest suit will be last
 
         // determine hand-type
-        let mut named_suit_lengths = suit_lengths.into_iter().zip(Suit::iter().rev()).collect::<Vec<(u8, Suit)>>();
-        named_suit_lengths.sort_unstable();
-
-
         let hand_type: HandType;
-        if named_suit_lengths[1].0 >= 4 {
+        if sorted_suit_lengths[1].1 >= 4 {
             // three suits with at least 4 cards is a three-suiter
-            hand_type = HandType::ThreeSuiter(named_suit_lengths[3].1, named_suit_lengths[2].1, named_suit_lengths[1].1);
-        } else if named_suit_lengths[3].0 >= 5 && named_suit_lengths[2].0 >= 4 {
+            hand_type = HandType::ThreeSuiter(sorted_suit_lengths[3].0, sorted_suit_lengths[2].0, sorted_suit_lengths[1].0);
+        } else if sorted_suit_lengths[3].1 >= 5 && sorted_suit_lengths[2].1 >= 4 {
             // two-suiter
-            hand_type = HandType::TwoSuiter(named_suit_lengths[3].1, named_suit_lengths[2].1);
-        } else if named_suit_lengths[3].0 >= 6 {
+            hand_type = HandType::TwoSuiter(sorted_suit_lengths[3].0, sorted_suit_lengths[2].0);
+        } else if sorted_suit_lengths[3].1 >= 6 {
             // one-suiter
-            hand_type = HandType::OneSuiter(named_suit_lengths[3].1);
+            hand_type = HandType::OneSuiter(sorted_suit_lengths[3].0);
         } else {
             // balanced
-            match named_suit_lengths[3].0 == 5 {
-                true => hand_type = HandType::Balanced(Some(named_suit_lengths[3].1)),
+            match sorted_suit_lengths[3].1 == 5 {
+                true => hand_type = HandType::Balanced(Some(sorted_suit_lengths[3].0)),
                 false => hand_type = HandType::Balanced(None),
             }
         }
-        Hand { cards, suit_lengths, hand_type }
+
+        let suit_lengths = BTreeMap::<Suit, u8>::from(sorted_suit_lengths);
+
+        Hand { cards, suit_lengths, hand_type}
     }
+
 
     pub fn from_str(string: &str) -> Result<Hand, ()> {
         let mut cards: Vec<Card> = vec![];
@@ -249,7 +254,7 @@ mod tests {
         );
         assert_eq!(hand.cards_in(Spades).count(), 10);
         assert_eq!(hand.cards_in(Hearts).count(), 0);
-        assert_eq!(hand.suit_lengths, [10,0,2,1]);
+        assert_eq!(hand.suit_lengths, BTreeMap::from([(Spades, 10), (Hearts, 0), (Diamonds, 2), (Clubs, 1)]));
         assert!(!hand.contains(&Card {
             suit: Diamonds,
             denomination: Queen
