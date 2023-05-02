@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use itertools::Itertools;
 use rand::{random, thread_rng};
 use rand::seq::SliceRandom;
