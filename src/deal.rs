@@ -11,7 +11,8 @@ use crate::card::*;
 pub struct Deal {
     deal_number: u8,
     vulnerable: Vulnerable,
-    hands: [Hand;4]
+    dealer: PlayerPosition,
+    hands: [Hand;4],
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -40,6 +41,7 @@ impl Deal {
     pub fn new_from_number(deal_number: u8) -> Deal {
         // calculate vulnerability
         let vulnerable = Self::calculate_vulnerability(deal_number);
+        let dealer = Self::calculate_dealer(deal_number);
 
 
         // create the cards for playing
@@ -62,7 +64,7 @@ impl Deal {
         hands_vec.push(Hand::new(cards_vec.split_off(13).try_into().unwrap()));
         hands_vec.push(Hand::new(cards_vec.try_into().unwrap()));
 
-        Deal {deal_number, vulnerable, hands: hands_vec.try_into().unwrap()}
+        Deal {deal_number, vulnerable, dealer, hands: hands_vec.try_into().unwrap()}
 
     }
 
@@ -74,6 +76,15 @@ impl Deal {
             1 => Vulnerable::NorthSouth,
             2 => Vulnerable::EastWest,
             _ => Vulnerable::All,
+        }
+    }
+    
+    fn calculate_dealer(deal_number: u8) -> PlayerPosition {
+        match (deal_number-1) % 4 {
+            0 => PlayerPosition::North,
+            1 => PlayerPosition::East,
+            2 => PlayerPosition::South,
+            _ => PlayerPosition::West,
         }
     }
 }
@@ -109,6 +120,33 @@ mod tests {
         // Pattern repeats after 16 hands
         assert_eq!(Deal::calculate_vulnerability(17), Vulnerable::None);
         assert_eq!(Deal::calculate_vulnerability(18), Vulnerable::NorthSouth);
+    }
+
+    #[test]
+    fn test_dealer() {
+        // Pattern follows the "BONE"-chart
+        assert_eq!(Deal::calculate_dealer(1), PlayerPosition::North);
+        assert_eq!(Deal::calculate_dealer(2), PlayerPosition::East);
+        assert_eq!(Deal::calculate_dealer(3), PlayerPosition::South);
+        assert_eq!(Deal::calculate_dealer(4), PlayerPosition::West);
+
+        assert_eq!(Deal::calculate_dealer(5), PlayerPosition::North);
+        assert_eq!(Deal::calculate_dealer(6), PlayerPosition::East);
+        assert_eq!(Deal::calculate_dealer(7), PlayerPosition::South);
+        assert_eq!(Deal::calculate_dealer(8), PlayerPosition::West);
+
+        assert_eq!(Deal::calculate_dealer(9), PlayerPosition::North);
+        assert_eq!(Deal::calculate_dealer(10),PlayerPosition::East);
+        assert_eq!(Deal::calculate_dealer(11),PlayerPosition::South);
+        assert_eq!(Deal::calculate_dealer(12),PlayerPosition::West);
+
+        assert_eq!(Deal::calculate_dealer(13),PlayerPosition::North);
+        assert_eq!(Deal::calculate_dealer(14),PlayerPosition::East);
+        assert_eq!(Deal::calculate_dealer(15),PlayerPosition::South);
+        assert_eq!(Deal::calculate_dealer(16),PlayerPosition::West);
+        // Pattern repeats after 16 hands
+        assert_eq!(Deal::calculate_dealer(17),PlayerPosition::North);
+        assert_eq!(Deal::calculate_dealer(18),PlayerPosition::East);
     }
 
     #[test]
