@@ -11,7 +11,7 @@ use crate::card::*;
 pub struct Deal {
     deal_number: u8,
     vulnerable: Vulnerable,
-    cards: BTreeMap<PlayerPosition, Hand>
+    hands: [Hand;4]
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -24,10 +24,10 @@ pub enum Vulnerable {
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum PlayerPosition {
-    North,
-    East,
-    South,
-    West,
+    North = 0,
+    East = 1,
+    South = 2,
+    West = 3,
 }
 
 
@@ -56,13 +56,13 @@ impl Deal {
 
 
         //distribute cards
-        let mut cards: BTreeMap<PlayerPosition, Hand>= BTreeMap::new();
-        cards.insert(PlayerPosition::North, Hand::new(cards_vec.split_off(39).try_into().unwrap()));
-        cards.insert(PlayerPosition::East, Hand::new(cards_vec.split_off(26).try_into().unwrap()));
-        cards.insert(PlayerPosition::South, Hand::new(cards_vec.split_off(13).try_into().unwrap()));
-        cards.insert(PlayerPosition::West, Hand::new(cards_vec.try_into().unwrap()));
+        let mut hands_vec = Vec::new();
+        hands_vec.push(Hand::new(cards_vec.split_off(39).try_into().unwrap()));
+        hands_vec.push(Hand::new(cards_vec.split_off(26).try_into().unwrap()));
+        hands_vec.push(Hand::new(cards_vec.split_off(13).try_into().unwrap()));
+        hands_vec.push(Hand::new(cards_vec.try_into().unwrap()));
 
-        Deal {deal_number, vulnerable, cards}
+        Deal {deal_number, vulnerable, hands: hands_vec.try_into().unwrap()}
 
     }
 
@@ -116,7 +116,7 @@ mod tests {
         let deal = Deal::new();
         let mut cards: Vec<Card> = Vec::with_capacity(52);
 
-        for hand in deal.cards.values() {
+        for hand in deal.hands {
             for &card in hand.cards() {
                 cards.push(card)
             }
