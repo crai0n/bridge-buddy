@@ -87,28 +87,28 @@ mod tests {
     #[test]
     fn test_vulnerability() {
         // Pattern follows the "BONE"-chart
-        assert_eq!(Deal::new_from_number(1).vulnerable, Vulnerable::None);
-        assert_eq!(Deal::new_from_number(2).vulnerable, Vulnerable::NorthSouth);
-        assert_eq!(Deal::new_from_number(3).vulnerable, Vulnerable::EastWest);
-        assert_eq!(Deal::new_from_number(4).vulnerable, Vulnerable::All);
+        assert_eq!(Deal::calculate_vulnerability(1), Vulnerable::None);
+        assert_eq!(Deal::calculate_vulnerability(2), Vulnerable::NorthSouth);
+        assert_eq!(Deal::calculate_vulnerability(3), Vulnerable::EastWest);
+        assert_eq!(Deal::calculate_vulnerability(4), Vulnerable::All);
 
-        assert_eq!(Deal::new_from_number(5).vulnerable, Vulnerable::NorthSouth);
-        assert_eq!(Deal::new_from_number(6).vulnerable, Vulnerable::EastWest);
-        assert_eq!(Deal::new_from_number(7).vulnerable, Vulnerable::All);
-        assert_eq!(Deal::new_from_number(8).vulnerable, Vulnerable::None);
+        assert_eq!(Deal::calculate_vulnerability(5), Vulnerable::NorthSouth);
+        assert_eq!(Deal::calculate_vulnerability(6), Vulnerable::EastWest);
+        assert_eq!(Deal::calculate_vulnerability(7), Vulnerable::All);
+        assert_eq!(Deal::calculate_vulnerability(8), Vulnerable::None);
 
-        assert_eq!(Deal::new_from_number(9).vulnerable, Vulnerable::EastWest);
-        assert_eq!(Deal::new_from_number(10).vulnerable, Vulnerable::All);
-        assert_eq!(Deal::new_from_number(11).vulnerable, Vulnerable::None);
-        assert_eq!(Deal::new_from_number(12).vulnerable, Vulnerable::NorthSouth);
+        assert_eq!(Deal::calculate_vulnerability(9), Vulnerable::EastWest);
+        assert_eq!(Deal::calculate_vulnerability(10), Vulnerable::All);
+        assert_eq!(Deal::calculate_vulnerability(11), Vulnerable::None);
+        assert_eq!(Deal::calculate_vulnerability(12), Vulnerable::NorthSouth);
 
-        assert_eq!(Deal::new_from_number(13).vulnerable, Vulnerable::All);
-        assert_eq!(Deal::new_from_number(14).vulnerable, Vulnerable::None);
-        assert_eq!(Deal::new_from_number(15).vulnerable, Vulnerable::NorthSouth);
-        assert_eq!(Deal::new_from_number(16).vulnerable, Vulnerable::EastWest);
+        assert_eq!(Deal::calculate_vulnerability(13), Vulnerable::All);
+        assert_eq!(Deal::calculate_vulnerability(14), Vulnerable::None);
+        assert_eq!(Deal::calculate_vulnerability(15), Vulnerable::NorthSouth);
+        assert_eq!(Deal::calculate_vulnerability(16), Vulnerable::EastWest);
         // Pattern repeats after 16 hands
-        assert_eq!(Deal::new_from_number(17).vulnerable, Vulnerable::None);
-        assert_eq!(Deal::new_from_number(18).vulnerable, Vulnerable::NorthSouth);
+        assert_eq!(Deal::calculate_vulnerability(17), Vulnerable::None);
+        assert_eq!(Deal::calculate_vulnerability(18), Vulnerable::NorthSouth);
     }
 
     #[test]
