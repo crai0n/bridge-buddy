@@ -113,6 +113,10 @@ impl Hand {
         self.cards.contains(card)
     }
 
+    pub fn length_in(&self, suit: Suit) -> u8 {
+        self.suit_lengths[&suit]
+    }
+
     pub fn high_card_points(&self) -> u8 {
         self.cards.iter().fold(0, |acc, card| match card.denomination {
             Denomination::Ace => acc + 4,

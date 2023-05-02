@@ -1,74 +1,32 @@
 use crate::card::{Card, Denomination, Suit};
 use crate::hand::Hand;
-use log::{debug, info};
 use std::collections::BTreeMap;
 use strum::IntoEnumIterator;
-
-#[derive(Debug)]
-pub struct HandEvaluation {
-    high_card_points: PointCount,
-    length_points: PointCount,
-    // expected_tricks: u8,
-    // expected_losers: u8,
-    // side_suit_distribution_points: PointCount,
-    // trump_distribution_points: PointCount,
-    // controls: BTreeMap<Suit, bool>,
-    // stops: BTreeMap<Suit, bool>
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct PointCount {
-    by_suit: [(Suit, u8); 4],
-}
-
-impl PointCount {
-    fn in_suit(&self, suit: &Suit) -> u8 {
-        self.by_suit.iter().find(|x| x.0 == *suit).unwrap().1
-    }
-
-    fn total(&self) -> u8 {
-        self.by_suit.iter().fold(0, |acc, x| acc + x.1)
-    }
-}
-
 #[derive(Debug)]
 pub struct ForumDPlus2015Evaluator {}
 
 impl ForumDPlus2015Evaluator {
-    fn evaluate(hand: &Hand) -> HandEvaluation {
-        let (high_card_points, length_points) = Self::count_hcp_and_length_points(hand);
-        HandEvaluation {
-            high_card_points,
-            length_points,
-        }
+
+    fn hcp(hand: &Hand) -> f64 {
+        //basic hcp-count
+        hand.cards().fold(0.0, |hcp, c| hcp + ForumDPlus2015Evaluator::card_value(c) as f64)
     }
-
-    fn count_hcp_and_length_points(hand: &Hand) -> (PointCount, PointCount) {
-        let mut hcp = Vec::with_capacity(4);
-        let mut lp = Vec::with_capacity(4);
-
+    
+    fn hcp_in(hand: &Hand, suit: Suit) -> f64 {
+        hand.cards_in(suit).fold(0.0,|hcp, c| hcp + ForumDPlus2015Evaluator::card_value(c) as f64)
+    }
+    
+    fn length_points(hand: &Hand, trump_suit: Option<Suit>, long_suits_shown_by_opponents:  &[Suit]) -> f64 {
+        let mut acc = 0.0;
+        //in each suit that contains at least 3 HCP, is not the trump suit, and has not been named by the opponents, count 1 point for each card past the fourth. 
         for suit in Suit::iter() {
-            let acc = hand
-                .cards_in(suit)
-                .fold(0, |a, c| a + ForumDPlus2015Evaluator::card_value(c));
-            hcp.push((suit, acc));
-            // do length-points here, because we need hcp information
-            let len = hand.cards_in(suit).count() as u8;
-            if acc >= 3 && len >= 5 {
-                lp.push((suit, len - 4))
-            } else {
-                lp.push((suit, 0u8))
+            if trump_suit == Some(suit) { continue }
+            if long_suits_shown_by_opponents.contains(&suit) {continue}
+            if Self::hcp_in(hand, suit) >= 3.0 { 
+                    acc += std::cmp::max(0, hand.length_in(suit) - 4) as f64;
             }
         }
-
-        (
-            PointCount {
-                by_suit: hcp.try_into().unwrap(),
-            },
-            PointCount {
-                by_suit: lp.try_into().unwrap(),
-            },
-        )
+        acc
     }
 
     fn card_value(card: &Card) -> u8 {
@@ -80,6 +38,36 @@ impl ForumDPlus2015Evaluator {
             _ => 0,
         }
     }
+
+    // fn expected_tricks(hand: &Hand) -> f32 {
+    //     for suit in Suit::iter() {
+    //         // count high card tricks
+    //         hand.cards_in(suit).map(|x| x.denomination)
+
+
+
+    //         // count length tricks
+    //         if hand.cards_in(suit).count() > 7 {
+
+    //         } else {
+
+    //         }
+    //     }
+    // }
+
+    // fn tricks_in_short_suit(denominations: &mut [Denomination]) -> f32 {
+    //     denominations.sort().rev();
+    //     match denominations.len() {
+    //         0 => 0,
+    //         1 => match denominations.nth(0) {
+    //             Denomination::Ace => 1,
+    //             _ => 0,
+    //         },
+    //         2 => match denominations.nth(0)
+    //         }
+    //     }
+    //     cards.sort().rev() 
+    // }
 }
 
 #[cfg(test)]
@@ -89,42 +77,21 @@ mod test {
     use crate::hand::Hand;
     use test_case::test_case;
 
-    #[test_case("♠:AKQJT9876,♥:5432", (PointCount {
-        by_suit: [
-            (Suit::Clubs, 0),
-            (Suit::Diamonds, 0),
-            (Suit::Hearts, 0),
-            (Suit::Spades, 10)
-        ]
-    },PointCount {
-        by_suit: [
-            (Suit::Clubs, 0),
-            (Suit::Diamonds, 0),
-            (Suit::Hearts, 0),
-            (Suit::Spades, 5)
-        ],
-    }); "Two-Suited")]
-    #[test_case("♠:K74,♥:AQ32,♦:T986,♣:K2", (PointCount {
-        by_suit: [
-            (Suit::Clubs, 3),
-            (Suit::Diamonds, 0),
-            (Suit::Hearts, 6),
-            (Suit::Spades, 3)
-        ],
-    }, PointCount {
-        by_suit: [
-            (Suit::Clubs, 0),
-            (Suit::Diamonds, 0),
-            (Suit::Hearts, 0),
-            (Suit::Spades, 0)
-        ],
-    }); "Balanced")]
-    fn test_evaluation(hand_str: &str, expected_point_count: (PointCount, PointCount)) {
+    #[test_case("♠:AKQJT9876,♥:5432", 10.0 ; "10 HCP")]
+    fn test_hcp(hand_str: &str, hcp: f64) {
         let hand = Hand::from_str(hand_str).unwrap();
-        let HandEvaluation = ForumDPlus2015Evaluator::evaluate(&hand);
-        assert_eq!(
-            (HandEvaluation.high_card_points, HandEvaluation.length_points),
-            expected_point_count
-        );
+        assert_eq!(ForumDPlus2015Evaluator::hcp(&hand), hcp);
+    }
+
+    #[test_case("♠:AKQJT9876,♥:5432", Suit::Spades, 10.0 ; "10 HCP")]
+    fn test_hcp_in(hand_str: &str, suit: Suit, hcp: f64) {
+        let hand = Hand::from_str(hand_str).unwrap();
+        assert_eq!(ForumDPlus2015Evaluator::hcp(&hand), hcp);
+    }
+
+    #[test_case("♠:AKQJT9876,♥:5432", 5.0 ; "5 LP")]
+    fn test_length_points(hand_str: &str, lp: f64) {
+        let hand = Hand::from_str(hand_str).unwrap();
+        assert_eq!(ForumDPlus2015Evaluator::length_points(&hand, None, &[]), lp);
     }
 }
