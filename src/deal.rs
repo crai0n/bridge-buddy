@@ -39,14 +39,8 @@ impl Deal {
 
     pub fn new_from_number(deal_number: u8) -> Deal {
         // calculate vulnerability
-        let v = deal_number - 1;
-        let vul = v + v / 4 ;
-        let vulnerable = match vul % 4 {
-            0 => Vulnerable::None,
-            1 => Vulnerable::NorthSouth,
-            2 => Vulnerable::EastWest,
-            _ => Vulnerable::All,
-        };
+        let vulnerable = Self::calculate_vulnerability(deal_number);
+
 
         // create the cards for playing
         let mut cards_vec = Vec::<Card>::from_iter(
@@ -70,6 +64,17 @@ impl Deal {
 
         Deal {deal_number, vulnerable, cards}
 
+    }
+
+    fn calculate_vulnerability(deal_number: u8) -> Vulnerable {
+        let v = deal_number - 1;
+        let vul = v + v / 4 ;
+        match vul % 4 {
+            0 => Vulnerable::None,
+            1 => Vulnerable::NorthSouth,
+            2 => Vulnerable::EastWest,
+            _ => Vulnerable::All,
+        }
     }
 }
 
