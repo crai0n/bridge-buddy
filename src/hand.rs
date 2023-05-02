@@ -13,9 +13,9 @@ pub struct Hand {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum HandType {
-    ThreeSuiter(Suit, Suit, Suit),
-    TwoSuiter(Suit, Suit),
-    OneSuiter(Suit),
+    ThreeSuited(Suit, Suit, Suit),
+    TwoSuited(Suit, Suit),
+    SingleSuited(Suit),
     Balanced(Option<Suit>), // might contain a 5-card suit
 }
 
@@ -50,17 +50,17 @@ impl Hand {
         let hand_type: HandType;
         if sorted_suit_lengths[1].1 >= 4 {
             // three suits with at least 4 cards is a three-suiter
-            hand_type = HandType::ThreeSuiter(
+            hand_type = HandType::ThreeSuited(
                 sorted_suit_lengths[3].0,
                 sorted_suit_lengths[2].0,
                 sorted_suit_lengths[1].0,
             );
         } else if sorted_suit_lengths[3].1 >= 5 && sorted_suit_lengths[2].1 >= 4 {
             // two-suiter
-            hand_type = HandType::TwoSuiter(sorted_suit_lengths[3].0, sorted_suit_lengths[2].0);
+            hand_type = HandType::TwoSuited(sorted_suit_lengths[3].0, sorted_suit_lengths[2].0);
         } else if sorted_suit_lengths[3].1 >= 6 {
             // one-suiter
-            hand_type = HandType::OneSuiter(sorted_suit_lengths[3].0);
+            hand_type = HandType::SingleSuited(sorted_suit_lengths[3].0);
         } else {
             // balanced
             match sorted_suit_lengths[3].1 == 5 {
@@ -282,7 +282,7 @@ mod tests {
             denomination: Ace
         }));
         assert_eq!(hand.high_card_points(), 21);
-        assert_eq!(hand.hand_type, HandType::OneSuiter(Suit::Spades));
+        assert_eq!(hand.hand_type, HandType::SingleSuited(Suit::Spades));
         assert_eq!(format!("{}", hand), "♠: AKQJT98762\n♥: \n♦: AK\n♣: A\n");
         assert_eq!(hand, Hand::from_str("H:, ♠:9J7A2T6K8Q,♦: AK, C: A").unwrap())
     }
@@ -346,14 +346,14 @@ mod tests {
         ]);
     }
 
-    #[test_case("♠:AKQJT98765432", HandType::OneSuiter(Spades) ; "13-0-0-0")]
-    #[test_case("♥:AKQJT98765,♠:432", HandType::OneSuiter(Hearts) ; "10-3-0-0")]
-    #[test_case("♦:AKQJT9,♥:876,♠:54,♣:32", HandType::OneSuiter(Diamonds) ; "6-3-2-2")]
-    #[test_case("♠:AKQJT9876,♥:5432", HandType::TwoSuiter(Spades, Hearts) ; "9-4-0-0")]
-    #[test_case("♠:AKQJT,♦:9876,♥:543,♣:2", HandType::TwoSuiter(Spades, Diamonds); "5-4-3-1")]
-    #[test_case("♦:AKQJT,♣:9876,♠:54,♥:32", HandType::TwoSuiter(Diamonds, Clubs); "5-4-2-2")]
-    #[test_case("♠:AKQJT,♥:9876,♦:5432", HandType::ThreeSuiter(Spades, Hearts, Diamonds); "5-4-4-0")]
-    #[test_case("♣:AKQJ,♥:T987,♦:6543,♠:2", HandType::ThreeSuiter(Hearts, Diamonds, Clubs); "4-4-4-1")]
+    #[test_case("♠:AKQJT98765432", HandType::SingleSuited(Spades) ; "13-0-0-0")]
+    #[test_case("♥:AKQJT98765,♠:432", HandType::SingleSuited(Hearts) ; "10-3-0-0")]
+    #[test_case("♦:AKQJT9,♥:876,♠:54,♣:32", HandType::SingleSuited(Diamonds) ; "6-3-2-2")]
+    #[test_case("♠:AKQJT9876,♥:5432", HandType::TwoSuited(Spades, Hearts) ; "9-4-0-0")]
+    #[test_case("♠:AKQJT,♦:9876,♥:543,♣:2", HandType::TwoSuited(Spades, Diamonds); "5-4-3-1")]
+    #[test_case("♦:AKQJT,♣:9876,♠:54,♥:32", HandType::TwoSuited(Diamonds, Clubs); "5-4-2-2")]
+    #[test_case("♠:AKQJT,♥:9876,♦:5432", HandType::ThreeSuited(Spades, Hearts, Diamonds); "5-4-4-0")]
+    #[test_case("♣:AKQJ,♥:T987,♦:6543,♠:2", HandType::ThreeSuited(Hearts, Diamonds, Clubs); "4-4-4-1")]
     #[test_case("♠:AKQJT,♥:987,♦:654,♣:32", HandType::Balanced(Some(Spades)) ; "5-3-3-2")]
     #[test_case("♠:AKQJ,♥:T98,♦:765,♣:432", HandType::Balanced(None); "4-3-3-3")]
     #[test_case("♠:AKQJ,♥:T987,♦:654,♣:32", HandType::Balanced(None); "4-4-3-2")]
