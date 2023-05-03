@@ -160,19 +160,11 @@ impl ForumDPlus2015Evaluator {
                     if card_vec.contains(&King) {l -= 1.0};
                     l
                 },
-                3 => {
-                    let mut l = 3.0;
-                    if card_vec.contains(&Ace) {l -= 1.0};
-                    if card_vec.contains(&King) {l -= 1.0};
-                    if card_vec.contains(&Queen) {l -= 1.0};
-                    l
-                },
                 _ => {
                     let mut l = 3.0;
                     if card_vec.contains(&Ace) {l -= 1.0};
                     if card_vec.contains(&King) {l -= 1.0};
                     if card_vec.contains(&Queen) {l -= 1.0};
-                    let index = l as usize;
                     l + Self::loser_table_for_midvalues(&card_vec[..]) // add 0.5 if we lack mid-values
                 },
             }
@@ -183,6 +175,8 @@ impl ForumDPlus2015Evaluator {
     fn loser_table_for_midvalues(den: &[Denomination]) -> f64 {
         // we already took care of Ace, King and Queen, disregard now, only look at midvalues
         match den {
+            // 3-card-suits can only ever have 3 losers
+            [_,_,_] => 0.0,
             // Jack is enough in any case
             [_, _, _, Jack] => 0.0,
             [_, _, Jack, _] => 0.0,
