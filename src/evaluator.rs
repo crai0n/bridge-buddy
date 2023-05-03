@@ -33,7 +33,7 @@ impl ForumDPlus2015Evaluator {
             .filter(|d| cards.contains(&d))
             .count()
             >= 4) // four of top five honors
-            || (cards.len() >= 6 && &cards[..3] == &[Ace, King, Queen]) 
+            || (cards.len() >= 6 && &cards[..3] == &[Ace, King, Queen])
             || (cards.len() >= 7 && &cards[..3] == &[King, Queen, Jack])
         {
             return SuitQuality::AlmostStanding;
