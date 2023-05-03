@@ -20,7 +20,7 @@ pub enum SuitQuality {
 impl ForumDPlus2015Evaluator {
     fn suit_quality(hand: &Hand, suit: Suit) -> SuitQuality {
         let cards = hand.cards_in(suit).map(|c| c.denomination).rev().collect_vec();
-        
+
         //check for Standing Suit
         if (cards.len() >= 7 && &cards[..3] == &[Ace, King, Queen]) || &cards[..4] == &[Ace, King, Queen, Jack] {
             return SuitQuality::Standing;
@@ -46,7 +46,8 @@ impl ForumDPlus2015Evaluator {
             .filter(|d| cards.contains(&d))
             .count()
             >= 2 // two of the top three honors
-            && (cards.contains(&Jack) || (cards.contains(&Ten) && cards.contains(&Nine)) || cards.len() >= 7) // mid-values or length
+            && (cards.contains(&Jack) || (cards.contains(&Ten) && cards.contains(&Nine)) || cards.len() >= 7)
+        // mid-values or length
         {
             return SuitQuality::VeryGood;
         }
@@ -151,11 +152,13 @@ impl ForumDPlus2015Evaluator {
             (Ordering::Less, Ordering::Greater) => total_length as f64 - 7.0, // if partner did not count the 9th card, count an additional point
             (Ordering::Equal, Ordering::Greater) => total_length as f64 - partners_count as f64, // partner counted the 9th card, only count a single point for each additional card
             (Ordering::Greater, Ordering::Greater) => total_length as f64 - partners_count as f64, // partner counted the 9th card, only count a single point for each additional card
-            _ => 0.0,
+            _ => 0.0, // no additional points
         }
     }
 
-    // fn double_fit_point(hand: &Hand) {} todo!()
+    fn double_fit_point(hand: &Hand) {
+        todo!()
+    }
 
     fn expected_tricks(hand: &Hand) -> f64 {
         let mut acc = 0.0;
@@ -201,7 +204,7 @@ impl ForumDPlus2015Evaluator {
     fn three_card_trick_table(den: &[Denomination; 3]) -> f64 {
         match den {
             _ => 0.0,
-        }
+        } // todo! use table generated from test below
     }
 
     fn four_card_trick_table(den: &[Denomination; 4]) -> f64 {
