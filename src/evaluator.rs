@@ -253,18 +253,6 @@ impl ForumDPlus2015Evaluator {
             _ => 0.0,
         } 
     }
-
-    fn five_card_loser_table(den: &[Denomination;5]) -> f64 {
-        match den {
-            _ => 0.0 
-        } // todo! use table generated from test below
-    }
-
-    fn six_card_loser_table(den: &[Denomination;6]) -> f64 {
-        match den {
-            _ => 0.0 
-        } // todo! use table generated from test below
-    }
 }
 
 #[cfg(test)]
