@@ -152,36 +152,106 @@ impl ForumDPlus2015Evaluator {
                 0 => 0.0,
                 1 => match &card_vec[..] {
                     [Ace] => 0.0,
-                    // all other cases
                     _ => 1.0
                 },
-                2 => Self::two_card_loser_table(&card_vec.try_into().unwrap()),
-                3 => Self::three_card_loser_table(&card_vec.try_into().unwrap()),
-                4 => Self::four_card_loser_table(&card_vec.try_into().unwrap()), // fourth card might be half a loser
-                5 => Self::five_card_loser_table(&card_vec.try_into().unwrap()), // fourth card might be half a loser
-                6 => Self::six_card_loser_table(&card_vec.try_into().unwrap()), // fourth card might be half a loser
-                _ => Self::three_card_loser_table(&card_vec[..3].try_into().unwrap()), // fourth card is not a loser
+                2 => {
+                    let mut l = 2.0;
+                    if card_vec.contains(&Ace) {l -= 1.0};
+                    if card_vec.contains(&King) {l -= 1.0};
+                    l
+                },
+                3 => {
+                    let mut l = 3.0;
+                    if card_vec.contains(&Ace) {l -= 1.0};
+                    if card_vec.contains(&King) {l -= 1.0};
+                    if card_vec.contains(&Queen) {l -= 1.0};
+                    l
+                },
+                _ => {
+                    let mut l = 3.0;
+                    if card_vec.contains(&Ace) {l -= 1.0};
+                    if card_vec.contains(&King) {l -= 1.0};
+                    if card_vec.contains(&Queen) {l -= 1.0};
+                    let index = l as usize;
+                    l + Self::loser_table_for_midvalues(&card_vec[..]) // add 0.5 if we lack mid-values
+                },
             }
         }
         acc
     }
 
-    fn two_card_loser_table(den: &[Denomination;2]) -> f64 {
+    fn loser_table_for_midvalues(den: &[Denomination]) -> f64 {
+        // we already took care of Ace, King and Queen, disregard now, only look at midvalues
         match den {
-            _ => 0.0 
-        } // todo! use table generated from test below
-    }
-
-    fn three_card_loser_table(den: &[Denomination;3]) -> f64 {
-        match den {
-            _ => 0.0 
-        } // todo! use table generated from test below
-    }
-
-    fn four_card_loser_table(den: &[Denomination;4]) -> f64 {
-        match den {
-            _ => 0.0 
-        } // todo! use table generated from test below
+            // Jack is enough in any case
+            [_, _, _, Jack] => 0.0,
+            [_, _, Jack, _] => 0.0,
+            [_, Jack, _, _] => 0.0,
+            [Jack, _, _, _] => 0.0,
+            [_, _, _, Jack, _] => 0.0,
+            [_, _, Jack, _, _] => 0.0,
+            [_, Jack, _, _, _] => 0.0,
+            [Jack, _, _, _, _] => 0.0,
+            [_, _, _, Jack, _, _] => 0.0,
+            [_, _, Jack, _, _, _] => 0.0,
+            [_, Jack, _, _, _, _] => 0.0,
+            [Jack, _, _, _, _, _] => 0.0,
+            // Ten and 9 together are also often enough
+            // four-card-suit
+            [_, _, Ten, Nine] => 0.0,
+            [_, Ten, Nine, _] => 0.0,
+            [Ten, Nine, _, _] => 0.0,
+            // five-card-suit
+            [_, _, _, Ten, Nine] => 0.0,
+            [_, _, Ten, Nine, _] => 0.0,
+            [_, Ten, Nine, _, _] => 0.0,
+            [Ten, Nine, _, _, _] => 0.0,
+            // six-card-suit
+            [_, _, _, Ten, Nine, _] => 0.0,
+            [_, _, Ten, Nine, _, _] => 0.0,
+            [_, Ten, Nine, _, _, _] => 0.0,
+            [Ten, Nine, _, _, _, _] => 0.0,
+            // Ten alone is strong enough in any 6-card-suit, but not in a general 4- or 5-card-suit
+            // four-card-suit
+            [_, _, _, Ten] => 0.0, // special case AKQT (AKJT is covered above)
+            [_, _, Ten, _] => 0.5,
+            [_, Ten, _, _] => 0.5,
+            [Ten, _, _, _] => 0.5,
+            // five-card-suit
+            [_, _, _, Ten, _] => 0.0, // special case AKQTx (AKJTx is covered above)
+            [_, _, Ten, _, _] => 0.5,
+            [_, Ten, _, _, _] => 0.5,
+            [Ten, _, _, _, _] => 0.5,
+            // six-card-suit
+            [_, _, _, Ten, _, _] => 0.0,
+            [_, _, Ten, _, _, _] => 0.0,
+            [_, Ten, _, _, _, _] => 0.0,
+            [Ten, _, _, _, _, _] => 0.0,
+            // 9 alone is only strong enough in good 6-card suits
+            // four-card-suit
+            [_, _, _, Nine] => 0.5, 
+            [_, _, Nine, _] => 0.5,
+            [_, Nine, _, _] => 0.5,
+            [Nine, _, _, _] => 0.5,
+            // five-card-suit
+            // [_, _, _, _, Nine] => 0.0, AKQ_9 is already covered
+            [_, _, _, Nine, _] => 0.5, 
+            [_, _, Nine, _, _] => 0.5,
+            [_, Nine, _, _, _] => 0.5,
+            [Nine, _, _, _, _] => 0.5,
+            // six-card-suit
+            // [_, _, _, _, Nine, _] => 0.0, // AKQ_9x is already covered
+            [_, _, _, Nine, _, _] => 0.0,
+            [_, _, Nine, _, _, _] => 0.0,
+            [_, Nine, _, _, _, _] => 0.5,
+            [Nine, _, _, _, _, _] => 0.5,
+            // any other 4-, 5- or 6-card suit is half a loser
+            [_, _, _, _] => 0.5, 
+            [_, _, _, _, _] => 0.5, 
+            [_, _, _, _, _, _] => 0.5, 
+            // any 7 card suit or longer is no additional loser
+            _ => 0.0,
+        } 
     }
 
     fn five_card_loser_table(den: &[Denomination;5]) -> f64 {
