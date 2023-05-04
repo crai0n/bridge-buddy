@@ -39,6 +39,31 @@ impl ForumDPlus2015Evaluator {
         }
     }
 
+    fn adjustment_aces_and_tens(hand: &Hand) -> f64 {
+        let tens = hand.cards().filter(|&&x| x.denomination == Ten).count();
+        let aces = hand.cards().filter(|&&x| x.denomination == Ace).count();
+        match ( tens, aces ) {
+            (0, 0) => -1.0,
+            (0, 1) | (1, 0) => -0.5,
+            (3, _) => 1.0,
+            (i, j) if i+j >= 4 => 1.0,
+            _ => 0.0 
+        }
+    }
+
+    fn adjustment_unguarded_honors(hand: &Hand) -> f64 {
+        let mut acc = 0.0;
+        for suit in Suit::iter() {
+            let cards_vec = hand.cards_in(suit).rev().map(|x| x.denomination).collect_vec();
+            acc += match cards_vec.len() {
+                1 if (cards_vec[0] >= Jack) => -1.0,
+                2 if (cards_vec[1] >= Jack) => -1.0,
+                _ => 0.0,
+            }
+        }
+        acc
+    }
+
     fn suit_quality(hand: &Hand, suit: Suit) -> SuitQuality {
         let cards = hand.cards_in(suit).map(|c| c.denomination).rev().collect_vec();
 
@@ -155,5 +180,39 @@ mod test {
     fn test_suit_quality(hand_str: &str, suit: Suit, quality: SuitQuality) {
         let hand = Hand::from_str(hand_str).unwrap();
         assert_eq!(ForumDPlus2015Evaluator::suit_quality(&hand, suit), quality);
+    }
+
+    #[test_case("S:T93,H:AKQ5,D:QJ,C:T542", 0.0 ; "Board 1.N")]
+    #[test_case("S:Q764,H:8,D:AT753,C:AKQ", 0.0 ; "Board 1.E")]
+    #[test_case("S:8,H:JT762,D:K64,C:J963", -0.5 ; "Board 1.S")]
+    #[test_case("S:AKJ52,H:943,D:982,C:87", -0.5 ; "Board 1.W")]
+    #[test_case("S:963,H:T97,D:KT42,C:AJT", 1.0 ; "Board 2.N")]
+    #[test_case("S:AQT74,H:Q43,D:A85,C:86", 0.0 ; "Board 2.E")]
+    #[test_case("S:8,H:A86,D:QJ963,C:Q952", -0.5 ; "Board 2.S")]
+    #[test_case("S:KJ52,H:KJ52,D:7,C:K743", -1.0 ; "Board 2.W")]
+    #[test_case("S:K653,H:KJ7,D:AKQ5,C:53", -0.5 ; "Board 3.N")]
+    #[test_case("S:AQ7,H:9532,D:74,C:KJ74", -0.5 ; "Board 3.E")]
+    #[test_case("S:JT2,H:A4,D:T92,C:AQT62", 1.0; "Board 3.S")]
+    #[test_case("S:984,H:QT86,D:J863,C:98", -0.5 ; "Board 3.W")]
+    fn test_adjustment_aces_and_tens(hand_str: &str, adjustment: f64) {
+        let hand = Hand::from_str(hand_str).unwrap();
+        assert_eq!(ForumDPlus2015Evaluator::adjustment_aces_and_tens(&hand), adjustment);
+    }
+
+    #[test_case("S:T93,H:AKQ5,D:QJ,C:T542", -1.0 ; "Board 1.N")]
+    #[test_case("S:Q764,H:8,D:AT753,C:AKQ", 0.0 ; "Board 1.E")]
+    #[test_case("S:A,H:JT762,D:K64,C:J963", -1.0 ; "Board 1.S")]
+    #[test_case("S:AKJ52,H:943,D:982,C:QJ", -1.0 ; "Board 1.W")]
+    #[test_case("S:963,H:T97,D:KT42,C:AJT", 0.0 ; "Board 2.N")]
+    #[test_case("S:AQT74,H:Q43,D:A85,C:AT", 0.0 ; "Board 2.E")]
+    #[test_case("S:J,H:A86,D:QJ963,C:Q952", -1.0 ; "Board 2.S")]
+    #[test_case("S:KJ52,H:KJ52,D:K,C:K743", -1.0 ; "Board 2.W")]
+    #[test_case("S:K653,H:KJ7,D:AKQ5,C:J3", 0.0 ; "Board 3.N")]
+    #[test_case("S:AQ7,H:9532,D:K4,C:KJ74", 0.0 ; "Board 3.E")]
+    #[test_case("S:JT2,H:AQ,D:T92,C:AQT62", -1.0; "Board 3.S")]
+    #[test_case("S:984,H:QT86,D:J863,C:AK", -1.0 ; "Board 3.W")]
+    fn test_adjustment_unguarded_honors(hand_str: &str, adjustment: f64) {
+        let hand = Hand::from_str(hand_str).unwrap();
+        assert_eq!(ForumDPlus2015Evaluator::adjustment_unguarded_honors(&hand), adjustment);
     }
 }
