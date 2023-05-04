@@ -18,13 +18,13 @@ pub enum SuitQuality {
 pub struct ForumDPlus2015Evaluator {}
 
 impl ForumDPlus2015Evaluator {
-    fn hcp(hand: &Hand) -> f64 {
+    pub fn hcp(hand: &Hand) -> f64 {
         //basic hcp-count
         hand.cards()
             .fold(0.0, |hcp, c| hcp + ForumDPlus2015Evaluator::card_value(c) as f64)
     }
 
-    fn hcp_in(hand: &Hand, suit: Suit) -> f64 {
+    pub fn hcp_in(hand: &Hand, suit: Suit) -> f64 {
         hand.cards_in(suit)
             .fold(0.0, |hcp, c| hcp + ForumDPlus2015Evaluator::card_value(c) as f64)
     }
@@ -39,7 +39,7 @@ impl ForumDPlus2015Evaluator {
         }
     }
 
-    fn adjustment_aces_and_tens(hand: &Hand) -> f64 {
+    pub fn adjustment_aces_and_tens(hand: &Hand) -> f64 {
         let tens = hand.cards().filter(|&&x| x.denomination == Ten).count();
         let aces = hand.cards().filter(|&&x| x.denomination == Ace).count();
         match ( tens, aces ) {
@@ -51,7 +51,7 @@ impl ForumDPlus2015Evaluator {
         }
     }
 
-    fn adjustment_unguarded_honors(hand: &Hand) -> f64 {
+    pub fn adjustment_unguarded_honors(hand: &Hand) -> f64 {
         let mut acc = 0.0;
         for suit in Suit::iter() {
             let cards_vec = hand.cards_in(suit).rev().map(|x| x.denomination).collect_vec();
@@ -64,7 +64,7 @@ impl ForumDPlus2015Evaluator {
         acc
     }
 
-    fn suit_quality(hand: &Hand, suit: Suit) -> SuitQuality {
+    pub fn suit_quality(hand: &Hand, suit: Suit) -> SuitQuality {
         let cards = hand.cards_in(suit).map(|c| c.denomination).rev().collect_vec();
 
         //check for Standing Suit
@@ -121,7 +121,7 @@ impl ForumDPlus2015Evaluator {
         SuitQuality::Weak
     }
 
-    fn length_points(hand: &Hand, trump_suit: Option<Suit>, long_suits_shown_by_opponents: &[Suit]) -> f64 {
+    pub fn length_points(hand: &Hand, trump_suit: Option<Suit>, long_suits_shown_by_opponents: &[Suit]) -> f64 {
         let mut acc = 0.0;
         //in each suit that contains at least 3 HCP, is not the trump suit, and has not been named by the opponents, count 1 point for each card past the fourth.
         for suit in Suit::iter() {
@@ -143,9 +143,7 @@ impl ForumDPlus2015Evaluator {
 
 #[cfg(test)]
 mod test {
-    use std::cmp::Ordering::*;
-
-    use crate::card::{Denomination, Suit};
+    use crate::card::{Suit};
     use crate::evaluator::*;
     use crate::hand::Hand;
     use test_case::test_case;
