@@ -1,6 +1,6 @@
 use itertools::Itertools;
 use strum::IntoEnumIterator;
-
+use std::cmp::Ordering;
 use crate::card::Denomination::*;
 use crate::{
     card::{Card, Denomination, Suit},
@@ -138,6 +138,42 @@ impl ForumDPlus2015Evaluator {
         }
         acc
     }
+
+    pub fn side_suit_distribution_points(hand: &Hand, trump_suit: Suit) -> f64 {
+        let mut acc = 0.0;
+        for suit in Suit::iter() {
+            if trump_suit == suit {
+                continue;
+            }
+            acc += match hand.length_in(suit) {
+                0 => 3.0,
+                1 => 2.0,
+                2 => 1.0,
+                _ => 0.0,
+            }
+        }
+        acc
+    }
+
+    pub fn trump_distribution_points(hand: &Hand, trump_suit: Suit, partner_promised: u8, promised_to_partner: u8) -> f64 {
+        // count 2 points for the ninth trump card, and 1 more point for each additional card
+        // however: each card can only be counted once, so we need to keep track of who counted which cards first.
+        let total_length = hand.length_in(trump_suit) + partner_promised;
+        let partners_count = promised_to_partner + partner_promised;
+        assert_ne!(total_length.cmp(&partners_count), Ordering::Less);
+        match (partners_count.cmp(&9), total_length.cmp(&9)) {
+            // only start counting points from the 9th card
+            (Ordering::Less, Ordering::Equal) => 2.0, // if partner did not count the 9th card, count an additional point
+            (Ordering::Less, Ordering::Greater) => total_length as f64 - 7.0, // if partner did not count the 9th card, count an additional point
+            (Ordering::Equal, Ordering::Greater) => total_length as f64 - partners_count as f64, // partner counted the 9th card, only count a single point for each additional card
+            (Ordering::Greater, Ordering::Greater) => total_length as f64 - partners_count as f64, // partner counted the 9th card, only count a single point for each additional card
+            _ => 0.0, // no additional points
+        }
+    }
+
+    
+
+
 }
 
 #[cfg(test)]
@@ -235,7 +271,7 @@ mod test {
     #[test_case("S:Q764,H:8,D:AT753,C:AKQ", Some(Suit::Spades), &[Suit::Hearts, Suit::Clubs], 1.0 ; "Board 1.E")]
     #[test_case("S:Q764,H:8,D:AT753,C:AKQ", Some(Suit::Spades), &[Suit::Diamonds], 0.0 ; "Board 1.Ea")]
     #[test_case("S:984,H:QT86,D:J863,C:AK", None, &[Suit::Hearts], 0.0 ; "Board 3.W")]
-    #[test_case("S:AKJ52,H:943,D:982,C:87", Some(Suit::Spades), &[], 0.0 ; "Board 1.W")]
+    #[test_case("S:AKJ9532,H:9,D:982,C:87", Some(Suit::Diamonds), &[], 3.0 ; "Board 1.W")]
     fn test_length_points(hand_str: &str, trump_suit: Option<Suit>, suits: &[Suit], lp: f64) {
         let hand = Hand::from_str(hand_str).unwrap();
         assert_eq!(
@@ -243,4 +279,23 @@ mod test {
             lp
         );
     }
+
+    #[test_case("S:Q764,H:8,D:AT753,C:AKQ", Suit::Spades, 2.0 ; "2 V")]
+    #[test_case("S:Q764,H:,D:AT8753,C:AKQ", Suit::Spades, 3.0 ; "3 V")]
+    #[test_case("S:984,H:QT86,D:J863,C:AK", Suit::Hearts, 1.0 ; "1 V")]
+    #[test_case("S:AK52,H:943,D:982,C:872", Suit::Spades, 0.0 ; "0 V")]
+    fn test_side_suit_dp(hand_str: &str, trump_suit: Suit, dp: f64) {
+        let hand = Hand::from_str(hand_str).unwrap();
+        assert_eq!(ForumDPlus2015Evaluator::side_suit_distribution_points(&hand, trump_suit), dp);
+    }
+
+    #[test_case("S:Q764,H:8,D:AT753,C:AKQ", Suit::Spades, 4, 4, 0.0 ; "Eight-card fit")]
+    #[test_case("S:Q764,H:,D:AT8753,C:AKQ", Suit::Spades, 5, 4, 0.0 ; "Partner counts the ninth card")]
+    #[test_case("S:984,H:QT86,D:J863,C:AK", Suit::Hearts, 5, 3, 2.0 ; "We count the ninth card")]
+    #[test_case("S:AK582,H:93,D:982,C:872", Suit::Spades, 5, 4, 1.0 ; "Partner counts the ninth, we count the tenth")]
+    fn test_trump_suit_dp(hand_str: &str, trump_suit: Suit, partner_promised: u8, promised_to_partner: u8, dp: f64) {
+        let hand = Hand::from_str(hand_str).unwrap();
+        assert_eq!(ForumDPlus2015Evaluator::trump_distribution_points(&hand, trump_suit, partner_promised, promised_to_partner), dp);
+    }
+
 }
