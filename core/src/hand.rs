@@ -96,16 +96,8 @@ impl Hand {
         self.cards.iter()
     }
 
-    pub fn cards_rev(&self) -> impl DoubleEndedIterator<Item = &Card> {
-        self.cards().rev()
-    }
-
     pub fn cards_in(&self, suit: Suit) -> impl DoubleEndedIterator<Item = &Card> {
         self.cards.iter().filter(move |&card| card.suit == suit)
-    }
-
-    pub fn cards_in_rev(&self, suit: Suit) -> impl DoubleEndedIterator<Item = &Card> {
-        self.cards_in(suit).rev()
     }
 
     pub fn contains(&self, card: &Card) -> bool {
@@ -119,7 +111,7 @@ impl std::fmt::Display for Hand {
         for suit in Suit::iter().rev() {
             // Spades, then Hearts, ...
             write!(f, "{}: ", suit)?;
-            for card in self.cards_in_rev(suit) {
+            for card in self.cards_in(suit).rev() {
                 write!(f, "{}", card.denomination)?;
             }
             writeln!(f)?;
