@@ -112,15 +112,6 @@ impl Hand {
         self.cards.contains(card)
     }
 
-    pub fn high_card_points(&self) -> u8 {
-        self.cards.iter().fold(0, |acc, card| match card.denomination {
-            Denomination::Ace => acc + 4,
-            Denomination::King => acc + 3,
-            Denomination::Queen => acc + 2,
-            Denomination::Jack => acc + 1,
-            _ => acc,
-        })
-    }
 }
 
 impl std::fmt::Display for Hand {
@@ -280,7 +271,6 @@ mod tests {
             suit: Diamonds,
             denomination: Ace
         }));
-        assert_eq!(hand.high_card_points(), 21);
         assert_eq!(hand.hand_type, HandType::SingleSuited(Suit::Spades));
         assert_eq!(format!("{}", hand), "♠: AKQJT98762\n♥: \n♦: AK\n♣: A\n");
         assert_eq!(hand, Hand::from_str("H:, ♠:9J7A2T6K8Q,♦: AK, C: A").unwrap())
