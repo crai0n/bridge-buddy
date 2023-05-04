@@ -1,8 +1,11 @@
 use itertools::Itertools;
 use strum::IntoEnumIterator;
 
-use crate::{hand::Hand, card::{Suit, Card, Denomination}};
 use crate::card::Denomination::*;
+use crate::{
+    card::{Card, Denomination, Suit},
+    hand::Hand,
+};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SuitQuality {
@@ -42,12 +45,12 @@ impl ForumDPlus2015Evaluator {
     pub fn adjustment_aces_and_tens(hand: &Hand) -> f64 {
         let tens = hand.cards().filter(|&&x| x.denomination == Ten).count();
         let aces = hand.cards().filter(|&&x| x.denomination == Ace).count();
-        match ( tens, aces ) {
+        match (tens, aces) {
             (0, 0) => -1.0,
             (0, 1) | (1, 0) => -0.5,
             (3, _) => 1.0,
-            (i, j) if i+j >= 4 => 1.0,
-            _ => 0.0 
+            (i, j) if i + j >= 4 => 1.0,
+            _ => 0.0,
         }
     }
 
@@ -68,7 +71,9 @@ impl ForumDPlus2015Evaluator {
         let cards = hand.cards_in(suit).map(|c| c.denomination).rev().collect_vec();
 
         //check for Standing Suit
-        if (cards.len() >= 7 && &cards[..3] == &[Ace, King, Queen]) || cards.len() >= 4 && &cards[..4] == &[Ace, King, Queen, Jack] {
+        if (cards.len() >= 7 && cards[..3] == [Ace, King, Queen])
+            || cards.len() >= 4 && cards[..4] == [Ace, King, Queen, Jack]
+        {
             return SuitQuality::Standing;
         }
 
@@ -76,11 +81,11 @@ impl ForumDPlus2015Evaluator {
         if (Denomination::iter()
             .rev()
             .take(5)
-            .filter(|d| cards.contains(&d))
+            .filter(|d| cards.contains(d))
             .count()
             >= 4) // four of top five honors
-            || (cards.len() >= 6 && &cards[..3] == &[Ace, King, Queen])
-            || (cards.len() >= 7 && &cards[..3] == &[King, Queen, Jack])
+            || (cards.len() >= 6 && cards[..3] == [Ace, King, Queen])
+            || (cards.len() >= 7 && cards[..3] == [King, Queen, Jack])
         {
             return SuitQuality::AlmostStanding;
         }
@@ -89,11 +94,12 @@ impl ForumDPlus2015Evaluator {
         if Denomination::iter()
             .rev()
             .take(3)
-            .filter(|d| cards.contains(&d))
+            .filter(|d| cards.contains(d))
             .count()
             >= 2 // two of the top three honors
             && (cards.contains(&Jack) || (cards.contains(&Ten) && cards.contains(&Nine)) || cards.len() >= 7)
-            || cards.len() >= 3 && &cards[..3] == &[Ace, King, Queen] // Three top honors
+            || cards.len() >= 3 && cards[..3] == [Ace, King, Queen]
+        // Three top honors
         // mid-values or length
         {
             return SuitQuality::VeryGood;
@@ -102,13 +108,8 @@ impl ForumDPlus2015Evaluator {
         // check for Good Suit
         if ((cards.contains(&Ace) || cards.contains(&King))
             && (cards.contains(&Jack) || (cards.contains(&Ten) && cards.contains(&Nine))))
-            || Denomination::iter()
-                .rev()
-                .take(3)
-                .filter(|d| cards.contains(&d))
-                .count()
-                >= 2
-            || cards.len() >= 3 && &cards[..3] == &[Queen, Jack, Ten]
+            || Denomination::iter().rev().take(3).filter(|d| cards.contains(d)).count() >= 2
+            || cards.len() >= 3 && cards[..3] == [Queen, Jack, Ten]
         {
             return SuitQuality::Good;
         }
@@ -137,13 +138,11 @@ impl ForumDPlus2015Evaluator {
         }
         acc
     }
-
-    
 }
 
 #[cfg(test)]
 mod test {
-    use crate::card::{Suit};
+    use crate::card::Suit;
     use crate::evaluator::*;
     use crate::hand::Hand;
     use test_case::test_case;
@@ -239,7 +238,9 @@ mod test {
     #[test_case("S:AKJ52,H:943,D:982,C:87", Some(Suit::Spades), &[], 0.0 ; "Board 1.W")]
     fn test_length_points(hand_str: &str, trump_suit: Option<Suit>, suits: &[Suit], lp: f64) {
         let hand = Hand::from_str(hand_str).unwrap();
-        assert_eq!(ForumDPlus2015Evaluator::length_points(&hand, trump_suit, &suits[..] ), lp);
+        assert_eq!(
+            ForumDPlus2015Evaluator::length_points(&hand, trump_suit, &suits[..]),
+            lp
+        );
     }
-
 }

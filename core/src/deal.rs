@@ -6,10 +6,10 @@ use rand::{random, thread_rng};
 use strum::IntoEnumIterator;
 
 pub struct Deal {
-    deal_number: u8,
-    vulnerable: Vulnerable,
-    dealer: PlayerPosition,
-    hands: [Hand; 4],
+    pub deal_number: u8,
+    pub vulnerable: Vulnerable,
+    pub dealer: PlayerPosition,
+    pub hands: [Hand; 4],
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -85,6 +85,12 @@ impl Deal {
             2 => PlayerPosition::South,
             _ => PlayerPosition::West,
         }
+    }
+}
+
+impl Default for Deal {
+    fn default() -> Self {
+        Deal::new()
     }
 }
 
