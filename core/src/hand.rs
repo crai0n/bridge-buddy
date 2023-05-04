@@ -104,6 +104,9 @@ impl Hand {
         self.cards.contains(card)
     }
 
+    pub fn length_in(&self, suit: Suit) -> u8 {
+        self.suit_lengths[&suit]
+    }
 }
 
 impl std::fmt::Display for Hand {

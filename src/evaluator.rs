@@ -120,6 +120,25 @@ impl ForumDPlus2015Evaluator {
 
         SuitQuality::Weak
     }
+
+    fn length_points(hand: &Hand, trump_suit: Option<Suit>, long_suits_shown_by_opponents: &[Suit]) -> f64 {
+        let mut acc = 0.0;
+        //in each suit that contains at least 3 HCP, is not the trump suit, and has not been named by the opponents, count 1 point for each card past the fourth.
+        for suit in Suit::iter() {
+            if trump_suit == Some(suit) || long_suits_shown_by_opponents.contains(&suit) {
+                continue;
+            }
+            if Self::hcp_in(hand, suit) >= 3.0 {
+                acc += match hand.length_in(suit) {
+                    0..=4 => 0.0,
+                    _ => hand.length_in(suit) as f64 - 4.0,
+                }
+            }
+        }
+        acc
+    }
+
+    
 }
 
 #[cfg(test)]
@@ -215,4 +234,14 @@ mod test {
         let hand = Hand::from_str(hand_str).unwrap();
         assert_eq!(ForumDPlus2015Evaluator::adjustment_unguarded_honors(&hand), adjustment);
     }
+
+    #[test_case("S:Q764,H:8,D:AT753,C:AKQ", Some(Suit::Spades), &[Suit::Hearts, Suit::Clubs], 1.0 ; "Board 1.E")]
+    #[test_case("S:Q764,H:8,D:AT753,C:AKQ", Some(Suit::Spades), &[Suit::Diamonds], 0.0 ; "Board 1.Ea")]
+    #[test_case("S:984,H:QT86,D:J863,C:AK", None, &[Suit::Hearts], 0.0 ; "Board 3.W")]
+    #[test_case("S:AKJ52,H:943,D:982,C:87", Some(Suit::Spades), &[], 0.0 ; "Board 1.W")]
+    fn test_length_points(hand_str: &str, trump_suit: Option<Suit>, suits: &[Suit], lp: f64) {
+        let hand = Hand::from_str(hand_str).unwrap();
+        assert_eq!(ForumDPlus2015Evaluator::length_points(&hand, trump_suit, &suits[..] ), lp);
+    }
+
 }
