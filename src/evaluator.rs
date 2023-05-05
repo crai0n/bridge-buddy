@@ -223,7 +223,91 @@ impl ForumDPlus2015Evaluator {
     // Playing Trick Count (PTC)
     //
     // There are different opinions on how exactly Playing Tricks are counted. The difference mostly stems from disagreements about the value of Jack and Ten, especially for suits with 4-6 cards.
-    // 
+    // For now, we implement a basic approach, were we only evaluate at most the first three cards of the suit. We count winners for all additional cards
+    pub fn playing_trick_count(hand: &Hand) -> f64 {
+        let mut acc = 0.0;
+        for suit in Suit::iter() {
+            let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
+            acc += match card_vec.len() {
+                0 => 0.0,
+                l @ 1 | l @ 11..=12 => {
+                    // In a singleton we make a trick if we have the ace. for a 11+-card-suit, we make all tricks if we have the ace
+                    match &card_vec[..1] {
+                        [Ace] => l as f64,
+                        _ => l as f64 - 1.0,
+                    }
+                }
+                2 => Self::two_card_trick_table(&card_vec.try_into().unwrap()),
+                3..=8 => card_vec.len() as f64 - 3.0 + Self::three_card_trick_table(&card_vec[..3].try_into().unwrap()), // fourth card is always a trick
+                l @ 9..=10 => {
+                    l as f64 - 2.0
+                        + match &card_vec[..2] {
+                            [Ace, King] => 2.0,
+                            [Ace, Queen] => 1.5,
+                            [Ace, Jack] => 1.5, // this is probably debatable
+                            [Ace, _] => 1.0,
+                            [King, Queen] => 1.0,
+                            [King, Jack] => 1.0, // this is probably debatable
+                            [King, _] => 0.5,
+                            _ => 0.0,
+                        }
+                }
+                _ => 13.0,
+            }
+        }
+        acc
+    }
+
+    fn two_card_trick_table(den: &[Denomination; 2]) -> f64 {
+        match den { // table generated using test-method below
+            [Ace, King] => 2.0,
+            [Ace, Queen] => 1.5,
+            [Ace, Jack] => 1.5, // this is probably debatable
+            [Ace, _] => 1.0,
+            [King, Queen] => 1.0,
+            [King, Jack] => 1.0, // this is probably debatable
+            [King, _] => 0.5,
+            [Queen, Jack] => 0.0,
+            [Queen, _] => 0.0,
+            [Jack, _] => 0.0,
+            [_, _,] => 0.0,
+        }
+    }
+
+    fn three_card_trick_table(den: &[Denomination; 3]) -> f64 {
+        match den {// table generated using test-method below
+            // 3 cards headed by the ace, 3 tricks max. 
+            // Count 1 for each of the 5 honours and subtract 0.5 for each "hole" in between, Jack and Ten together are only 1.5 points
+            [Ace, King, Queen] => 3.0,
+            [Ace, King, Jack] => 2.5, // missing the queen
+            [Ace, King, Ten] => 2.0, // missing the queen and the jack
+            [Ace, King, _] => 2.0, // 
+            [Ace, Queen, Jack] => 2.5, // missing the king
+            [Ace, Queen, Ten] => 2.0, // missing the king and the jack 
+            [Ace, Queen, _] => 1.5, // missing the king
+            [Ace, Jack, Ten] => 1.5, // missing the King and Queen, this is probably debatable
+            [Ace, Jack, _] => 1.0, // this is probably debatable
+            [Ace, Ten, _] => 1.0,
+            [Ace, _, _] => 1.0,
+            // 3 cards headed by the king, 2 tricks max, lose 0.5 when missing the jack, lose 1 when missing the queen
+            [King, Queen, Jack] => 2.0,
+            [King, Queen, Ten] => 1.5,
+            [King, Queen, _] => 1.5,
+            [King, Jack, Ten] => 1.5, // this is probably debatable
+            [King, Jack, _] => 1.0, // this is probably debatable
+            [King, Ten, _] => 0.5,
+            [King, _, _] => 0.5,
+            // 3 cards headed by the queen: 1 trick max and lose 0.5 points for missing ten, lose 1 point for missing jack
+            [Queen, Jack, Ten] => 1.0,
+            [Queen, Jack, _] => 0.5,
+            [Queen, Ten, _] => 0.0,
+            [Queen, _, _] => 0.0,
+            [Jack, Ten, _] => 0.0,
+            [Jack, _, _] => 0.0,
+            [Ten, _, _] => 0.0,
+            [_, _, _] => 0.0,
+        }
+    }
 
 
 
@@ -266,7 +350,6 @@ impl ForumDPlus2015Evaluator {
         acc
     }
 
-
 }
 
 #[cfg(test)]
@@ -275,6 +358,7 @@ mod test {
     use crate::evaluator::*;
     use crate::hand::Hand;
     use test_case::test_case;
+    use std::cmp::Ordering::*;
 
     #[test_case("S:T93,H:AKQ5,D:QJ,C:T542", 12.0 ; "Board 1.N")]
     #[test_case("S:Q764,H:8,D:AT753,C:AKQ", 15.0 ; "Board 1.E")]
@@ -400,4 +484,271 @@ mod test {
         assert_eq!(ForumDPlus2015Evaluator::losing_trick_count(&hand), ltc)
     }
 
+    #[test]
+    #[ignore]
+    fn generate_two_card_hands() {
+        let cards = Denomination::iter().rev().collect::<Vec<_>>();
+        let cut = Denomination::Ten;
+        for i in 0..13 {
+            match cards[i].cmp(&cut) {
+                Less => continue,
+                Equal => {
+                    println!("[_, _,] => 0.0,");
+                }
+                Greater => {
+                    for j in i + 1..13 {
+                        match cards[j].cmp(&cut) {
+                            Less => continue,
+                            Equal => {
+                                println!("[{:?}, _] => 0.0,", cards[i]);
+                            }
+                            Greater => {
+                                println!("[{:?}, {:?}] => 0.0,", cards[i], cards[j]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    #[test]
+    #[ignore]
+    fn generate_three_card_hands() {
+        let cards = Denomination::iter().rev().collect::<Vec<_>>();
+        let cut = Denomination::Nine;
+        for i in 0..13 {
+            match cards[i].cmp(&cut) {
+                Less => continue,
+                Equal => {
+                    println!("[_, _, _] => 0.0,");
+                }
+                Greater => {
+                    for j in i + 1..13 {
+                        match cards[j].cmp(&cut) {
+                            Less => continue,
+                            Equal => {
+                                println!("[{:?}, _, _] => 0.0,", cards[i]);
+                            }
+                            Greater => {
+                                for k in j + 1..13 {
+                                    match cards[k].cmp(&cut) {
+                                        Less => continue,
+                                        Equal => {
+                                            println!("[{:?}, {:?}, _] => 0.0,", cards[i], cards[j]);
+                                        }
+                                        Greater => {
+                                            println!("[{:?}, {:?}, {:?}] => 0.0,", cards[i], cards[j], cards[k]);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    #[test]
+    #[ignore]
+    fn generate_four_card_hands() {
+        let cards = Denomination::iter().rev().collect::<Vec<_>>();
+        let cut = Denomination::Eight;
+        for i in 0..13 {
+            match cards[i].cmp(&cut) {
+                Less => continue,
+                Equal => {
+                    println!("[_, _, _, _] => 0.0,");
+                }
+                Greater => {
+                    for j in i + 1..13 {
+                        match cards[j].cmp(&cut) {
+                            Less => continue,
+                            Equal => {
+                                println!("[{:?}, _, _, _] => 0.0,", cards[i]);
+                            }
+                            Greater => {
+                                for k in j + 1..13 {
+                                    match cards[k].cmp(&cut) {
+                                        Less => continue,
+                                        Equal => {
+                                            println!("[{:?}, {:?}, _, _] => 0.0,", cards[i], cards[j]);
+                                        }
+                                        Greater => {
+                                            for l in k + 1..13 {
+                                                match cards[l].cmp(&cut) {
+                                                    Less => continue,
+                                                    Equal => {
+                                                        println!(
+                                                            "[{:?}, {:?}, {:?}, _] => 0.0,",
+                                                            cards[i], cards[j], cards[k]
+                                                        );
+                                                    }
+                                                    Greater => {
+                                                        println!(
+                                                            "[{:?}, {:?}, {:?}, {:?}] => 0.0,",
+                                                            cards[i], cards[j], cards[k], cards[l]
+                                                        );
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    #[test]
+    #[ignore]
+    fn generate_five_card_hands() {
+        let cards = Denomination::iter().rev().collect::<Vec<_>>();
+        let cut = Denomination::Eight;
+        for i in 0..13 {
+            match cards[i].cmp(&cut) {
+                Less => continue,
+                Equal => {
+                    println!("[_, _, _, _, _] => 0.0,");
+                }
+                Greater => {
+                    for j in i + 1..13 {
+                        match cards[j].cmp(&cut) {
+                            Less => continue,
+                            Equal => {
+                                println!("[{:?}, _, _, _, _] => 0.0,", cards[i]);
+                            }
+                            Greater => {
+                                for k in j + 1..13 {
+                                    match cards[k].cmp(&cut) {
+                                        Less => continue,
+                                        Equal => {
+                                            println!("[{:?}, {:?}, _, _, _] => 0.0,", cards[i], cards[j]);
+                                        }
+                                        Greater => {
+                                            for l in k + 1..13 {
+                                                match cards[l].cmp(&cut) {
+                                                    Less => continue,
+                                                    Equal => {
+                                                        println!(
+                                                            "[{:?}, {:?}, {:?}, _, _] => 0.0,",
+                                                            cards[i], cards[j], cards[k]
+                                                        );
+                                                    }
+                                                    Greater => {
+                                                        for m in l + 1..13 {
+                                                            match cards[m].cmp(&cut) {
+                                                                Less => continue,
+                                                                Equal => {
+                                                                    println!(
+                                                                        "[{:?}, {:?}, {:?}, {:?}, _] => 0.0,",
+                                                                        cards[i], cards[j], cards[k], cards[l]
+                                                                    );
+                                                                }
+                                                                Greater => {
+                                                                    println!(
+                                                                        "[{:?}, {:?}, {:?}, {:?}, {:?}] => 0.0,",
+                                                                        cards[i],
+                                                                        cards[j],
+                                                                        cards[k],
+                                                                        cards[l],
+                                                                        cards[m]
+                                                                    );
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    #[test]
+    #[ignore]
+    fn generate_six_card_hands() {
+        let cards = Denomination::iter().rev().collect::<Vec<_>>();
+        let cut = Denomination::Eight;
+        for i in 0..13 {
+            match cards[i].cmp(&cut) {
+                Less => continue,
+                Equal => {
+                    println!("[_, _, _, _, _, _] => 0.0,");
+                }
+                Greater => {
+                    for j in i + 1..13 {
+                        match cards[j].cmp(&cut) {
+                            Less => continue,
+                            Equal => {
+                                println!("[{:?}, _, _, _, _, _] => 0.0,", cards[i]);
+                            }
+                            Greater => {
+                                for k in j + 1..13 {
+                                    match cards[k].cmp(&cut) {
+                                        Less => continue,
+                                        Equal => {
+                                            println!("[{:?}, {:?}, _, _, _, _] => 0.0,", cards[i], cards[j]);
+                                        }
+                                        Greater => {
+                                            for l in k + 1..13 {
+                                                match cards[l].cmp(&cut) {
+                                                    Less => continue,
+                                                    Equal => {
+                                                        println!(
+                                                            "[{:?}, {:?}, {:?}, _, _, _] => 0.0,",
+                                                            cards[i], cards[j], cards[k]
+                                                        );
+                                                    }
+                                                    Greater => {
+                                                        for m in l + 1..13 {
+                                                            match cards[m].cmp(&cut) {
+                                                                Less => continue,
+                                                                Equal => {
+                                                                    println!(
+                                                                        "[{:?}, {:?}, {:?}, {:?}, _, _] => 0.0,",
+                                                                        cards[i], cards[j], cards[k], cards[l]
+                                                                    );
+                                                                }
+                                                                Greater => {
+                                                                    for n in m + 1..13 {
+                                                                        match cards[n].cmp(&cut) {
+                                                                            Less => continue,
+                                                                            Equal => {
+                                                                                println!(
+                                                                                    "[{:?}, {:?}, {:?}, {:?}, {:?}, _] => 0.0,",
+                                                                                    cards[i], cards[j], cards[k], cards[l], cards[m]);
+                                                                                }
+                                                                                Greater => {
+                                                                                    println!("[{:?}, {:?}, {:?}, {:?}, {:?}, {:?}] => 0.0,",
+                                                                                    cards[i], cards[j], cards[k], cards[l], cards[m], cards[n]);
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
 }
