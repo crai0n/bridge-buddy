@@ -244,7 +244,15 @@ impl ForumDPlus2015Evaluator {
                 }
                 l @ 2 | l @ 9..=10 => l as f64 - 2.0 + Self::two_card_trick_table(&card_vec[..2].try_into().unwrap()),
                 l @ 3 | l @ 7..=8 => l as f64 - 3.0 + Self::three_card_trick_table(&card_vec[..3].try_into().unwrap()), // fourth card is always a trick
-                l @ 4..=6 => l as f64 - 3.5 + Self::three_card_trick_table(&card_vec[..3].try_into().unwrap()), // fourth card is half a trick
+                l @ 4..=6 => {
+                    if card_vec[4..].contains(&Jack) || card_vec[4..].contains(&Ten) && card_vec[4..].contains(&Nine) {
+                        // fourth card is a full trick
+                        l as f64 - 3.0 + Self::three_card_trick_table(&card_vec[..3].try_into().unwrap())
+                    } else {
+                        // fourth card is half a trick
+                        l as f64 - 3.5 + Self::three_card_trick_table(&card_vec[..3].try_into().unwrap())
+                    }
+                }
                 _ => 13.0,
             }
         }
@@ -256,10 +264,8 @@ impl ForumDPlus2015Evaluator {
             // table generated using test-method below
             [Ace, King] => 2.0,
             [Ace, Queen] => 1.5,
-            [Ace, Jack] => 1.5, // this is probably debatable
             [Ace, _] => 1.0,
             [King, Queen] => 1.0,
-            [King, Jack] => 1.0, // this is probably debatable
             [King, _] => 0.5,
             [Queen, Jack] => 0.0,
             [Queen, _] => 0.0,
@@ -275,14 +281,11 @@ impl ForumDPlus2015Evaluator {
             // Count 1 for each of the 5 honours and subtract 0.5 for each "hole" in between, Jack and Ten together are only 1.5 points
             [Ace, King, Queen] => 3.0,
             [Ace, King, Jack] => 2.5,  // missing the queen
-            [Ace, King, Ten] => 2.0,   // missing the queen and the jack
             [Ace, King, _] => 2.0,     //
             [Ace, Queen, Jack] => 2.5, // missing the king
             [Ace, Queen, Ten] => 2.0,  // missing the king and the jack
             [Ace, Queen, _] => 1.5,    // missing the king
             [Ace, Jack, Ten] => 1.5,   // missing the King and Queen, this is probably debatable
-            [Ace, Jack, _] => 1.0,     // this is probably debatable
-            [Ace, Ten, _] => 1.0,
             [Ace, _, _] => 1.0,
             // 3 cards headed by the king, 2 tricks max, lose 0.5 when missing the jack, lose 1 when missing the queen
             [King, Queen, Jack] => 2.0,
