@@ -345,7 +345,7 @@ impl ForumDPlus2015Evaluator {
                     3.0 - Denomination::iter()
                         .rev()
                         .take(3)
-                        .filter(|d| card_vec.contains(&d))
+                        .filter(|d| card_vec.contains(d))
                         .count() as f64
                 }
                 4..=6 => {
@@ -353,7 +353,7 @@ impl ForumDPlus2015Evaluator {
                     3.0 - Denomination::iter()
                         .rev()
                         .take(3)
-                        .filter(|d| card_vec.contains(&d))
+                        .filter(|d| card_vec.contains(d))
                         .count() as f64
                         + Self::losers_for_midvalues(&card_vec[..])
                 }
@@ -365,11 +365,8 @@ impl ForumDPlus2015Evaluator {
 
     fn losers_for_midvalues(den: &[Denomination]) -> f64 {
         // we already took care of Ace, King and Queen, disregard now, only look at midvalues
-        if den.contains(&Jack) {
+        if den.contains(&Jack) || den.contains(&Ten) && den.contains(&Nine) {
             // Jack is enough in any case
-            0.0
-        } else if den.contains(&Ten) && den.contains(&Nine) {
-            // Ten and 9 together are also enough
             0.0
         } else {
             0.5
@@ -383,7 +380,7 @@ impl ForumDPlus2015Evaluator {
         }
         if let Some(t) = trump {
             // in a suit-contract voids also act as 1st-round-controls
-            return card_vec.len() == 0 && hand.cards_in(t).count() > 0; // safety-check for trump-cards
+            return card_vec.is_empty() && hand.cards_in(t).count() > 0; // safety-check for trump-cards
         }
         false
     }
@@ -661,6 +658,17 @@ mod test {
     fn honor_in(hand_str: &str, suit: Suit, exp: bool) {
         let hand = Hand::from_str(hand_str).unwrap();
         assert_eq!(ForumDPlus2015Evaluator::honor_in(&hand, suit), exp)
+    }
+
+    #[test_case("S:AKQJ96,H:T,D:A,C:Q9763", Suit::Diamonds, 1.0)]
+    #[test_case("S:AKQJ6,H:KT,D:A,C:Q9763", Suit::Spades, 4.0)]
+    #[test_case("S:AK96,H:96,D:AQ,C:QJT63", Suit::Spades, 2.0)]
+    #[test_case("S:AK96,H:96,D:AQ,C:QJT63", Suit::Hearts, 0.0)]
+    #[test_case("S:AK96,H:6,D:AQ8,C:QJT63", Suit::Diamonds, 1.5)]
+    #[test_case("S:AK96,H:96,D:AQ,C:QJT63", Suit::Clubs, 1.0)]
+    fn stoppers_in(hand_str: &str, suit: Suit, exp: f64) {
+        let hand = Hand::from_str(hand_str).unwrap();
+        assert_eq!(ForumDPlus2015Evaluator::stoppers_in(&hand, suit), exp)
     }
 
     #[test]
