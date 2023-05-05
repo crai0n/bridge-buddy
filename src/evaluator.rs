@@ -371,6 +371,30 @@ impl ForumDPlus2015Evaluator {
         }
     }
 
+    pub fn first_round_control_in(hand: &Hand, suit: Suit, trump: Option<Suit>) -> bool {
+        let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
+        if card_vec.contains(&Ace) { return true; }
+        if let Some(t) = trump { // in a suit-contract voids also act as 1st-round-controls
+            return card_vec.len() == 0 && hand.cards_in(t).count() > 0 // safety-check for trump-cards
+        }
+        false
+    }
+
+    pub fn second_round_control_in(hand: &Hand, suit: Suit, trump: Option<Suit>) -> bool {
+        let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
+        if card_vec.len() >= 2 && card_vec.contains(&King) {
+                return true;// Kx
+        }
+        if let Some(t) = trump { // in a suit-contract singletons also act as 2nd-round-controls
+            match card_vec.len() {
+                0 => hand.cards_in(t).count() > 1, // safety-check for 2 trump-cards
+                1 => hand.cards_in(t).count() > 0, // safety-check for trump-cards
+                _ => false,
+            }
+        } else {
+            false
+        }
+    }
 }
 
 #[cfg(test)]
@@ -503,6 +527,20 @@ mod test {
     fn test_losing_trick_count(hand_str: &str, ltc: f64) {
         let hand = Hand::from_str(hand_str).unwrap();
         assert_eq!(ForumDPlus2015Evaluator::losing_trick_count(&hand), ltc)
+    }
+    #[test_case("S:AKQJ976,H:,D:A,C:Q9763", Suit::Hearts, Some(Suit::Spades), true)]
+    #[test_case("S:AKQJ976,H:,D:A,C:Q9763", Suit::Diamonds, None, true)]
+    #[test_case("S:AKQJ96,H:T,D:A,C:Q9763", Suit::Hearts, Some(Suit::Spades), false)]
+    fn first_round_control_in(hand_str: &str, suit: Suit, trump_suit: Option<Suit>, exp: bool) {
+        let hand = Hand::from_str(hand_str).unwrap();
+        assert_eq!(ForumDPlus2015Evaluator::first_round_control_in(&hand, suit, trump_suit), exp)
+    }
+    #[test_case("S:AKQJ96,H:T,D:A,C:Q9763", Suit::Diamonds, None, false)]
+    #[test_case("S:AKQJ6,H:KT,D:A,C:Q9763", Suit::Hearts, None, true)]
+    #[test_case("S:AKQJ96,H:T,D:A,C:Q9763", Suit::Hearts, Some(Suit::Spades), true)]
+    fn second_round_control_in(hand_str: &str, suit: Suit, trump_suit: Option<Suit>, exp: bool) {
+        let hand = Hand::from_str(hand_str).unwrap();
+        assert_eq!(ForumDPlus2015Evaluator::second_round_control_in(&hand, suit, trump_suit), exp)
     }
 
     #[test]
