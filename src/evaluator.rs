@@ -124,7 +124,7 @@ impl ForumDPlus2015Evaluator {
 
     pub fn length_points(hand: &Hand, trump_suit: Option<Suit>, long_suits_shown_by_opponents: &[Suit]) -> f64 {
         let mut acc = 0.0;
-        //in each suit that contains at least 3 HCP, is not the trump suit, and has not been named by the opponents, count 1 point for each card past the fourth.
+        //in each suit that contains at least 3 HCP, is not the trump suit, and for which no opponent has shown 5+ cards, count 1 point for each card past the fourth.
         for suit in Suit::iter() {
             if trump_suit == Some(suit) || long_suits_shown_by_opponents.contains(&suit) {
                 continue;
@@ -171,7 +171,53 @@ impl ForumDPlus2015Evaluator {
         }
     }
 
-    
+    //
+    // adjustment on bids by other players
+    //
+
+    fn adjustment_partners_suits(hand: &Hand, suits: &[Suit]) -> f64 {
+        // honors and honor combinations in partner's suits gain 0.5 HCP 
+        todo!()
+    }
+
+    fn adjustment_right_opponents_suits(hand: &Hand, suits: &[Suit]) -> f64 {
+        // we gain 1 HCP if we have one or more of the top three honors in a suit named by our right-hand opponent
+        todo!()
+    }
+
+    fn adjustment_left_opponents_suits(hand: &Hand, suits: &[Suit]) -> f64 {
+        // we lose 1 HCP if we have honors in a suit named by our left-hand opponent.
+        todo!()
+    }
+
+    fn adjustment_misfit() -> f64 {
+        // disregard all length points if we are in misfit with partner
+        todo!()
+    }
+
+    //
+    // adjustments for suit contracts
+    //
+
+    fn adjustment_double_fit(hand: &Hand) {
+        // for a suit-contract +1 V
+        todo!()
+    }
+
+    fn adjustment_shortness_in_opponents_suit(hand: &Hand, trump: Suit, suits: &[Suit]) -> f64 {
+        // for a suit-contract, this increases ruffing opportunity, +1 V
+        todo!()
+    }
+
+    fn adjustment_partners_short_suit(hand: &Hand, trump: Suit, short_suits: &[Suit]) -> f64 {
+        // for a suit-contract, this decreases the value of K,D or B by at least -1 HCP        
+        todo!()
+    }
+
+    fn adjustment_unguarded_queen_and_jack_in_dummy(hand: &Hand, trump: Suit, unbid_suits: &[Suit]) -> f64 {
+        // for a suit-contract, if we are going to be dummy, low honors in unbid suits are mostly worthless
+        todo!()
+    }
 
 
 }
