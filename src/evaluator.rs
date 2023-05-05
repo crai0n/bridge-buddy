@@ -492,6 +492,9 @@ impl ForumDPlus2015Evaluator {
         Suit::iter().map(|x| hand.length_in(x)).sorted().rev().take(2).sum::<u8>() as f64 + Self::hcp(hand) >= 20.0
     }
 
+    pub fn rule_of_fifteen(hand: &Hand) -> bool {
+        hand.length_in(Suit::Spades) as f64 + Self::hcp(hand) >= 15.0
+    }
 
 }
 
@@ -683,6 +686,14 @@ mod test {
     fn rule_of_twenty(hand_str: &str, exp: bool) {
         let hand = Hand::from_str(hand_str).unwrap();
         assert_eq!(ForumDPlus2015Evaluator::rule_of_twenty(&hand), exp)
+    }
+
+    #[test_case("S:AKT96,H:QT96,D:J9,C:63", true)]
+    #[test_case("S:AKT9,H:QT96,D:JT9,C:63", false)]
+    #[test_case("S:AKT96,H:JT96,D:J9,C:63", false)]
+    fn rule_of_fifteen(hand_str: &str, exp: bool) {
+        let hand = Hand::from_str(hand_str).unwrap();
+        assert_eq!(ForumDPlus2015Evaluator::rule_of_fifteen(&hand), exp)
     }
     #[test]
     #[ignore]
