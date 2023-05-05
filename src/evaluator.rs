@@ -317,7 +317,6 @@ impl ForumDPlus2015Evaluator {
     // There are different opinions on how exactly Losing Tricks are counted. The difference mostly stems from disagreements about the value of Jack and Ten, especially for suits with 4-6 cards.
     // For now, we implement a basic approach, never counting more than 3 losers per suit. From these, one loser is deducted for each of the Ace, King and Queen.
     // This means that Qxx is valued the same as Axx though, which should be refined todo!
-    // A possible approach is to start considering the Queen as only worth half a trick/loser and valuing the Jack and Ten more instead.
     pub fn losing_trick_count(hand: &Hand) -> f64 {
         let mut acc = 0.0;
         for suit in Suit::iter() {
@@ -335,19 +334,41 @@ impl ForumDPlus2015Evaluator {
                     [King, _] => 1.0,
                     _ => 2.0,
                 },
-                3..=8 => {
-                    // Three-card suits can only have three losers, don't add additional losers in longer suits
+                3 | 7..=8 => {
+                    // Three-card suits can only have three losers, in a 7-card suit, don't add additional losers
                     // subtract one for each of the top three honors
                     3.0 - Denomination::iter()
                         .rev()
                         .take(3)
                         .filter(|d| card_vec.contains(&d))
                         .count() as f64
-                }
+                },
+                4..=6 => {
+                    // in a 4- to 6-card-suit, add half a loser if we lack mid-values
+                    3.0 - Denomination::iter()
+                    .rev()
+                    .take(3)
+                    .filter(|d| card_vec.contains(&d))
+                    .count() as f64
+                    + Self::losers_for_midvalues(&card_vec[..])
+                },
                 _ => 0.0, // 13 card suits have no losers, Chicanes have no losers
             }
         }
         acc
+    }
+
+    fn losers_for_midvalues(den: &[Denomination]) -> f64 {
+        // we already took care of Ace, King and Queen, disregard now, only look at midvalues
+        if den.contains(&Jack) {
+            // Jack is enough in any case
+            0.0
+        } else if den.contains(&Ten) && den.contains(&Nine) {
+            // Ten and 9 together are also enough
+            0.0
+        } else {
+            0.5
+        }
     }
 
 }
@@ -475,10 +496,10 @@ mod test {
         assert_eq!(ForumDPlus2015Evaluator::trump_distribution_points(&hand, trump_suit, partner_promised, promised_to_partner), dp);
     }
 
-    #[test_case("S:Q764,H:8,D:AT753,C:AKQ", 5.0)]
-    #[test_case("S:AK582,H:93,D:982,C:872", 9.0)]
-    #[test_case("S:984,H:QT86,D:J863,C:AK", 8.0)]
-    #[test_case("S:AKJT984,H:QT8,D:J3,C:K", 6.0)]
+    #[test_case("S:Q764,H:8,D:AT753,C:AKQ", 6.0; "Six losers")]
+    #[test_case("S:AK582,H:93,D:982,C:872", 9.5; "Nine and a half losers")]
+    #[test_case("S:984,H:QT86,D:J863,C:AK", 8.5; "Eight and a half losers")]
+    #[test_case("S:AJT9874,H:QT8,D:J3,C:K", 7.0; "Seven losers")]
     fn test_losing_trick_count(hand_str: &str, ltc: f64) {
         let hand = Hand::from_str(hand_str).unwrap();
         assert_eq!(ForumDPlus2015Evaluator::losing_trick_count(&hand), ltc)
