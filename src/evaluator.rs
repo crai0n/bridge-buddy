@@ -175,48 +175,95 @@ impl ForumDPlus2015Evaluator {
     // adjustment on bids by other players
     //
 
-    fn adjustment_partners_suits(hand: &Hand, suits: &[Suit]) -> f64 {
-        // honors and honor combinations in partner's suits gain 0.5 HCP 
-        todo!()
-    }
+    // pub fn adjustment_partners_suits(hand: &Hand, suits: &[Suit]) -> f64 {
+    //     // honors and honor combinations in partner's suits gain 0.5 HCP 
+    //     todo!()
+    // }
 
-    fn adjustment_right_opponents_suits(hand: &Hand, suits: &[Suit]) -> f64 {
-        // we gain 1 HCP if we have one or more of the top three honors in a suit named by our right-hand opponent
-        todo!()
-    }
+    // pub fn adjustment_right_opponents_suits(hand: &Hand, suits: &[Suit]) -> f64 {
+    //     // we gain 1 HCP if we have one or more of the top three honors in a suit named by our right-hand opponent
+    //     todo!()
+    // }
 
-    fn adjustment_left_opponents_suits(hand: &Hand, suits: &[Suit]) -> f64 {
-        // we lose 1 HCP if we have honors in a suit named by our left-hand opponent.
-        todo!()
-    }
+    // pub fn adjustment_left_opponents_suits(hand: &Hand, suits: &[Suit]) -> f64 {
+    //     // we lose 1 HCP if we have honors in a suit named by our left-hand opponent.
+    //     todo!()
+    // }
 
-    fn adjustment_misfit() -> f64 {
-        // disregard all length points if we are in misfit with partner
-        todo!()
-    }
+    // pub fn adjustment_misfit() -> f64 {
+    //     // disregard all length points if we are in misfit with partner
+    //     todo!()
+    // }
 
     //
     // adjustments for suit contracts
     //
 
-    fn adjustment_double_fit(hand: &Hand) {
-        // for a suit-contract +1 V
-        todo!()
-    }
+    // pub fn adjustment_double_fit(hand: &Hand) {
+    //     // for a suit-contract +1 V
+    //     todo!()
+    // }
 
-    fn adjustment_shortness_in_opponents_suit(hand: &Hand, trump: Suit, suits: &[Suit]) -> f64 {
-        // for a suit-contract, this increases ruffing opportunity, +1 V
-        todo!()
-    }
+    // pub fn adjustment_shortness_in_opponents_suit(hand: &Hand, trump: Suit, suits: &[Suit]) -> f64 {
+    //     // for a suit-contract, this increases ruffing opportunity, +1 V
+    //     todo!()
+    // }
 
-    fn adjustment_partners_short_suit(hand: &Hand, trump: Suit, short_suits: &[Suit]) -> f64 {
-        // for a suit-contract, this decreases the value of K,D or B by at least -1 HCP        
-        todo!()
-    }
+    // pub fn adjustment_partners_short_suit(hand: &Hand, trump: Suit, short_suits: &[Suit]) -> f64 {
+    //     // for a suit-contract, this decreases the value of K,D or B by at least -1 HCP        
+    //     todo!()
+    // }
 
-    fn adjustment_unguarded_queen_and_jack_in_dummy(hand: &Hand, trump: Suit, unbid_suits: &[Suit]) -> f64 {
-        // for a suit-contract, if we are going to be dummy, low honors in unbid suits are mostly worthless
-        todo!()
+    // pub fn adjustment_unguarded_queen_and_jack_in_dummy(hand: &Hand, trump: Suit, unbid_suits: &[Suit]) -> f64 {
+    //     // for a suit-contract, if we are going to be dummy, low honors in unbid suits are mostly worthless
+    //     todo!()
+    // }
+
+    //
+    // Playing Trick Count (PTC)
+    //
+    // There are different opinions on how exactly Playing Tricks are counted. The difference mostly stems from disagreements about the value of Jack and Ten, especially for suits with 4-6 cards.
+    // 
+
+
+
+    //
+    // Losing Trick Count (LTC)
+    //
+    // There are different opinions on how exactly Losing Tricks are counted. The difference mostly stems from disagreements about the value of Jack and Ten, especially for suits with 4-6 cards.
+    // For now, we implement a basic approach, never counting more than 3 losers per suit. From these, one loser is deducted for each of the Ace, King and Queen.
+    // This means that Qxx is valued the same as Axx though, which should be refined todo!
+    // A possible approach is to start considering the Queen as only worth half a trick/loser and valuing the Jack and Ten more instead.
+    pub fn losing_trick_count(hand: &Hand) -> f64 {
+        let mut acc = 0.0;
+        for suit in Suit::iter() {
+            let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
+            acc += match card_vec.len() {
+                1 | 11..=12 => match &card_vec[..1] {
+                    // Singletons can only have one loser. If we have 11+ cards, only the Ace matters
+                    [Ace] => 0.0,
+                    _ => 1.0,
+                },
+                2 | 9..=10 => match &card_vec[..2] {
+                    // Doubletons can one have two losers. If we have 9+ cards, only Ace and King matter
+                    [Ace, King] => 0.0,
+                    [Ace, _] => 1.0,
+                    [King, _] => 1.0,
+                    _ => 2.0,
+                },
+                3..=8 => {
+                    // Three-card suits can only have three losers, don't add additional losers in longer suits
+                    // subtract one for each of the top three honors
+                    3.0 - Denomination::iter()
+                        .rev()
+                        .take(3)
+                        .filter(|d| card_vec.contains(&d))
+                        .count() as f64
+                }
+                _ => 0.0, // 13 card suits have no losers, Chicanes have no losers
+            }
+        }
+        acc
     }
 
 
@@ -342,6 +389,15 @@ mod test {
     fn test_trump_suit_dp(hand_str: &str, trump_suit: Suit, partner_promised: u8, promised_to_partner: u8, dp: f64) {
         let hand = Hand::from_str(hand_str).unwrap();
         assert_eq!(ForumDPlus2015Evaluator::trump_distribution_points(&hand, trump_suit, partner_promised, promised_to_partner), dp);
+    }
+
+    #[test_case("S:Q764,H:8,D:AT753,C:AKQ", 5.0)]
+    #[test_case("S:AK582,H:93,D:982,C:872", 9.0)]
+    #[test_case("S:984,H:QT86,D:J863,C:AK", 8.0)]
+    #[test_case("S:AKJT984,H:QT8,D:J3,C:K", 6.0)]
+    fn test_losing_trick_count(hand_str: &str, ltc: f64) {
+        let hand = Hand::from_str(hand_str).unwrap();
+        assert_eq!(ForumDPlus2015Evaluator::losing_trick_count(&hand), ltc)
     }
 
 }
