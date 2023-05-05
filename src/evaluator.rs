@@ -242,21 +242,9 @@ impl ForumDPlus2015Evaluator {
                         _ => l as f64 - 1.0,
                     }
                 }
-                2 => Self::two_card_trick_table(&card_vec.try_into().unwrap()),
-                3..=8 => card_vec.len() as f64 - 3.0 + Self::three_card_trick_table(&card_vec[..3].try_into().unwrap()), // fourth card is always a trick
-                l @ 9..=10 => {
-                    l as f64 - 2.0
-                        + match &card_vec[..2] {
-                            [Ace, King] => 2.0,
-                            [Ace, Queen] => 1.5,
-                            [Ace, Jack] => 1.5, // this is probably debatable
-                            [Ace, _] => 1.0,
-                            [King, Queen] => 1.0,
-                            [King, Jack] => 1.0, // this is probably debatable
-                            [King, _] => 0.5,
-                            _ => 0.0,
-                        }
-                }
+                l @ 2 | l @ 9..=10 => l as f64 - 2.0 + Self::two_card_trick_table(&card_vec[..2].try_into().unwrap()),
+                l @ 3 | l @ 7..=8 => l as f64 - 3.0 + Self::three_card_trick_table(&card_vec[..3].try_into().unwrap()), // fourth card is always a trick
+                l @ 4..=6 => l as f64 - 3.5 + Self::three_card_trick_table(&card_vec[..3].try_into().unwrap()), // fourth card is half a trick
                 _ => 13.0,
             }
         }
@@ -489,13 +477,19 @@ impl ForumDPlus2015Evaluator {
     }
 
     pub fn rule_of_twenty(hand: &Hand) -> bool {
-        Suit::iter().map(|x| hand.length_in(x)).sorted().rev().take(2).sum::<u8>() as f64 + Self::hcp(hand) >= 20.0
+        Suit::iter()
+            .map(|x| hand.length_in(x))
+            .sorted()
+            .rev()
+            .take(2)
+            .sum::<u8>() as f64
+            + Self::hcp(hand)
+            >= 20.0
     }
 
     pub fn rule_of_fifteen(hand: &Hand) -> bool {
         hand.length_in(Suit::Spades) as f64 + Self::hcp(hand) >= 15.0
     }
-
 }
 
 #[cfg(test)]
