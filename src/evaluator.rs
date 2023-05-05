@@ -395,6 +395,12 @@ impl ForumDPlus2015Evaluator {
             false
         }
     }
+
+    pub fn honor_in(hand: &Hand, suit: Suit) -> bool {
+        let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
+        Denomination::iter().rev().take(5).filter(|x| card_vec.contains(x)).count() >= 1
+    }
+
 }
 
 #[cfg(test)]
@@ -541,6 +547,14 @@ mod test {
     fn second_round_control_in(hand_str: &str, suit: Suit, trump_suit: Option<Suit>, exp: bool) {
         let hand = Hand::from_str(hand_str).unwrap();
         assert_eq!(ForumDPlus2015Evaluator::second_round_control_in(&hand, suit, trump_suit), exp)
+    }
+
+    #[test_case("S:AKQJ96,H:T,D:A,C:Q9763", Suit::Diamonds, true)]
+    #[test_case("S:AKQJ6,H:KT,D:A,C:Q9763", Suit::Hearts, true)]
+    #[test_case("S:AKQJ96,H:9,D:A,C:Q9763", Suit::Hearts, false)]
+    fn honor_in(hand_str: &str, suit: Suit, exp: bool) {
+        let hand = Hand::from_str(hand_str).unwrap();
+        assert_eq!(ForumDPlus2015Evaluator::honor_in(&hand, suit), exp)
     }
 
     #[test]
