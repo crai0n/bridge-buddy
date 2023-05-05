@@ -1,11 +1,11 @@
-use itertools::Itertools;
-use strum::IntoEnumIterator;
-use std::cmp::Ordering;
 use crate::card::Denomination::*;
 use crate::{
     card::{Card, Denomination, Suit},
     hand::Hand,
 };
+use itertools::Itertools;
+use std::cmp::Ordering;
+use strum::IntoEnumIterator;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SuitQuality {
@@ -155,7 +155,12 @@ impl ForumDPlus2015Evaluator {
         acc
     }
 
-    pub fn trump_distribution_points(hand: &Hand, trump_suit: Suit, partner_promised: u8, promised_to_partner: u8) -> f64 {
+    pub fn trump_distribution_points(
+        hand: &Hand,
+        trump_suit: Suit,
+        partner_promised: u8,
+        promised_to_partner: u8,
+    ) -> f64 {
         // count 2 points for the ninth trump card, and 1 more point for each additional card
         // however: each card can only be counted once, so we need to keep track of who counted which cards first.
         let total_length = hand.length_in(trump_suit) + partner_promised;
@@ -176,7 +181,7 @@ impl ForumDPlus2015Evaluator {
     //
 
     // pub fn adjustment_partners_suits(hand: &Hand, suits: &[Suit]) -> f64 {
-    //     // honors and honor combinations in partner's suits gain 0.5 HCP 
+    //     // honors and honor combinations in partner's suits gain 0.5 HCP
     //     todo!()
     // }
 
@@ -210,7 +215,7 @@ impl ForumDPlus2015Evaluator {
     // }
 
     // pub fn adjustment_partners_short_suit(hand: &Hand, trump: Suit, short_suits: &[Suit]) -> f64 {
-    //     // for a suit-contract, this decreases the value of K,D or B by at least -1 HCP        
+    //     // for a suit-contract, this decreases the value of K,D or B by at least -1 HCP
     //     todo!()
     // }
 
@@ -259,7 +264,8 @@ impl ForumDPlus2015Evaluator {
     }
 
     fn two_card_trick_table(den: &[Denomination; 2]) -> f64 {
-        match den { // table generated using test-method below
+        match den {
+            // table generated using test-method below
             [Ace, King] => 2.0,
             [Ace, Queen] => 1.5,
             [Ace, Jack] => 1.5, // this is probably debatable
@@ -270,23 +276,24 @@ impl ForumDPlus2015Evaluator {
             [Queen, Jack] => 0.0,
             [Queen, _] => 0.0,
             [Jack, _] => 0.0,
-            [_, _,] => 0.0,
+            [_, _] => 0.0,
         }
     }
 
     fn three_card_trick_table(den: &[Denomination; 3]) -> f64 {
-        match den {// table generated using test-method below
-            // 3 cards headed by the ace, 3 tricks max. 
+        match den {
+            // table generated using test-method below
+            // 3 cards headed by the ace, 3 tricks max.
             // Count 1 for each of the 5 honours and subtract 0.5 for each "hole" in between, Jack and Ten together are only 1.5 points
             [Ace, King, Queen] => 3.0,
-            [Ace, King, Jack] => 2.5, // missing the queen
-            [Ace, King, Ten] => 2.0, // missing the queen and the jack
-            [Ace, King, _] => 2.0, // 
+            [Ace, King, Jack] => 2.5,  // missing the queen
+            [Ace, King, Ten] => 2.0,   // missing the queen and the jack
+            [Ace, King, _] => 2.0,     //
             [Ace, Queen, Jack] => 2.5, // missing the king
-            [Ace, Queen, Ten] => 2.0, // missing the king and the jack 
-            [Ace, Queen, _] => 1.5, // missing the king
-            [Ace, Jack, Ten] => 1.5, // missing the King and Queen, this is probably debatable
-            [Ace, Jack, _] => 1.0, // this is probably debatable
+            [Ace, Queen, Ten] => 2.0,  // missing the king and the jack
+            [Ace, Queen, _] => 1.5,    // missing the king
+            [Ace, Jack, Ten] => 1.5,   // missing the King and Queen, this is probably debatable
+            [Ace, Jack, _] => 1.0,     // this is probably debatable
             [Ace, Ten, _] => 1.0,
             [Ace, _, _] => 1.0,
             // 3 cards headed by the king, 2 tricks max, lose 0.5 when missing the jack, lose 1 when missing the queen
@@ -294,7 +301,7 @@ impl ForumDPlus2015Evaluator {
             [King, Queen, Ten] => 1.5,
             [King, Queen, _] => 1.5,
             [King, Jack, Ten] => 1.5, // this is probably debatable
-            [King, Jack, _] => 1.0, // this is probably debatable
+            [King, Jack, _] => 1.0,   // this is probably debatable
             [King, Ten, _] => 0.5,
             [King, _, _] => 0.5,
             // 3 cards headed by the queen: 1 trick max and lose 0.5 points for missing ten, lose 1 point for missing jack
@@ -308,8 +315,6 @@ impl ForumDPlus2015Evaluator {
             [_, _, _] => 0.0,
         }
     }
-
-
 
     //
     // Losing Trick Count (LTC)
@@ -342,16 +347,16 @@ impl ForumDPlus2015Evaluator {
                         .take(3)
                         .filter(|d| card_vec.contains(&d))
                         .count() as f64
-                },
+                }
                 4..=6 => {
                     // in a 4- to 6-card-suit, add half a loser if we lack mid-values
                     3.0 - Denomination::iter()
-                    .rev()
-                    .take(3)
-                    .filter(|d| card_vec.contains(&d))
-                    .count() as f64
-                    + Self::losers_for_midvalues(&card_vec[..])
-                },
+                        .rev()
+                        .take(3)
+                        .filter(|d| card_vec.contains(&d))
+                        .count() as f64
+                        + Self::losers_for_midvalues(&card_vec[..])
+                }
                 _ => 0.0, // 13 card suits have no losers, Chicanes have no losers
             }
         }
@@ -373,9 +378,12 @@ impl ForumDPlus2015Evaluator {
 
     pub fn first_round_control_in(hand: &Hand, suit: Suit, trump: Option<Suit>) -> bool {
         let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
-        if card_vec.contains(&Ace) { return true; }
-        if let Some(t) = trump { // in a suit-contract voids also act as 1st-round-controls
-            return card_vec.len() == 0 && hand.cards_in(t).count() > 0 // safety-check for trump-cards
+        if card_vec.contains(&Ace) {
+            return true;
+        }
+        if let Some(t) = trump {
+            // in a suit-contract voids also act as 1st-round-controls
+            return card_vec.len() == 0 && hand.cards_in(t).count() > 0; // safety-check for trump-cards
         }
         false
     }
@@ -383,9 +391,10 @@ impl ForumDPlus2015Evaluator {
     pub fn second_round_control_in(hand: &Hand, suit: Suit, trump: Option<Suit>) -> bool {
         let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
         if card_vec.len() >= 2 && card_vec.contains(&King) {
-                return true;// Kx
+            return true; // Kx
         }
-        if let Some(t) = trump { // in a suit-contract singletons also act as 2nd-round-controls
+        if let Some(t) = trump {
+            // in a suit-contract singletons also act as 2nd-round-controls
             match card_vec.len() {
                 0 => hand.cards_in(t).count() > 1, // safety-check for 2 trump-cards
                 1 => hand.cards_in(t).count() > 0, // safety-check for trump-cards
@@ -398,9 +407,89 @@ impl ForumDPlus2015Evaluator {
 
     pub fn honor_in(hand: &Hand, suit: Suit) -> bool {
         let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
-        Denomination::iter().rev().take(5).filter(|x| card_vec.contains(x)).count() >= 1
+        Denomination::iter()
+            .rev()
+            .take(5)
+            .filter(|x| card_vec.contains(x))
+            .count()
+            >= 1
     }
 
+    pub fn stoppers_in(hand: &Hand, suit: Suit) -> f64 {
+        let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
+        match card_vec.len() {
+            1 => {
+                if card_vec.contains(&Ace) {
+                    1.0
+                } else {
+                    0.0
+                }
+            }
+            2 => Self::two_card_stopper_table(&card_vec[..2].try_into().unwrap()),
+            3 => Self::three_card_stopper_table(&card_vec[..3].try_into().unwrap()),
+            _ => Self::four_card_stopper_table(&card_vec[..4].try_into().unwrap()),
+        }
+    }
+
+    fn two_card_stopper_table(den: &[Denomination; 2]) -> f64 {
+        match den {
+            // table generated using test-method below
+            [Ace, King] => 2.0,
+            [Ace, _] => 1.0,
+            [King, Queen] => 1.0,
+            [King, _] => 0.5,
+            [Queen, Jack] => 0.0,
+            [_, _] => 0.0,
+        }
+    }
+
+    fn three_card_stopper_table(den: &[Denomination; 3]) -> f64 {
+        match den {
+            // table generated using test-method below
+            [Ace, King, Queen] => 3.0,
+            [Ace, King, Jack] => 2.0,
+            [Ace, King, _] => 2.0,
+            [Ace, Queen, Jack] => 2.0,
+            [Ace, Queen, _] => 1.5,
+            [Ace, Jack, Ten] => 1.5, // this is probably debatable
+            [Ace, _, _] => 1.0,
+            // 3 cards headed by the king, 2 tricks max, lose 0.5 when missing the jack, lose 1 when missing the queen
+            [King, Queen, Jack] => 2.0,
+            [King, Queen, _] => 1.0,
+            [King, Jack, Ten] => 1.0, // this is probably debatable
+            [King, _, _] => 0.5,
+            // 3 cards headed by the queen: 1 trick max and lose 0.5 points for missing ten, lose 1 point for missing jack
+            [Queen, Jack, Ten] => 1.0,
+            [Queen, Jack, _] => 0.5,
+            [_, _, _] => 0.0,
+        }
+    }
+
+    fn four_card_stopper_table(den: &[Denomination; 4]) -> f64 {
+        match den {
+            [Ace, King, Queen, Jack] => 4.0,
+            [Ace, King, Queen, _] => 3.0,
+            [Ace, King, Jack, Ten] => 3.0,
+            [Ace, King, _, _] => 2.0,
+            [Ace, Queen, Jack, Ten] => 3.0,
+            [Ace, Queen, Jack, _] => 2.0,
+            [Ace, Queen, _, _] => 1.5,
+            [Ace, Jack, Ten, Nine] => 1.5,
+            [Ace, Jack, _, _] => 1.0,
+            [Ace, _, _, _] => 1.0,
+            [King, Queen, Jack, Ten] => 3.0,
+            [King, Queen, Jack, _] => 2.0,
+            [King, Queen, Ten, _] => 1.5,
+            [King, Queen, _, _] => 1.0,
+            [King, Jack, Ten, Nine] => 1.0,
+            [King, Jack, Ten, _] => 1.0,
+            [King, _, _, _] => 0.5,
+            [Queen, Jack, Ten, Nine] => 2.0,
+            [Queen, Jack, Ten, _] => 1.0,
+            [Queen, Jack, Nine, _] => 0.5,
+            [_, _, _, _] => 0.0,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -408,8 +497,8 @@ mod test {
     use crate::card::Suit;
     use crate::evaluator::*;
     use crate::hand::Hand;
-    use test_case::test_case;
     use std::cmp::Ordering::*;
+    use test_case::test_case;
 
     #[test_case("S:T93,H:AKQ5,D:QJ,C:T542", 12.0 ; "Board 1.N")]
     #[test_case("S:Q764,H:8,D:AT753,C:AKQ", 15.0 ; "Board 1.E")]
@@ -514,7 +603,10 @@ mod test {
     #[test_case("S:AK52,H:943,D:982,C:872", Suit::Spades, 0.0 ; "0 V")]
     fn test_side_suit_dp(hand_str: &str, trump_suit: Suit, dp: f64) {
         let hand = Hand::from_str(hand_str).unwrap();
-        assert_eq!(ForumDPlus2015Evaluator::side_suit_distribution_points(&hand, trump_suit), dp);
+        assert_eq!(
+            ForumDPlus2015Evaluator::side_suit_distribution_points(&hand, trump_suit),
+            dp
+        );
     }
 
     #[test_case("S:Q764,H:8,D:AT753,C:AKQ", Suit::Spades, 4, 4, 0.0 ; "Eight-card fit")]
@@ -523,7 +615,15 @@ mod test {
     #[test_case("S:AK582,H:93,D:982,C:872", Suit::Spades, 5, 4, 1.0 ; "Partner counts the ninth, we count the tenth")]
     fn test_trump_suit_dp(hand_str: &str, trump_suit: Suit, partner_promised: u8, promised_to_partner: u8, dp: f64) {
         let hand = Hand::from_str(hand_str).unwrap();
-        assert_eq!(ForumDPlus2015Evaluator::trump_distribution_points(&hand, trump_suit, partner_promised, promised_to_partner), dp);
+        assert_eq!(
+            ForumDPlus2015Evaluator::trump_distribution_points(
+                &hand,
+                trump_suit,
+                partner_promised,
+                promised_to_partner
+            ),
+            dp
+        );
     }
 
     #[test_case("S:Q764,H:8,D:AT753,C:AKQ", 6.0; "Six losers")]
@@ -539,14 +639,20 @@ mod test {
     #[test_case("S:AKQJ96,H:T,D:A,C:Q9763", Suit::Hearts, Some(Suit::Spades), false)]
     fn first_round_control_in(hand_str: &str, suit: Suit, trump_suit: Option<Suit>, exp: bool) {
         let hand = Hand::from_str(hand_str).unwrap();
-        assert_eq!(ForumDPlus2015Evaluator::first_round_control_in(&hand, suit, trump_suit), exp)
+        assert_eq!(
+            ForumDPlus2015Evaluator::first_round_control_in(&hand, suit, trump_suit),
+            exp
+        )
     }
     #[test_case("S:AKQJ96,H:T,D:A,C:Q9763", Suit::Diamonds, None, false)]
     #[test_case("S:AKQJ6,H:KT,D:A,C:Q9763", Suit::Hearts, None, true)]
     #[test_case("S:AKQJ96,H:T,D:A,C:Q9763", Suit::Hearts, Some(Suit::Spades), true)]
     fn second_round_control_in(hand_str: &str, suit: Suit, trump_suit: Option<Suit>, exp: bool) {
         let hand = Hand::from_str(hand_str).unwrap();
-        assert_eq!(ForumDPlus2015Evaluator::second_round_control_in(&hand, suit, trump_suit), exp)
+        assert_eq!(
+            ForumDPlus2015Evaluator::second_round_control_in(&hand, suit, trump_suit),
+            exp
+        )
     }
 
     #[test_case("S:AKQJ96,H:T,D:A,C:Q9763", Suit::Diamonds, true)]
@@ -584,7 +690,7 @@ mod test {
             }
         }
     }
-    
+
     #[test]
     #[ignore]
     fn generate_three_card_hands() {
@@ -622,7 +728,7 @@ mod test {
             }
         }
     }
-    
+
     #[test]
     #[ignore]
     fn generate_four_card_hands() {
@@ -676,7 +782,7 @@ mod test {
             }
         }
     }
-    
+
     #[test]
     #[ignore]
     fn generate_five_card_hands() {
@@ -747,7 +853,7 @@ mod test {
             }
         }
     }
-    
+
     #[test]
     #[ignore]
     fn generate_six_card_hands() {
@@ -801,11 +907,10 @@ mod test {
                                                                                 println!(
                                                                                     "[{:?}, {:?}, {:?}, {:?}, {:?}, _] => 0.0,",
                                                                                     cards[i], cards[j], cards[k], cards[l], cards[m]);
-                                                                                }
-                                                                                Greater => {
-                                                                                    println!("[{:?}, {:?}, {:?}, {:?}, {:?}, {:?}] => 0.0,",
+                                                                            }
+                                                                            Greater => {
+                                                                                println!("[{:?}, {:?}, {:?}, {:?}, {:?}, {:?}] => 0.0,",
                                                                                     cards[i], cards[j], cards[k], cards[l], cards[m], cards[n]);
-                                                                                }
                                                                             }
                                                                         }
                                                                     }
@@ -824,4 +929,5 @@ mod test {
                 }
             }
         }
+    }
 }
