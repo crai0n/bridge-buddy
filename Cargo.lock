@@ -30,14 +30,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cfa8873f51c92e232f9bac4065cddef41b714152812bfc5f7672ba16d6ef8cd9"
 
 [[package]]
-name = "bridge-buddy"
+name = "bridge-buddy-core"
 version = "0.1.0"
 dependencies = [
- "getrandom",
  "itertools",
  "rand",
  "strum",
  "test-case",
+]
+
+[[package]]
+name = "bridge-buddy-webapp"
+version = "0.1.0"
+dependencies = [
+ "getrandom",
  "yew",
 ]
 

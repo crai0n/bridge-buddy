@@ -1,0 +1,15 @@
+[package]
+name = "bridge-buddy-core"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+itertools = "0.10.5"
+rand = "0.8.5"
+strum = { version = "0.24", features = ["derive"] }
+
+[dev-dependencies]
+test-case = "3.1.0"
