@@ -27,7 +27,7 @@ impl ForumDPlus2015Evaluator {
             .fold(0.0, |hcp, c| hcp + ForumDPlus2015Evaluator::card_value(c) as f64)
     }
 
-    pub fn hcp_in(hand: &Hand, suit: Suit) -> f64 {
+    pub fn hcp_in(suit: Suit, hand: &Hand) -> f64 {
         hand.cards_in(suit)
             .fold(0.0, |hcp, c| hcp + ForumDPlus2015Evaluator::card_value(c) as f64)
     }
@@ -78,12 +78,7 @@ impl ForumDPlus2015Evaluator {
         }
 
         //check for AlmostStanding Suit
-        if (Denomination::iter()
-            .rev()
-            .take(5)
-            .filter(|d| cards.contains(d))
-            .count()
-            >= 4) // four of top five honors
+        if Self::count_honors_out_of_top(5, &cards) >= 4 // four of top five honors
             || (cards.len() >= 6 && cards[..3] == [Ace, King, Queen])
             || (cards.len() >= 7 && cards[..3] == [King, Queen, Jack])
         {
@@ -91,12 +86,7 @@ impl ForumDPlus2015Evaluator {
         }
 
         //check for VeryGood Suit
-        if Denomination::iter()
-            .rev()
-            .take(3)
-            .filter(|d| cards.contains(d))
-            .count()
-            >= 2 // two of the top three honors
+        if Self::count_honors_out_of_top(3, &cards) >= 2 // two of the top three honors
             && (cards.contains(&Jack) || (cards.contains(&Ten) && cards.contains(&Nine)) || cards.len() >= 7)
             || cards.len() >= 3 && cards[..3] == [Ace, King, Queen]
         // Three top honors
@@ -108,18 +98,23 @@ impl ForumDPlus2015Evaluator {
         // check for Good Suit
         if ((cards.contains(&Ace) || cards.contains(&King))
             && (cards.contains(&Jack) || (cards.contains(&Ten) && cards.contains(&Nine))))
-            || Denomination::iter().rev().take(3).filter(|d| cards.contains(d)).count() >= 2
+            || Self::count_honors_out_of_top(3, &cards) >= 2
             || cards.len() >= 3 && cards[..3] == [Queen, Jack, Ten]
         {
             return SuitQuality::Good;
         }
 
         // check for Acceptable Suit
-        if Self::hcp_in(hand, suit) >= 3.0 {
+        if Self::hcp_in(suit, hand) >= 3.0 {
             return SuitQuality::Acceptable;
         }
 
         SuitQuality::Weak
+    }
+
+    fn count_honors_out_of_top(n: usize, cards: &[Denomination]) -> usize {
+        let l = std::cmp::min(5, n); // there are only 5 honors
+        Denomination::iter().rev().take(l).filter(|d| cards.contains(d)).count()
     }
 
     pub fn length_points(hand: &Hand, trump_suit: Option<Suit>, long_suits_shown_by_opponents: &[Suit]) -> f64 {
@@ -129,7 +124,7 @@ impl ForumDPlus2015Evaluator {
             if trump_suit == Some(suit) || long_suits_shown_by_opponents.contains(&suit) {
                 continue;
             }
-            if Self::hcp_in(hand, suit) >= 3.0 {
+            if Self::hcp_in(suit, hand) >= 3.0 {
                 acc += match hand.length_in(suit) {
                     0..=4 => 0.0,
                     _ => hand.length_in(suit) as f64 - 4.0,
@@ -267,9 +262,6 @@ impl ForumDPlus2015Evaluator {
             [Ace, _] => 1.0,
             [King, Queen] => 1.0,
             [King, _] => 0.5,
-            [Queen, Jack] => 0.0,
-            [Queen, _] => 0.0,
-            [Jack, _] => 0.0,
             [_, _] => 0.0,
         }
     }
@@ -285,24 +277,19 @@ impl ForumDPlus2015Evaluator {
             [Ace, Queen, Jack] => 2.5, // missing the king
             [Ace, Queen, Ten] => 2.0,  // missing the king and the jack
             [Ace, Queen, _] => 1.5,    // missing the king
-            [Ace, Jack, Ten] => 1.5,   // missing the King and Queen, this is probably debatable
+            [Ace, Jack, Ten] => 1.5,   // missing the King and Queen
             [Ace, _, _] => 1.0,
             // 3 cards headed by the king, 2 tricks max, lose 0.5 when missing the jack, lose 1 when missing the queen
             [King, Queen, Jack] => 2.0,
             [King, Queen, Ten] => 1.5,
             [King, Queen, _] => 1.5,
-            [King, Jack, Ten] => 1.5, // this is probably debatable
-            [King, Jack, _] => 1.0,   // this is probably debatable
+            [King, Jack, Ten] => 1.5,
+            [King, Jack, _] => 1.0,
             [King, Ten, _] => 0.5,
             [King, _, _] => 0.5,
             // 3 cards headed by the queen: 1 trick max and lose 0.5 points for missing ten, lose 1 point for missing jack
             [Queen, Jack, Ten] => 1.0,
             [Queen, Jack, _] => 0.5,
-            [Queen, Ten, _] => 0.0,
-            [Queen, _, _] => 0.0,
-            [Jack, Ten, _] => 0.0,
-            [Jack, _, _] => 0.0,
-            [Ten, _, _] => 0.0,
             [_, _, _] => 0.0,
         }
     }
@@ -333,20 +320,11 @@ impl ForumDPlus2015Evaluator {
                 3 | 7..=8 => {
                     // Three-card suits can only have three losers, in a 7-card suit, don't add additional losers
                     // subtract one for each of the top three honors
-                    3.0 - Denomination::iter()
-                        .rev()
-                        .take(3)
-                        .filter(|d| card_vec.contains(d))
-                        .count() as f64
+                    3.0 - Self::count_honors_out_of_top(3, &card_vec) as f64
                 }
                 4..=6 => {
                     // in a 4- to 6-card-suit, add half a loser if we lack mid-values
-                    3.0 - Denomination::iter()
-                        .rev()
-                        .take(3)
-                        .filter(|d| card_vec.contains(d))
-                        .count() as f64
-                        + Self::losers_for_midvalues(&card_vec[..])
+                    3.0 - Self::count_honors_out_of_top(3, &card_vec) as f64 + Self::losers_for_midvalues(&card_vec)
                 }
                 _ => 0.0, // 13 card suits have no losers, Chicanes have no losers
             }
@@ -364,7 +342,7 @@ impl ForumDPlus2015Evaluator {
         }
     }
 
-    pub fn first_round_control_in(hand: &Hand, suit: Suit, trump: Option<Suit>) -> bool {
+    pub fn first_round_control_in(suit: Suit, hand: &Hand, trump: Option<Suit>) -> bool {
         let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
         if card_vec.contains(&Ace) {
             return true;
@@ -376,7 +354,7 @@ impl ForumDPlus2015Evaluator {
         false
     }
 
-    pub fn second_round_control_in(hand: &Hand, suit: Suit, trump: Option<Suit>) -> bool {
+    pub fn second_round_control_in(suit: Suit, hand: &Hand, trump: Option<Suit>) -> bool {
         let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
         if card_vec.len() >= 2 && card_vec.contains(&King) {
             return true; // Kx
@@ -393,7 +371,7 @@ impl ForumDPlus2015Evaluator {
         }
     }
 
-    pub fn honor_in(hand: &Hand, suit: Suit) -> bool {
+    pub fn honor_in(suit: Suit, hand: &Hand) -> bool {
         let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
         Denomination::iter()
             .rev()
@@ -403,7 +381,7 @@ impl ForumDPlus2015Evaluator {
             >= 1
     }
 
-    pub fn stoppers_in(hand: &Hand, suit: Suit) -> f64 {
+    pub fn stoppers_in(suit: Suit, hand: &Hand) -> f64 {
         let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
         match card_vec.len() {
             1 => {
@@ -534,7 +512,7 @@ mod test {
     #[test_case("S:984,H:QT86,D:J863,C:98", Suit::Diamonds, 1.0 ; "Board 3.W")]
     fn test_hcp_in(hand_str: &str, suit: Suit, hcp: f64) {
         let hand = Hand::from_str(hand_str).unwrap();
-        assert_eq!(ForumDPlus2015Evaluator::hcp_in(&hand, suit), hcp);
+        assert_eq!(ForumDPlus2015Evaluator::hcp_in(suit, &hand), hcp);
     }
 
     #[test_case("S:T93,H:AKQ5,D:QJ,C:T542", Suit::Hearts, SuitQuality::VeryGood ; "Board 1.N")]
@@ -643,7 +621,7 @@ mod test {
     fn first_round_control_in(hand_str: &str, suit: Suit, trump_suit: Option<Suit>, exp: bool) {
         let hand = Hand::from_str(hand_str).unwrap();
         assert_eq!(
-            ForumDPlus2015Evaluator::first_round_control_in(&hand, suit, trump_suit),
+            ForumDPlus2015Evaluator::first_round_control_in(suit, &hand, trump_suit),
             exp
         )
     }
@@ -653,7 +631,7 @@ mod test {
     fn second_round_control_in(hand_str: &str, suit: Suit, trump_suit: Option<Suit>, exp: bool) {
         let hand = Hand::from_str(hand_str).unwrap();
         assert_eq!(
-            ForumDPlus2015Evaluator::second_round_control_in(&hand, suit, trump_suit),
+            ForumDPlus2015Evaluator::second_round_control_in(suit, &hand, trump_suit),
             exp
         )
     }
@@ -663,7 +641,7 @@ mod test {
     #[test_case("S:AKQJ96,H:9,D:A,C:Q9763", Suit::Hearts, false)]
     fn honor_in(hand_str: &str, suit: Suit, exp: bool) {
         let hand = Hand::from_str(hand_str).unwrap();
-        assert_eq!(ForumDPlus2015Evaluator::honor_in(&hand, suit), exp)
+        assert_eq!(ForumDPlus2015Evaluator::honor_in(suit, &hand), exp)
     }
 
     #[test_case("S:AKQJ96,H:T,D:A,C:Q9763", Suit::Diamonds, 1.0)]
@@ -674,7 +652,7 @@ mod test {
     #[test_case("S:AK96,H:96,D:AQ,C:QJT63", Suit::Clubs, 1.0)]
     fn stoppers_in(hand_str: &str, suit: Suit, exp: f64) {
         let hand = Hand::from_str(hand_str).unwrap();
-        assert_eq!(ForumDPlus2015Evaluator::stoppers_in(&hand, suit), exp)
+        assert_eq!(ForumDPlus2015Evaluator::stoppers_in(suit, &hand), exp)
     }
 
     #[test_case("S:AKT96,H:QT96,D:Q9,C:63", true)]
