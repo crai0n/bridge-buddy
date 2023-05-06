@@ -228,7 +228,7 @@ impl ForumDPlus2015Evaluator {
     // Playing Trick Count (PTC)
     //
     // There are different opinions on how exactly Playing Tricks are counted. The difference mostly stems from disagreements about the value of Jack and Ten, especially for suits with 4-6 cards.
-    // For now, we implement a basic approach, were we only evaluate at most the first three cards of the suit. We count winners for all additional cards
+    // For now, we implement a basic approach, where we only evaluate at most the first three cards of the suit. We count winners for all additional cards
     pub fn playing_trick_count(hand: &Hand) -> f64 {
         let mut acc = 0.0;
         for suit in Suit::iter() {
