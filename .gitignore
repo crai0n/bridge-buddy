@@ -1,3 +1,6 @@
-/.idea
-/target
-/dist
+# editors and IDEs
+/.idea/
+/.vscode/
+
+# cargo
+/target/

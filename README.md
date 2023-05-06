@@ -20,6 +20,6 @@ You are now ready to clone the Bridge Buddy repository and run our app
 
 ```
 git clone https://github.com/crai0n/bridge-buddy
-cd bridge-buddy
+cd bridge-buddy/webapp
 trunk serve --open
 ```
