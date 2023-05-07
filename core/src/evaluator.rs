@@ -550,7 +550,7 @@ mod test {
     fn test_length_points(hand_str: &str, trump_suit: Option<Suit>, suits: &[Suit], lp: f64) {
         let hand = Hand::from_str(hand_str).unwrap();
         assert_eq!(
-            ForumDPlus2015Evaluator::length_points(&hand, trump_suit, &suits[..]),
+            ForumDPlus2015Evaluator::length_points(&hand, trump_suit, suits),
             lp
         );
     }
