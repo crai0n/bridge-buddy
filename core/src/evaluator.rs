@@ -9,12 +9,12 @@ use strum::IntoEnumIterator;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SuitQuality {
-    Weak,           
-    Acceptable,     
-    Good,           
-    VeryGood,       
-    AlmostStanding, 
-    Standing,       
+    Weak,
+    Acceptable,
+    Good,
+    VeryGood,
+    AlmostStanding,
+    Standing,
 }
 
 #[derive(Debug)]
