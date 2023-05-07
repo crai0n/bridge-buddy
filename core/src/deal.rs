@@ -6,10 +6,10 @@ use rand::{random, thread_rng};
 use strum::IntoEnumIterator;
 
 pub struct Deal {
-    deal_number: u8,
-    vulnerable: Vulnerable,
-    dealer: PlayerPosition,
-    hands: [Hand; 4],
+    pub deal_number: u8,
+    pub vulnerable: Vulnerable,
+    pub dealer: PlayerPosition,
+    pub hands: [Hand; 4],
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -88,64 +88,43 @@ impl Deal {
     }
 }
 
+impl Default for Deal {
+    fn default() -> Self {
+        Deal::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::Deal;
     use super::Vulnerable;
     use super::*;
+    use test_case::test_case;
 
-    #[test]
-    fn test_vulnerability() {
-        // Pattern follows the "BONE"-chart
-        assert_eq!(Deal::calculate_vulnerability(1), Vulnerable::None);
-        assert_eq!(Deal::calculate_vulnerability(2), Vulnerable::NorthSouth);
-        assert_eq!(Deal::calculate_vulnerability(3), Vulnerable::EastWest);
-        assert_eq!(Deal::calculate_vulnerability(4), Vulnerable::All);
+    #[test_case( 1, Vulnerable::None, PlayerPosition::North ; "Deal construction 1")]
+    #[test_case( 2, Vulnerable::NorthSouth, PlayerPosition::East ; "Deal construction 2 ")]
+    #[test_case( 3, Vulnerable::EastWest, PlayerPosition::South ; "Deal construction 3")]
+    #[test_case( 4, Vulnerable::All, PlayerPosition::West; "Deal construction 4")]
+    #[test_case( 5, Vulnerable::NorthSouth, PlayerPosition::North ; "Deal construction 5")]
+    #[test_case( 6, Vulnerable::EastWest, PlayerPosition::East ; "Deal construction 6")]
+    #[test_case( 7, Vulnerable::All, PlayerPosition::South ; "Deal construction 7")]
+    #[test_case( 8, Vulnerable::None, PlayerPosition::West; "Deal construction 8")]
+    #[test_case( 9, Vulnerable::EastWest, PlayerPosition::North ; "Deal construction 9")]
+    #[test_case(10, Vulnerable::All, PlayerPosition::East ; "Deal construction 10")]
+    #[test_case(11, Vulnerable::None, PlayerPosition::South ; "Deal construction 11")]
+    #[test_case(12, Vulnerable::NorthSouth, PlayerPosition::West ; "Deal construction 12")]
+    #[test_case(13, Vulnerable::All, PlayerPosition::North ; "Deal construction 13")]
+    #[test_case(14, Vulnerable::None, PlayerPosition::East ; "Deal construction 14")]
+    #[test_case(15, Vulnerable::NorthSouth, PlayerPosition::South ; "Deal construction 15")]
+    #[test_case(16, Vulnerable::EastWest, PlayerPosition::West ; "Deal construction 16")]
+    #[test_case(17, Vulnerable::None, PlayerPosition::North ; "Deal construction 17")]
+    #[test_case(18, Vulnerable::NorthSouth, PlayerPosition::East ; "Deal construction 18")]
 
-        assert_eq!(Deal::calculate_vulnerability(5), Vulnerable::NorthSouth);
-        assert_eq!(Deal::calculate_vulnerability(6), Vulnerable::EastWest);
-        assert_eq!(Deal::calculate_vulnerability(7), Vulnerable::All);
-        assert_eq!(Deal::calculate_vulnerability(8), Vulnerable::None);
-
-        assert_eq!(Deal::calculate_vulnerability(9), Vulnerable::EastWest);
-        assert_eq!(Deal::calculate_vulnerability(10), Vulnerable::All);
-        assert_eq!(Deal::calculate_vulnerability(11), Vulnerable::None);
-        assert_eq!(Deal::calculate_vulnerability(12), Vulnerable::NorthSouth);
-
-        assert_eq!(Deal::calculate_vulnerability(13), Vulnerable::All);
-        assert_eq!(Deal::calculate_vulnerability(14), Vulnerable::None);
-        assert_eq!(Deal::calculate_vulnerability(15), Vulnerable::NorthSouth);
-        assert_eq!(Deal::calculate_vulnerability(16), Vulnerable::EastWest);
-        // Pattern repeats after 16 hands
-        assert_eq!(Deal::calculate_vulnerability(17), Vulnerable::None);
-        assert_eq!(Deal::calculate_vulnerability(18), Vulnerable::NorthSouth);
-    }
-
-    #[test]
-    fn test_dealer() {
-        // Pattern follows the "BONE"-chart
-        assert_eq!(Deal::calculate_dealer(1), PlayerPosition::North);
-        assert_eq!(Deal::calculate_dealer(2), PlayerPosition::East);
-        assert_eq!(Deal::calculate_dealer(3), PlayerPosition::South);
-        assert_eq!(Deal::calculate_dealer(4), PlayerPosition::West);
-
-        assert_eq!(Deal::calculate_dealer(5), PlayerPosition::North);
-        assert_eq!(Deal::calculate_dealer(6), PlayerPosition::East);
-        assert_eq!(Deal::calculate_dealer(7), PlayerPosition::South);
-        assert_eq!(Deal::calculate_dealer(8), PlayerPosition::West);
-
-        assert_eq!(Deal::calculate_dealer(9), PlayerPosition::North);
-        assert_eq!(Deal::calculate_dealer(10), PlayerPosition::East);
-        assert_eq!(Deal::calculate_dealer(11), PlayerPosition::South);
-        assert_eq!(Deal::calculate_dealer(12), PlayerPosition::West);
-
-        assert_eq!(Deal::calculate_dealer(13), PlayerPosition::North);
-        assert_eq!(Deal::calculate_dealer(14), PlayerPosition::East);
-        assert_eq!(Deal::calculate_dealer(15), PlayerPosition::South);
-        assert_eq!(Deal::calculate_dealer(16), PlayerPosition::West);
-        // Pattern repeats after 16 hands
-        assert_eq!(Deal::calculate_dealer(17), PlayerPosition::North);
-        assert_eq!(Deal::calculate_dealer(18), PlayerPosition::East);
+    fn test_deal_construction(deal_number: u8, vulnerable: Vulnerable, dealer: PlayerPosition) {
+        let deal = Deal::new_from_number(deal_number);
+        assert_eq!(deal.dealer, dealer);
+        assert_eq!(deal.vulnerable, vulnerable);
+        assert_eq!(deal.hands[0].cards().count(), 13);
     }
 
     #[test]

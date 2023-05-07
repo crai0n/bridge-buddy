@@ -96,30 +96,16 @@ impl Hand {
         self.cards.iter()
     }
 
-    pub fn cards_rev(&self) -> impl DoubleEndedIterator<Item = &Card> {
-        self.cards().rev()
-    }
-
     pub fn cards_in(&self, suit: Suit) -> impl DoubleEndedIterator<Item = &Card> {
         self.cards.iter().filter(move |&card| card.suit == suit)
-    }
-
-    pub fn cards_in_rev(&self, suit: Suit) -> impl DoubleEndedIterator<Item = &Card> {
-        self.cards_in(suit).rev()
     }
 
     pub fn contains(&self, card: &Card) -> bool {
         self.cards.contains(card)
     }
 
-    pub fn high_card_points(&self) -> u8 {
-        self.cards.iter().fold(0, |acc, card| match card.denomination {
-            Denomination::Ace => acc + 4,
-            Denomination::King => acc + 3,
-            Denomination::Queen => acc + 2,
-            Denomination::Jack => acc + 1,
-            _ => acc,
-        })
+    pub fn length_in(&self, suit: Suit) -> u8 {
+        self.suit_lengths[&suit]
     }
 }
 
@@ -128,7 +114,7 @@ impl std::fmt::Display for Hand {
         for suit in Suit::iter().rev() {
             // Spades, then Hearts, ...
             write!(f, "{}: ", suit)?;
-            for card in self.cards_in_rev(suit) {
+            for card in self.cards_in(suit).rev() {
                 write!(f, "{}", card.denomination)?;
             }
             writeln!(f)?;
@@ -280,7 +266,6 @@ mod tests {
             suit: Diamonds,
             denomination: Ace
         }));
-        assert_eq!(hand.high_card_points(), 21);
         assert_eq!(hand.hand_type, HandType::SingleSuited(Suit::Spades));
         assert_eq!(format!("{}", hand), "♠: AKQJT98762\n♥: \n♦: AK\n♣: A\n");
         assert_eq!(hand, Hand::from_str("H:, ♠:9J7A2T6K8Q,♦: AK, C: A").unwrap())

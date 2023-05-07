@@ -1,3 +1,4 @@
 mod card;
-mod deal;
+pub mod deal;
+pub mod evaluator;
 mod hand;
