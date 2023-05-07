@@ -1,3 +1,3 @@
 mod card;
-mod hand;
 mod deal;
+mod hand;
