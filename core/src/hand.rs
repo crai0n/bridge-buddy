@@ -1,7 +1,6 @@
 use std::collections::BTreeMap;
 
 use crate::card::*;
-use itertools::Itertools;
 use strum::IntoEnumIterator;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -132,7 +131,7 @@ impl std::fmt::Display for Hand {
             for card in self.cards_in_rev(suit) {
                 write!(f, "{}", card.denomination)?;
             }
-            write!(f, "\n");
+            writeln!(f)?;
         }
         Ok(())
     }
