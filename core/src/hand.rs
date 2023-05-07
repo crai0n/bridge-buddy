@@ -19,6 +19,18 @@ pub enum HandType {
     Balanced(Option<Suit>), // might contain a 5-card suit
 }
 
+impl std::fmt::Display for HandType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::ThreeSuited(s1, s2, s3) => write!(f, "three-suited: {}, {} and {}", s1, s2, s3),
+            Self::TwoSuited(s1, s2) => write!(f, "two-suited: {} and {}", s1, s2),
+            Self::SingleSuited(s) => write!(f, "single-suited: {}", s),
+            Self::Balanced(Some(s)) => write!(f, "balanced with five cards in {}", s),
+            Self::Balanced(None) => write!(f, "balanced"),
+        }
+    }
+}
+
 impl Hand {
     pub fn new(mut cards: [Card; 13]) -> Self {
         cards.sort_unstable();
@@ -92,6 +104,10 @@ impl Hand {
 
     pub fn length_in(&self, suit: Suit) -> u8 {
         self.suit_lengths[&suit]
+    }
+
+    pub fn hand_type(&self) -> HandType {
+        self.hand_type.clone()
     }
 }
 

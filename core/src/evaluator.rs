@@ -5,15 +5,21 @@ use crate::{
 };
 use itertools::Itertools;
 use std::cmp::Ordering;
-use strum::IntoEnumIterator;
+use strum::{Display, IntoEnumIterator};
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Display, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SuitQuality {
+    #[strum(serialize = "weak")]
     Weak,
+    #[strum(serialize = "acceptable")]
     Acceptable,
+    #[strum(serialize = "good")]
     Good,
+    #[strum(serialize = "very good")]
     VeryGood,
+    #[strum(serialize = "almost standing")]
     AlmostStanding,
+    #[strum(serialize = "standing")]
     Standing,
 }
 
