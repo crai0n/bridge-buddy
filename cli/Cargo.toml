@@ -1,0 +1,11 @@
+[package]
+name = "bridge-buddy-cli"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bridge-buddy-core = { path = "../core" }
+clap = { version = "4.2.7", features = ["derive"] }
