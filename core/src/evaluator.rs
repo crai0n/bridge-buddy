@@ -456,6 +456,7 @@ mod test {
     use crate::evaluator::*;
     use crate::hand::Hand;
     use std::cmp::Ordering::*;
+    use std::str::FromStr;
     use test_case::test_case;
 
     #[test_case("S:T93,H:AKQ5,D:QJ,C:T542", 12.0 ; "Board 1.N")]

@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
 use crate::card::*;
+use crate::error::ParseError;
 use strum::IntoEnumIterator;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -77,21 +78,6 @@ impl Hand {
         }
     }
 
-    pub fn from_str(string: &str) -> Result<Hand, ()> {
-        let mut cards: Vec<Card> = vec![];
-        for cards_in_suit in string.split(['\n', ',']) {
-            let (suit, denominations) = cards_in_suit.split_once(':').ok_or(())?;
-            for denomination in denominations.trim().chars() {
-                let card = Card {
-                    denomination: Denomination::from_char(denomination)?,
-                    suit: Suit::from_char(suit.trim().chars().next().unwrap())?,
-                };
-                cards.push(card)
-            }
-        }
-        Ok(Hand::new(cards.try_into().unwrap()))
-    }
-
     pub fn cards(&self) -> impl DoubleEndedIterator<Item = &Card> {
         self.cards.iter()
     }
@@ -123,11 +109,43 @@ impl std::fmt::Display for Hand {
     }
 }
 
+impl std::str::FromStr for Hand {
+    type Err = ParseError;
+
+    fn from_str(string: &str) -> Result<Hand, Self::Err> {
+        let mut cards: Vec<Card> = vec![];
+        for cards_in_suit in string.trim().split(['\n', ',']) {
+            let (suit, denominations) = cards_in_suit.split_once(':').ok_or(ParseError {
+                cause: cards_in_suit.into(),
+                description: "missing colon between suit and cards",
+            })?;
+            for denomination in denominations.trim().chars() {
+                let card = Card {
+                    denomination: Denomination::from_char(denomination)?,
+                    suit: Suit::from_char(suit.trim().chars().next().unwrap())?,
+                };
+                if cards.contains(&card) {
+                    return Err(ParseError {
+                        cause: cards_in_suit.into(),
+                        description: "suit contains duplicate cards",
+                    });
+                }
+                cards.push(card);
+            }
+        }
+        Ok(Hand::new(cards.try_into().map_err(|_| ParseError {
+            cause: string.into(),
+            description: "invalid number of cards",
+        })?))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::Denomination::*;
     use super::Suit::*;
     use super::*;
+    use std::str::FromStr;
     use test_case::test_case;
 
     #[test]
@@ -266,7 +284,7 @@ mod tests {
             suit: Diamonds,
             denomination: Ace
         }));
-        assert_eq!(hand.hand_type, HandType::SingleSuited(Suit::Spades));
+        assert_eq!(hand.hand_type, HandType::SingleSuited(Spades));
         assert_eq!(format!("{}", hand), "♠: AKQJT98762\n♥: \n♦: AK\n♣: A\n");
         assert_eq!(hand, Hand::from_str("H:, ♠:9J7A2T6K8Q,♦: AK, C: A").unwrap())
     }

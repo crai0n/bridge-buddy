@@ -1,4 +1,6 @@
+use crate::error::ParseError;
 use strum::EnumIter;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Card {
     pub suit: Suit,
@@ -51,13 +53,18 @@ impl std::fmt::Display for Denomination {
 }
 
 impl Denomination {
-    pub fn from_char(char: char) -> Result<Denomination, ()> {
+    pub fn from_char(char: char) -> Result<Denomination, ParseError> {
         match char {
             'A' => Ok(Denomination::Ace),
+            'a' => Ok(Denomination::Ace),
             'K' => Ok(Denomination::King),
+            'k' => Ok(Denomination::King),
             'Q' => Ok(Denomination::Queen),
+            'q' => Ok(Denomination::Queen),
             'J' => Ok(Denomination::Jack),
+            'j' => Ok(Denomination::Jack),
             'T' => Ok(Denomination::Ten),
+            't' => Ok(Denomination::Ten),
             '9' => Ok(Denomination::Nine),
             '8' => Ok(Denomination::Eight),
             '7' => Ok(Denomination::Seven),
@@ -66,7 +73,10 @@ impl Denomination {
             '4' => Ok(Denomination::Four),
             '3' => Ok(Denomination::Three),
             '2' => Ok(Denomination::Two),
-            _ => Err(()),
+            c => Err(ParseError {
+                cause: c.into(),
+                description: "unknown denomination",
+            }),
         }
     }
 }
@@ -83,17 +93,24 @@ impl std::fmt::Display for Suit {
 }
 
 impl Suit {
-    pub fn from_char(char: char) -> Result<Suit, ()> {
+    pub fn from_char(char: char) -> Result<Suit, ParseError> {
         match char {
             'S' => Ok(Suit::Spades),
+            's' => Ok(Suit::Spades),
             '♠' => Ok(Suit::Spades),
             'H' => Ok(Suit::Hearts),
+            'h' => Ok(Suit::Hearts),
             '♥' => Ok(Suit::Hearts),
             'D' => Ok(Suit::Diamonds),
+            'd' => Ok(Suit::Diamonds),
             '♦' => Ok(Suit::Diamonds),
             'C' => Ok(Suit::Clubs),
+            'c' => Ok(Suit::Clubs),
             '♣' => Ok(Suit::Clubs),
-            _ => Err(()),
+            c => Err(ParseError {
+                cause: c.into(),
+                description: "unknown suit",
+            }),
         }
     }
 }
@@ -104,10 +121,15 @@ impl std::fmt::Display for Card {
     }
 }
 
-impl Card {
-    pub fn from_str(string: &str) -> Result<Card, ()> {
+impl std::str::FromStr for Card {
+    type Err = ParseError;
+
+    fn from_str(string: &str) -> Result<Card, Self::Err> {
         if string.len() != 2 {
-            return Err(());
+            return Err(ParseError {
+                cause: string.into(),
+                description: "cards consist of two characters",
+            });
         }
         let mut chars = string.chars();
         match Suit::from_char(chars.next().unwrap()) {
