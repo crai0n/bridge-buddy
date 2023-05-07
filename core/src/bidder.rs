@@ -64,7 +64,9 @@ impl BidLine {
             match bid {
                 Bid::Auxiliary(AuxiliaryBid::Pass) => continue,
                 Bid::Auxiliary(AuxiliaryBid::Double) => {
-                    state = ContractState::Doubled;
+                    if state == ContractState::Passed {
+                        state = ContractState::Doubled;
+                    } // FIXME!
                     continue;
                 }
                 Bid::Auxiliary(AuxiliaryBid::Redouble) => {
