@@ -535,7 +535,7 @@ mod test {
         assert_eq!(ForumDPlus2015Evaluator::adjustment_aces_and_tens(&hand), adjustment);
     }
 
-    #[test_case("S:Q764,H:T,D:AT753,C:AKQ", 0.0 ; "No ungarded honors")]
+    #[test_case("S:Q764,H:T,D:AT753,C:AKQ", 0.0 ; "No unguarded honors")]
     #[test_case("S:A,H:JT762,D:K64,C:J963", -1.0 ; "Downgrade A")]
     #[test_case("S:K,H:JT762,D:K64,C:J963", -1.0 ; "Downgrade K")]
     #[test_case("S:Q,H:JT762,D:K64,C:J963", -1.0 ; "Downgrade Q")]
