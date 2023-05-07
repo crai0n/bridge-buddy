@@ -549,10 +549,7 @@ mod test {
     #[test_case("S:AKJ9532,H:9,D:982,C:87", Some(Suit::Diamonds), &[], 3.0 ; "Board 1.W")]
     fn test_length_points(hand_str: &str, trump_suit: Option<Suit>, suits: &[Suit], lp: f64) {
         let hand = Hand::from_str(hand_str).unwrap();
-        assert_eq!(
-            ForumDPlus2015Evaluator::length_points(&hand, trump_suit, suits),
-            lp
-        );
+        assert_eq!(ForumDPlus2015Evaluator::length_points(&hand, trump_suit, suits), lp);
     }
 
     #[test_case("S:Q764,H:8,D:AT753,C:AKQ", Suit::Spades, 2.0 ; "2 V")]
