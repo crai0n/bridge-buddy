@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 pub use crate::card::*;
 use crate::error::ParseError;
 use strum::IntoEnumIterator;
@@ -7,7 +5,7 @@ use strum::IntoEnumIterator;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Hand {
     cards: [Card; 13],
-    suit_lengths: BTreeMap<Suit, u8>,
+    suit_lengths: [u8; 4],
     hand_type: HandType,
 }
 
@@ -48,40 +46,27 @@ impl Hand {
             (Suit::Spades, 0),
         ];
         for card in &cards {
-            match card.suit {
-                // suit_lengths is in "intuitive order" of Suits
-                Suit::Clubs => sorted_suit_lengths[0].1 += 1,
-                Suit::Diamonds => sorted_suit_lengths[1].1 += 1,
-                Suit::Hearts => sorted_suit_lengths[2].1 += 1,
-                Suit::Spades => sorted_suit_lengths[3].1 += 1,
-            };
+            sorted_suit_lengths[card.suit as usize].1 += 1;
         }
-        sorted_suit_lengths.sort_unstable_by(|x, y| x.1.cmp(&y.1)); //longest suit will be last
+        let suit_lengths = sorted_suit_lengths.map(|(_suit, length)| length);
 
-        // determine hand-type
-        let hand_type: HandType;
-        if sorted_suit_lengths[1].1 >= 4 {
-            // three suits with at least 4 cards is a three-suiter
-            hand_type = HandType::ThreeSuited(
-                sorted_suit_lengths[3].0,
-                sorted_suit_lengths[2].0,
-                sorted_suit_lengths[1].0,
-            );
-        } else if sorted_suit_lengths[3].1 >= 5 && sorted_suit_lengths[2].1 >= 4 {
-            // two-suiter
-            hand_type = HandType::TwoSuited(sorted_suit_lengths[3].0, sorted_suit_lengths[2].0);
-        } else if sorted_suit_lengths[3].1 >= 6 {
-            // one-suiter
-            hand_type = HandType::SingleSuited(sorted_suit_lengths[3].0);
-        } else {
-            // balanced
-            match sorted_suit_lengths[3].1 == 5 {
-                true => hand_type = HandType::Balanced(Some(sorted_suit_lengths[3].0)),
-                false => hand_type = HandType::Balanced(None),
+        sorted_suit_lengths.sort_unstable_by(|(suit, length), (other_suit, other_length)| {
+            // descending by length, if equal length: descending by suit value
+            if length == other_length {
+                other_suit.cmp(suit)
+            } else {
+                other_length.cmp(length)
             }
-        }
+        });
 
-        let suit_lengths = BTreeMap::<Suit, u8>::from(sorted_suit_lengths);
+        let hand_type = match sorted_suit_lengths {
+            // three suits with at least 4 cards (third cannot have more than four)
+            [(s1, _), (s2, _), (s3, 4), _] => HandType::ThreeSuited(s1, s2, s3),
+            [(s1, 5..), (s2, 4..), _, _] => HandType::TwoSuited(s1, s2),
+            [(s1, 6..), _, _, _] => HandType::SingleSuited(s1),
+            [(s1, 5..), _, _, _] => HandType::Balanced(Some(s1)),
+            _ => HandType::Balanced(None),
+        };
 
         Hand {
             cards,
@@ -103,7 +88,7 @@ impl Hand {
     }
 
     pub fn length_in(&self, suit: Suit) -> u8 {
-        self.suit_lengths[&suit]
+        self.suit_lengths[suit as usize]
     }
 
     pub fn hand_type(&self) -> HandType {
@@ -288,10 +273,7 @@ mod tests {
         );
         assert_eq!(hand.cards_in(Spades).count(), 10);
         assert_eq!(hand.cards_in(Hearts).count(), 0);
-        assert_eq!(
-            hand.suit_lengths,
-            BTreeMap::from([(Spades, 10), (Hearts, 0), (Diamonds, 2), (Clubs, 1)])
-        );
+        assert_eq!(hand.suit_lengths, [1, 2, 0, 10]);
         assert!(!hand.contains(&Card {
             suit: Diamonds,
             denomination: Queen
