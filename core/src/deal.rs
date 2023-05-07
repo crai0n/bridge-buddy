@@ -1,16 +1,15 @@
-use itertools::Itertools;
-use rand::{random, thread_rng};
-use rand::seq::SliceRandom;
-use strum::IntoEnumIterator;
-use crate::hand::Hand;
 use crate::card::*;
-
+use crate::hand::Hand;
+use itertools::Itertools;
+use rand::seq::SliceRandom;
+use rand::{random, thread_rng};
+use strum::IntoEnumIterator;
 
 pub struct Deal {
     deal_number: u8,
     vulnerable: Vulnerable,
     dealer: PlayerPosition,
-    hands: [Hand;4],
+    hands: [Hand; 4],
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -18,7 +17,7 @@ pub enum Vulnerable {
     None,
     NorthSouth,
     EastWest,
-    All
+    All,
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -28,7 +27,6 @@ pub enum PlayerPosition {
     South = 2,
     West = 3,
 }
-
 
 impl Deal {
     pub fn new() -> Deal {
@@ -40,7 +38,6 @@ impl Deal {
         // calculate vulnerability
         let vulnerable = Self::calculate_vulnerability(deal_number);
         let dealer = Self::calculate_dealer(deal_number);
-
 
         // create the cards for playing
         let mut cards_vec = Vec::<Card>::from_iter(
@@ -54,7 +51,6 @@ impl Deal {
         let mut rng = thread_rng();
         cards_vec.shuffle(&mut rng);
 
-
         //distribute cards
         let mut hands_vec = Vec::new();
         hands_vec.push(Hand::new(cards_vec.split_off(39).try_into().unwrap()));
@@ -62,13 +58,17 @@ impl Deal {
         hands_vec.push(Hand::new(cards_vec.split_off(13).try_into().unwrap()));
         hands_vec.push(Hand::new(cards_vec.try_into().unwrap()));
 
-        Deal {deal_number, vulnerable, dealer, hands: hands_vec.try_into().unwrap()}
-
+        Deal {
+            deal_number,
+            vulnerable,
+            dealer,
+            hands: hands_vec.try_into().unwrap(),
+        }
     }
 
     fn calculate_vulnerability(deal_number: u8) -> Vulnerable {
         let v = deal_number - 1;
-        let vul = v + v / 4 ;
+        let vul = v + v / 4;
         match vul % 4 {
             0 => Vulnerable::None,
             1 => Vulnerable::NorthSouth,
@@ -76,9 +76,9 @@ impl Deal {
             _ => Vulnerable::All,
         }
     }
-    
+
     fn calculate_dealer(deal_number: u8) -> PlayerPosition {
-        match (deal_number-1) % 4 {
+        match (deal_number - 1) % 4 {
             0 => PlayerPosition::North,
             1 => PlayerPosition::East,
             2 => PlayerPosition::South,
@@ -134,17 +134,17 @@ mod tests {
         assert_eq!(Deal::calculate_dealer(8), PlayerPosition::West);
 
         assert_eq!(Deal::calculate_dealer(9), PlayerPosition::North);
-        assert_eq!(Deal::calculate_dealer(10),PlayerPosition::East);
-        assert_eq!(Deal::calculate_dealer(11),PlayerPosition::South);
-        assert_eq!(Deal::calculate_dealer(12),PlayerPosition::West);
+        assert_eq!(Deal::calculate_dealer(10), PlayerPosition::East);
+        assert_eq!(Deal::calculate_dealer(11), PlayerPosition::South);
+        assert_eq!(Deal::calculate_dealer(12), PlayerPosition::West);
 
-        assert_eq!(Deal::calculate_dealer(13),PlayerPosition::North);
-        assert_eq!(Deal::calculate_dealer(14),PlayerPosition::East);
-        assert_eq!(Deal::calculate_dealer(15),PlayerPosition::South);
-        assert_eq!(Deal::calculate_dealer(16),PlayerPosition::West);
+        assert_eq!(Deal::calculate_dealer(13), PlayerPosition::North);
+        assert_eq!(Deal::calculate_dealer(14), PlayerPosition::East);
+        assert_eq!(Deal::calculate_dealer(15), PlayerPosition::South);
+        assert_eq!(Deal::calculate_dealer(16), PlayerPosition::West);
         // Pattern repeats after 16 hands
-        assert_eq!(Deal::calculate_dealer(17),PlayerPosition::North);
-        assert_eq!(Deal::calculate_dealer(18),PlayerPosition::East);
+        assert_eq!(Deal::calculate_dealer(17), PlayerPosition::North);
+        assert_eq!(Deal::calculate_dealer(18), PlayerPosition::East);
     }
 
     #[test]
@@ -195,7 +195,5 @@ mod tests {
                 denomination: Denomination::Jack
             }
         );
-
     }
-
 }
