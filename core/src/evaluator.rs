@@ -9,12 +9,12 @@ use strum::IntoEnumIterator;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SuitQuality {
-    Weak,           // less than acceptable
-    Acceptable,     // at least 3 HCP
-    Good,           // A or K with mid-values, or two of (A,K,D), or QJT
-    VeryGood,       // Two of (A,K,D) with mid-values, for 7-card-suits and longer, two of (A,K,D) are sufficient
-    AlmostStanding, // 4 honors of 5 (not AKQJ), for a 6-card-suit AKD is sufficient, for a 7-card-suit or longer KDB is sufficient
-    Standing,       // AKQJ, for 7-card-suits and longer AKQ are sufficient
+    Weak,           
+    Acceptable,     
+    Good,           
+    VeryGood,       
+    AlmostStanding, 
+    Standing,       
 }
 
 #[derive(Debug)]
@@ -71,6 +71,7 @@ impl ForumDPlus2015Evaluator {
         let cards = hand.cards_in(suit).map(|c| c.denomination).rev().collect_vec();
 
         //check for Standing Suit
+        // AKQJ, for 7-card-suits and longer AKQ are sufficient
         if (cards.len() >= 7 && cards[..3] == [Ace, King, Queen])
             || cards.len() >= 4 && cards[..4] == [Ace, King, Queen, Jack]
         {
@@ -78,6 +79,7 @@ impl ForumDPlus2015Evaluator {
         }
 
         //check for AlmostStanding Suit
+        // 4 honors of 5 (not AKQJ), for a 6-card-suit AKD is sufficient, for a 7-card-suit or longer KDB is sufficient
         if Self::count_honors_out_of_top(5, &cards) >= 4 // four of top five honors
             || (cards.len() >= 6 && cards[..3] == [Ace, King, Queen])
             || (cards.len() >= 7 && cards[..3] == [King, Queen, Jack])
@@ -86,6 +88,7 @@ impl ForumDPlus2015Evaluator {
         }
 
         //check for VeryGood Suit
+        // Two of (A,K,D) with mid-values, for 7-card-suits and longer, two of (A,K,D) are sufficient
         if Self::count_honors_out_of_top(3, &cards) >= 2 // two of the top three honors
             && (cards.contains(&Jack) || (cards.contains(&Ten) && cards.contains(&Nine)) || cards.len() >= 7)
             || cards.len() >= 3 && cards[..3] == [Ace, King, Queen]
@@ -96,6 +99,7 @@ impl ForumDPlus2015Evaluator {
         }
 
         // check for Good Suit
+        // A or K with mid-values, or two of (A,K,D), or QJT
         if ((cards.contains(&Ace) || cards.contains(&King))
             && (cards.contains(&Jack) || (cards.contains(&Ten) && cards.contains(&Nine))))
             || Self::count_honors_out_of_top(3, &cards) >= 2
@@ -105,11 +109,12 @@ impl ForumDPlus2015Evaluator {
         }
 
         // check for Acceptable Suit
+        // at least 3 HCP
         if Self::hcp_in(suit, hand) >= 3.0 {
             return SuitQuality::Acceptable;
         }
 
-        SuitQuality::Weak
+        SuitQuality::Weak // less than acceptable
     }
 
     fn count_honors_out_of_top(n: usize, cards: &[Denomination]) -> usize {
