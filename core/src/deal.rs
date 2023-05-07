@@ -52,11 +52,12 @@ impl Deal {
         cards_vec.shuffle(&mut rng);
 
         //distribute cards
-        let mut hands_vec = Vec::new();
-        hands_vec.push(Hand::new(cards_vec.split_off(39).try_into().unwrap()));
-        hands_vec.push(Hand::new(cards_vec.split_off(26).try_into().unwrap()));
-        hands_vec.push(Hand::new(cards_vec.split_off(13).try_into().unwrap()));
-        hands_vec.push(Hand::new(cards_vec.try_into().unwrap()));
+        let hands_vec = vec![
+            Hand::new(cards_vec.split_off(39).try_into().unwrap()),
+            Hand::new(cards_vec.split_off(26).try_into().unwrap()),
+            Hand::new(cards_vec.split_off(13).try_into().unwrap()),
+            Hand::new(cards_vec.try_into().unwrap()),
+        ];
 
         Deal {
             deal_number,
@@ -161,35 +162,35 @@ mod tests {
         cards.sort_unstable();
 
         assert_eq!(
-            cards.iter().nth(1).unwrap(),
+            cards.get(1).unwrap(),
             &Card {
                 suit: Suit::Clubs,
                 denomination: Denomination::Three
             }
         );
         assert_eq!(
-            cards.iter().nth(13).unwrap(),
+            cards.get(13).unwrap(),
             &Card {
                 suit: Suit::Diamonds,
                 denomination: Denomination::Two
             }
         );
         assert_eq!(
-            cards.iter().nth(17).unwrap(),
+            cards.get(17).unwrap(),
             &Card {
                 suit: Suit::Diamonds,
                 denomination: Denomination::Six
             }
         );
         assert_eq!(
-            cards.iter().nth(32).unwrap(),
+            cards.get(32).unwrap(),
             &Card {
                 suit: Suit::Hearts,
                 denomination: Denomination::Eight
             }
         );
         assert_eq!(
-            cards.iter().nth(48).unwrap(),
+            cards.get(48).unwrap(),
             &Card {
                 suit: Suit::Spades,
                 denomination: Denomination::Jack
