@@ -223,7 +223,7 @@ impl ForumDPlus2015Evaluator {
     // Playing Trick Count (PTC)
     //
     // There are different opinions on how exactly Playing Tricks are counted. The difference mostly stems from disagreements about the value of Jack and Ten, especially for suits with 4-6 cards.
-    // For now, we implement a basic approach, where we only evaluate at most the first three cards of the suit. We count winners for all additional cards
+    // For now, we implement a basic approach, where we only evaluate at most the first three cards of the suit.
     pub fn playing_trick_count(hand: &Hand) -> f64 {
         let mut acc = 0.0;
         for suit in Suit::iter() {
@@ -381,79 +381,51 @@ impl ForumDPlus2015Evaluator {
             >= 1
     }
 
-    pub fn stoppers_in(suit: Suit, hand: &Hand) -> f64 {
+    pub fn stops(suit: Suit, hand: &Hand, is_declarer: bool) -> bool {
         let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
         match card_vec.len() {
-            1 => {
-                if card_vec.contains(&Ace) {
-                    1.0
-                } else {
-                    0.0
-                }
-            }
-            2 => Self::two_card_stopper_table(&card_vec[..2].try_into().unwrap()),
-            3 => Self::three_card_stopper_table(&card_vec[..3].try_into().unwrap()),
-            _ => Self::four_card_stopper_table(&card_vec[..4].try_into().unwrap()),
+            0 => false,
+            1 => card_vec.contains(&Ace),
+            2 => Self::two_card_stopper_table(&card_vec[..2].try_into().unwrap(), is_declarer),
+            3 => Self::three_card_stopper_table(&card_vec[..3].try_into().unwrap(), is_declarer),
+            4 => Self::four_card_stopper_table(&card_vec[..4].try_into().unwrap(), is_declarer),
+            _ => true,
         }
     }
 
-    fn two_card_stopper_table(den: &[Denomination; 2]) -> f64 {
+    fn two_card_stopper_table(den: &[Denomination; 2], is_declarer: bool) -> bool {
         match den {
-            // table generated using test-method below
-            [Ace, King] => 2.0,
-            [Ace, _] => 1.0,
-            [King, Queen] => 1.0,
-            [King, _] => 0.5,
-            [Queen, Jack] => 0.0,
-            [_, _] => 0.0,
+            [Ace, _] => true,
+            [King, Queen] => true,
+            [King, _] => is_declarer,
+            [Queen, _] => is_declarer, // risky, but usually worth it
+            [_, _] => false,
         }
     }
 
-    fn three_card_stopper_table(den: &[Denomination; 3]) -> f64 {
+    fn three_card_stopper_table(den: &[Denomination; 3], is_declarer: bool) -> bool {
         match den {
-            // table generated using test-method below
-            [Ace, King, Queen] => 3.0,
-            [Ace, King, Jack] => 2.0,
-            [Ace, King, _] => 2.0,
-            [Ace, Queen, Jack] => 2.0,
-            [Ace, Queen, _] => 1.5,
-            [Ace, Jack, Ten] => 1.5, // this is probably debatable
-            [Ace, _, _] => 1.0,
-            // 3 cards headed by the king, 2 tricks max, lose 0.5 when missing the jack, lose 1 when missing the queen
-            [King, Queen, Jack] => 2.0,
-            [King, Queen, _] => 1.0,
-            [King, Jack, Ten] => 1.0, // this is probably debatable
-            [King, _, _] => 0.5,
-            // 3 cards headed by the queen: 1 trick max and lose 0.5 points for missing ten, lose 1 point for missing jack
-            [Queen, Jack, Ten] => 1.0,
-            [Queen, Jack, _] => 0.5,
-            [_, _, _] => 0.0,
+            [Ace, _, _] => true,
+            [King, Queen, _] => true,
+            [King, Jack, Ten] => true,
+            [King, _, _] => is_declarer,
+            [Queen, Jack, Ten] => true,
+            [Queen, _, _] => is_declarer,
+            [_, _, _] => false,
         }
     }
 
-    fn four_card_stopper_table(den: &[Denomination; 4]) -> f64 {
+    fn four_card_stopper_table(den: &[Denomination; 4], is_declarer: bool) -> bool {
         match den {
-            [Ace, King, Queen, Jack] => 4.0,
-            [Ace, King, Queen, _] => 3.0,
-            [Ace, King, Jack, Ten] => 3.0,
-            [Ace, King, _, _] => 2.0,
-            [Ace, Queen, Jack, Ten] => 3.0,
-            [Ace, Queen, Jack, _] => 2.0,
-            [Ace, Queen, _, _] => 1.5,
-            [Ace, Jack, Ten, Nine] => 1.5,
-            [Ace, Jack, _, _] => 1.0,
-            [Ace, _, _, _] => 1.0,
-            [King, Queen, Jack, Ten] => 3.0,
-            [King, Queen, Jack, _] => 2.0,
-            [King, Queen, Ten, _] => 1.5,
-            [King, Queen, _, _] => 1.0,
-            [King, Jack, Ten, Nine] => 1.0,
-            [King, Jack, Ten, _] => 1.0,
-            [King, _, _, _] => 0.5,
-            [Queen, Jack, Ten, Nine] => 2.0,
-            [Queen, Jack, Ten, _] => 1.0,
-            [Queen, Jack, Nine, _] => 0.5,
-            [_, _, _, _] => 0.0,
+            [Ace, _, _, _] => true,
+            [King, Queen, _, _] => true,
+            [King, Jack, Ten, _] => true,
+            [King, _, _, _] => is_declarer,
+            [Queen, Jack, Ten, _] => true,
+            [Queen, _, _, _] => is_declarer,
+            [Jack, Ten, _, _] => true, // risky, but usually worth it
+            [Jack, _, _, _] => is_declarer,
+            [_, _, _, _] => false,
         }
     }
 
@@ -644,15 +616,15 @@ mod test {
         assert_eq!(ForumDPlus2015Evaluator::honor_in(suit, &hand), exp)
     }
 
-    #[test_case("S:AKQJ96,H:T,D:A,C:Q9763", Suit::Diamonds, 1.0)]
-    #[test_case("S:AKQJ6,H:KT,D:A,C:Q9763", Suit::Spades, 4.0)]
-    #[test_case("S:AK96,H:96,D:AQ,C:QJT63", Suit::Spades, 2.0)]
-    #[test_case("S:AK96,H:96,D:AQ,C:QJT63", Suit::Hearts, 0.0)]
-    #[test_case("S:AK96,H:6,D:AQ8,C:QJT63", Suit::Diamonds, 1.5)]
-    #[test_case("S:AK96,H:96,D:AQ,C:QJT63", Suit::Clubs, 1.0)]
-    fn stoppers_in(hand_str: &str, suit: Suit, exp: f64) {
+    #[test_case("S:AKQJ96,H:T,D:A,C:Q9763", Suit::Diamonds, true, true)]
+    #[test_case("S:AKQJ6,H:KT,D:A,C:Q9763", Suit::Spades, true, true)]
+    #[test_case("S:AK96,H:96,D:AQ,C:QJT63", Suit::Spades, false, true)]
+    #[test_case("S:AK96,H:96,D:AQ,C:QJT63", Suit::Hearts, true, false)]
+    #[test_case("S:AK96,H:6,D:Q8,C:AQJ763", Suit::Diamonds, true, true)]
+    #[test_case("S:AK96,H:6,D:Q7,C:AQJ763", Suit::Diamonds, false, false)]
+    fn stops(hand_str: &str, suit: Suit, is_declarer: bool, exp: bool) {
         let hand = Hand::from_str(hand_str).unwrap();
-        assert_eq!(ForumDPlus2015Evaluator::stoppers_in(suit, &hand), exp)
+        assert_eq!(ForumDPlus2015Evaluator::stops(suit, &hand, is_declarer), exp)
     }
 
     #[test_case("S:AKT96,H:QT96,D:Q9,C:63", true)]
