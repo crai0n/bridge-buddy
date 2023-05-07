@@ -125,7 +125,7 @@ impl BidLine {
                 }
 
                 if self.bids.len() >= 3 {
-                    let index = self.bids.len() - 3 - 1;
+                    let index = self.bids.len() - 3;
 
                     matches!(
                         &self.bids[index..],
@@ -145,7 +145,7 @@ impl BidLine {
                     return true;
                 }
                 if self.bids.len() >= 3 {
-                    let index = self.bids.len() - 3 - 1;
+                    let index = self.bids.len() - 3;
 
                     matches!(
                         &self.bids[index..],
