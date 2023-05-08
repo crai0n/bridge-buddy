@@ -1,5 +1,5 @@
 use crate::error::ParseError;
-use strum::EnumIter;
+use strum::{Display, EnumIter};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Card {
@@ -7,49 +7,46 @@ pub struct Card {
     pub denomination: Denomination,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
+#[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
 pub enum Denomination {
+    #[strum(serialize = "2")]
     Two,
+    #[strum(serialize = "3")]
     Three,
+    #[strum(serialize = "4")]
     Four,
+    #[strum(serialize = "5")]
     Five,
+    #[strum(serialize = "6")]
     Six,
+    #[strum(serialize = "7")]
     Seven,
+    #[strum(serialize = "8")]
     Eight,
+    #[strum(serialize = "9")]
     Nine,
+    #[strum(serialize = "T")]
     Ten,
+    #[strum(serialize = "J")]
     Jack,
+    #[strum(serialize = "Q")]
     Queen,
+    #[strum(serialize = "K")]
     King,
+    #[strum(serialize = "A")]
     Ace,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
+#[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
 pub enum Suit {
+    #[strum(serialize = "♣")]
     Clubs = 0,
+    #[strum(serialize = "♦")]
     Diamonds = 1,
+    #[strum(serialize = "♥")]
     Hearts = 2,
+    #[strum(serialize = "♠")]
     Spades = 3,
-}
-
-impl std::fmt::Display for Denomination {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Denomination::Ace => write!(f, "A"),
-            Denomination::King => write!(f, "K"),
-            Denomination::Queen => write!(f, "Q"),
-            Denomination::Jack => write!(f, "J"),
-            Denomination::Ten => write!(f, "T"),
-            Denomination::Nine => write!(f, "9"),
-            Denomination::Eight => write!(f, "8"),
-            Denomination::Seven => write!(f, "7"),
-            Denomination::Six => write!(f, "6"),
-            Denomination::Five => write!(f, "5"),
-            Denomination::Four => write!(f, "4"),
-            Denomination::Three => write!(f, "3"),
-            Denomination::Two => write!(f, "2"),
-        }
-    }
 }
 
 impl Denomination {
@@ -77,17 +74,6 @@ impl Denomination {
                 cause: c.into(),
                 description: "unknown denomination",
             }),
-        }
-    }
-}
-
-impl std::fmt::Display for Suit {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Suit::Spades => write!(f, "♠"),
-            Suit::Hearts => write!(f, "♥"),
-            Suit::Diamonds => write!(f, "♦"),
-            Suit::Clubs => write!(f, "♣"),
         }
     }
 }
