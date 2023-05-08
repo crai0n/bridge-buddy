@@ -38,7 +38,7 @@ impl ForumDPlus2015Evaluator {
             .fold(0.0, |hcp, c| hcp + ForumDPlus2015Evaluator::card_value(c) as f64)
     }
 
-    fn card_value(card: &Card) -> u8 {
+    const fn card_value(card: &Card) -> u8 {
         match card.denomination {
             Ace => 4,
             King => 3,
@@ -265,7 +265,7 @@ impl ForumDPlus2015Evaluator {
         acc
     }
 
-    fn two_card_trick_table(den: &[Denomination; 2]) -> f64 {
+    const fn two_card_trick_table(den: &[Denomination; 2]) -> f64 {
         match den {
             // table generated using test-method below
             [Ace, King] => 2.0,
@@ -277,7 +277,7 @@ impl ForumDPlus2015Evaluator {
         }
     }
 
-    fn three_card_trick_table(den: &[Denomination; 3]) -> f64 {
+    const fn three_card_trick_table(den: &[Denomination; 3]) -> f64 {
         match den {
             // table generated using test-method below
             // 3 cards headed by the ace, 3 tricks max.
@@ -404,7 +404,7 @@ impl ForumDPlus2015Evaluator {
         }
     }
 
-    fn two_card_stopper_table(den: &[Denomination; 2], is_declarer: bool) -> bool {
+    const fn two_card_stopper_table(den: &[Denomination; 2], is_declarer: bool) -> bool {
         match den {
             [Ace, _] => true,
             [King, Queen] => true,
@@ -414,7 +414,7 @@ impl ForumDPlus2015Evaluator {
         }
     }
 
-    fn three_card_stopper_table(den: &[Denomination; 3], is_declarer: bool) -> bool {
+    const fn three_card_stopper_table(den: &[Denomination; 3], is_declarer: bool) -> bool {
         match den {
             [Ace, _, _] => true,
             [King, Queen, _] => true,
@@ -426,7 +426,7 @@ impl ForumDPlus2015Evaluator {
         }
     }
 
-    fn four_card_stopper_table(den: &[Denomination; 4], is_declarer: bool) -> bool {
+    const fn four_card_stopper_table(den: &[Denomination; 4], is_declarer: bool) -> bool {
         match den {
             [Ace, _, _, _] => true,
             [King, Queen, _, _] => true,
@@ -461,7 +461,6 @@ mod test {
     use crate::card::Suit;
     use crate::evaluator::*;
     use crate::hand::Hand;
-    use std::cmp::Ordering::*;
     use std::str::FromStr;
     use test_case::test_case;
 
@@ -650,272 +649,5 @@ mod test {
     fn rule_of_fifteen(hand_str: &str, exp: bool) {
         let hand = Hand::from_str(hand_str).unwrap();
         assert_eq!(ForumDPlus2015Evaluator::rule_of_fifteen(&hand), exp)
-    }
-    #[test]
-    #[ignore]
-    fn generate_two_card_hands() {
-        let cards = Denomination::iter().rev().collect::<Vec<_>>();
-        let cut = Denomination::Ten;
-        for i in 0..13 {
-            match cards[i].cmp(&cut) {
-                Less => continue,
-                Equal => {
-                    println!("[_, _,] => 0.0,");
-                }
-                Greater => {
-                    for j in i + 1..13 {
-                        match cards[j].cmp(&cut) {
-                            Less => continue,
-                            Equal => {
-                                println!("[{:?}, _] => 0.0,", cards[i]);
-                            }
-                            Greater => {
-                                println!("[{:?}, {:?}] => 0.0,", cards[i], cards[j]);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    #[test]
-    #[ignore]
-    fn generate_three_card_hands() {
-        let cards = Denomination::iter().rev().collect::<Vec<_>>();
-        let cut = Denomination::Nine;
-        for i in 0..13 {
-            match cards[i].cmp(&cut) {
-                Less => continue,
-                Equal => {
-                    println!("[_, _, _] => 0.0,");
-                }
-                Greater => {
-                    for j in i + 1..13 {
-                        match cards[j].cmp(&cut) {
-                            Less => continue,
-                            Equal => {
-                                println!("[{:?}, _, _] => 0.0,", cards[i]);
-                            }
-                            Greater => {
-                                for k in j + 1..13 {
-                                    match cards[k].cmp(&cut) {
-                                        Less => continue,
-                                        Equal => {
-                                            println!("[{:?}, {:?}, _] => 0.0,", cards[i], cards[j]);
-                                        }
-                                        Greater => {
-                                            println!("[{:?}, {:?}, {:?}] => 0.0,", cards[i], cards[j], cards[k]);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    #[test]
-    #[ignore]
-    fn generate_four_card_hands() {
-        let cards = Denomination::iter().rev().collect::<Vec<_>>();
-        let cut = Denomination::Eight;
-        for i in 0..13 {
-            match cards[i].cmp(&cut) {
-                Less => continue,
-                Equal => {
-                    println!("[_, _, _, _] => 0.0,");
-                }
-                Greater => {
-                    for j in i + 1..13 {
-                        match cards[j].cmp(&cut) {
-                            Less => continue,
-                            Equal => {
-                                println!("[{:?}, _, _, _] => 0.0,", cards[i]);
-                            }
-                            Greater => {
-                                for k in j + 1..13 {
-                                    match cards[k].cmp(&cut) {
-                                        Less => continue,
-                                        Equal => {
-                                            println!("[{:?}, {:?}, _, _] => 0.0,", cards[i], cards[j]);
-                                        }
-                                        Greater => {
-                                            for l in k + 1..13 {
-                                                match cards[l].cmp(&cut) {
-                                                    Less => continue,
-                                                    Equal => {
-                                                        println!(
-                                                            "[{:?}, {:?}, {:?}, _] => 0.0,",
-                                                            cards[i], cards[j], cards[k]
-                                                        );
-                                                    }
-                                                    Greater => {
-                                                        println!(
-                                                            "[{:?}, {:?}, {:?}, {:?}] => 0.0,",
-                                                            cards[i], cards[j], cards[k], cards[l]
-                                                        );
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    #[test]
-    #[ignore]
-    fn generate_five_card_hands() {
-        let cards = Denomination::iter().rev().collect::<Vec<_>>();
-        let cut = Denomination::Eight;
-        for i in 0..13 {
-            match cards[i].cmp(&cut) {
-                Less => continue,
-                Equal => {
-                    println!("[_, _, _, _, _] => 0.0,");
-                }
-                Greater => {
-                    for j in i + 1..13 {
-                        match cards[j].cmp(&cut) {
-                            Less => continue,
-                            Equal => {
-                                println!("[{:?}, _, _, _, _] => 0.0,", cards[i]);
-                            }
-                            Greater => {
-                                for k in j + 1..13 {
-                                    match cards[k].cmp(&cut) {
-                                        Less => continue,
-                                        Equal => {
-                                            println!("[{:?}, {:?}, _, _, _] => 0.0,", cards[i], cards[j]);
-                                        }
-                                        Greater => {
-                                            for l in k + 1..13 {
-                                                match cards[l].cmp(&cut) {
-                                                    Less => continue,
-                                                    Equal => {
-                                                        println!(
-                                                            "[{:?}, {:?}, {:?}, _, _] => 0.0,",
-                                                            cards[i], cards[j], cards[k]
-                                                        );
-                                                    }
-                                                    Greater => {
-                                                        for m in l + 1..13 {
-                                                            match cards[m].cmp(&cut) {
-                                                                Less => continue,
-                                                                Equal => {
-                                                                    println!(
-                                                                        "[{:?}, {:?}, {:?}, {:?}, _] => 0.0,",
-                                                                        cards[i], cards[j], cards[k], cards[l]
-                                                                    );
-                                                                }
-                                                                Greater => {
-                                                                    println!(
-                                                                        "[{:?}, {:?}, {:?}, {:?}, {:?}] => 0.0,",
-                                                                        cards[i],
-                                                                        cards[j],
-                                                                        cards[k],
-                                                                        cards[l],
-                                                                        cards[m]
-                                                                    );
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    #[test]
-    #[ignore]
-    fn generate_six_card_hands() {
-        let cards = Denomination::iter().rev().collect::<Vec<_>>();
-        let cut = Denomination::Eight;
-        for i in 0..13 {
-            match cards[i].cmp(&cut) {
-                Less => continue,
-                Equal => {
-                    println!("[_, _, _, _, _, _] => 0.0,");
-                }
-                Greater => {
-                    for j in i + 1..13 {
-                        match cards[j].cmp(&cut) {
-                            Less => continue,
-                            Equal => {
-                                println!("[{:?}, _, _, _, _, _] => 0.0,", cards[i]);
-                            }
-                            Greater => {
-                                for k in j + 1..13 {
-                                    match cards[k].cmp(&cut) {
-                                        Less => continue,
-                                        Equal => {
-                                            println!("[{:?}, {:?}, _, _, _, _] => 0.0,", cards[i], cards[j]);
-                                        }
-                                        Greater => {
-                                            for l in k + 1..13 {
-                                                match cards[l].cmp(&cut) {
-                                                    Less => continue,
-                                                    Equal => {
-                                                        println!(
-                                                            "[{:?}, {:?}, {:?}, _, _, _] => 0.0,",
-                                                            cards[i], cards[j], cards[k]
-                                                        );
-                                                    }
-                                                    Greater => {
-                                                        for m in l + 1..13 {
-                                                            match cards[m].cmp(&cut) {
-                                                                Less => continue,
-                                                                Equal => {
-                                                                    println!(
-                                                                        "[{:?}, {:?}, {:?}, {:?}, _, _] => 0.0,",
-                                                                        cards[i], cards[j], cards[k], cards[l]
-                                                                    );
-                                                                }
-                                                                Greater => {
-                                                                    for n in m + 1..13 {
-                                                                        match cards[n].cmp(&cut) {
-                                                                            Less => continue,
-                                                                            Equal => {
-                                                                                println!(
-                                                                                    "[{:?}, {:?}, {:?}, {:?}, {:?}, _] => 0.0,",
-                                                                                    cards[i], cards[j], cards[k], cards[l], cards[m]);
-                                                                            }
-                                                                            Greater => {
-                                                                                println!("[{:?}, {:?}, {:?}, {:?}, {:?}, {:?}] => 0.0,",
-                                                                                    cards[i], cards[j], cards[k], cards[l], cards[m], cards[n]);
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 }
