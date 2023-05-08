@@ -3,9 +3,6 @@ use strum::{Display, EnumString};
 
 use crate::card::Suit;
 
-
-
-
 #[derive(Debug, Display, EnumString, PartialOrd, Ord, PartialEq, Eq, Clone, Copy)]
 pub enum ContractLevel {
     #[strum(to_string = "1")]
@@ -152,7 +149,6 @@ impl std::str::FromStr for Contract {
     }
 }
 
-
 #[cfg(test)]
 mod test {
     use crate::contract::*;
@@ -231,6 +227,13 @@ mod test {
     #[test_case("3d", ContractLevel::Three, ContractDenomination::Trump(Suit::Diamonds), ContractState::Passed; "Diamonds")]
     #[test_case("4♥X",ContractLevel::Four, ContractDenomination::Trump(Suit::Hearts), ContractState::Doubled; "Hearts")]
     fn contract_from_str(str: &str, level: ContractLevel, denomination: ContractDenomination, state: ContractState) {
-        assert_eq!(Contract::from_str(str).unwrap(), Contract{ level, denomination, state })
+        assert_eq!(
+            Contract::from_str(str).unwrap(),
+            Contract {
+                level,
+                denomination,
+                state
+            }
+        )
     }
 }

@@ -7,8 +7,6 @@ use crate::contract::*;
 
 use crate::deal::PlayerPosition;
 
-
-
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ContractBid {
     level: ContractLevel,
@@ -144,12 +142,9 @@ impl BidLine {
     }
 }
 
-
-
 #[cfg(test)]
 mod test {
     // use crate::contract::*;
     // use std::{cmp::Ordering, str::FromStr};
     // use test_case::test_case;
-
 }
