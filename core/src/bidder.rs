@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 use crate::deal::PlayerPosition;
 
 use crate::card::Suit;
@@ -39,7 +41,7 @@ pub struct ContractBid {
     denomination: ContractDenomination,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum AuxiliaryBid {
     Pass,
     Double,
@@ -59,32 +61,31 @@ pub struct BidLine {
 
 impl BidLine {
     pub fn implied_contract(&self) -> Option<Contract> {
-        let mut state = ContractState::Passed;
-        for bid in self.bids.iter().rev() {
-            match bid {
-                Bid::Auxiliary(AuxiliaryBid::Pass) => continue,
-                Bid::Auxiliary(AuxiliaryBid::Double) => {
-                    if state == ContractState::Passed {
-                        state = ContractState::Doubled;
-                    } // FIXME!
-                    continue;
-                }
-                Bid::Auxiliary(AuxiliaryBid::Redouble) => {
-                    state = ContractState::Redoubled;
-                    continue;
-                }
-                Bid::Contract(a) => {
-                    let level = a.level;
-                    let denomination = a.denomination;
-                    return Some(Contract {
-                        level,
-                        denomination,
-                        state,
-                    });
-                }
-            }
+        let mut bid_iter = self.bids.iter().rev().peekable();
+        let state = match bid_iter
+            .peeking_take_while(|x| matches!(x, Bid::Auxiliary(_)))
+            .map(|x| match x {
+                Bid::Auxiliary(aux_bid) => aux_bid,
+                _ => unreachable!(),
+            })
+            .max()
+        {
+            Some(AuxiliaryBid::Double) => ContractState::Doubled,
+            Some(AuxiliaryBid::Redouble) => ContractState::Redoubled,
+            _ => ContractState::Passed,
+        };
+
+        if let Some(Bid::Contract(contract_bid)) = bid_iter.next() {
+            let level = contract_bid.level;
+            let denomination = contract_bid.denomination;
+            Some(Contract {
+                level,
+                denomination,
+                state,
+            })
+        } else {
+            None // if all players pass, there is no contract
         }
-        None // if all players pass, there is no contract
     }
 
     pub fn implied_declarer(&self) -> Option<PlayerPosition> {
@@ -162,10 +163,9 @@ impl BidLine {
                 }
             }
             Bid::Contract(b) => {
-                // a contract bid is possible if it is higher than the currently implied contract
-                if let Some(implied_contract) = self.implied_contract() {
-                    // there is an implied contract, so compare
-                    b.level > implied_contract.level || b.denomination > implied_contract.denomination
+                if let Some(Bid::Contract(last)) = self.bids.iter().filter(|x| matches!(x, Bid::Contract(_))).last() {
+                    // a contract bid is possible if it is higher than the last contract bid
+                    &b > last
                 } else {
                     // no contract implied yet, you can start the bidding
                     true
