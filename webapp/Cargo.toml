@@ -9,3 +9,4 @@ publish.workspace = true
 [dependencies]
 yew = { version = "0.20.0", features = ["csr"] }
 getrandom = { version = "0.2", features = ["js"] }
+bridge-buddy-core = { path = "../core" }
