@@ -121,7 +121,7 @@ impl Display for BidLine {
         // Headline
         writeln!(f, " North  East South  West")?;
 
-        let mut bid_iter = self.bids.iter().map(|x| format!("{:>6}", x));
+        let bid_iter = self.bids.iter().map(|x| format!("{:>6}", x));
         //first line
         let mut line_str = String::with_capacity(24);
         let mut i;
@@ -143,7 +143,7 @@ impl Display for BidLine {
             }
         }
 
-        while let Some(bid_str) = bid_iter.next() {
+        for bid_str in bid_iter {
             i += 1;
             line_str += &bid_str;
             if i % 4 == 0 {
