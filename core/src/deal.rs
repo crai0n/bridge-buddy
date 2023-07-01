@@ -3,6 +3,7 @@ use crate::hand::Hand;
 use itertools::Itertools;
 use rand::seq::SliceRandom;
 use rand::{random, thread_rng};
+use std::ops;
 use strum::IntoEnumIterator;
 
 pub struct Deal {
@@ -20,12 +21,25 @@ pub enum Vulnerable {
     All,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub enum PlayerPosition {
     North = 0,
     East = 1,
     South = 2,
     West = 3,
+}
+
+impl ops::Add<usize> for PlayerPosition {
+    type Output = PlayerPosition;
+
+    fn add(self, rhs: usize) -> PlayerPosition {
+        match (self as usize + rhs) % 4 {
+            0 => PlayerPosition::North,
+            1 => PlayerPosition::East,
+            2 => PlayerPosition::South,
+            _ => PlayerPosition::West,
+        }
+    }
 }
 
 impl Deal {
