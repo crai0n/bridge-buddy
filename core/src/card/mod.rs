@@ -43,60 +43,61 @@ impl Card {
 
 #[cfg(test)]
 mod tests {
+    use super::Card;
     use super::Denomination::*;
     use super::Suit::*;
     use super::*;
+    use std::cmp::Ordering;
+    use std::str::FromStr;
+    use test_case::test_case;
 
-    #[test]
-    fn test_comparisons() {
-        assert_eq!(
-            Card {
-                denomination: Two,
-                suit: Spades
-            },
-            Card {
-                denomination: Two,
-                suit: Spades
-            }
-        );
-        assert_ne!(
-            Card {
-                denomination: Two,
-                suit: Diamonds
-            },
-            Card {
-                denomination: Two,
-                suit: Spades
-            }
-        );
-        assert!(Clubs < Diamonds);
-        assert!(King < Ace);
+    #[test_case("HQ", Hearts, Queen)]
+    #[test_case("SK", Spades, King)]
+    #[test_case("DA", Diamonds, Ace)]
+    #[test_case("C9", Clubs, Nine)]
+    #[test_case("h7", Hearts, Seven)]
+    #[test_case("c5", Clubs, Five)]
+    #[test_case("dJ", Diamonds, Jack)]
+    #[test_case("Hj", Hearts, Jack)]
+    fn parsing(input: &str, suit: Suit, denomination: Denomination) {
+        assert_eq!(Card::from_str(input).unwrap(), Card { suit, denomination });
     }
 
-    #[test]
-    fn test_card_display() {
-        let nine_of_clubs = Card {
-            denomination: Nine,
-            suit: Clubs,
-        };
-        assert_eq!(format!("{}", nine_of_clubs), "♣9");
+    #[test_case("h7", "hA", Ordering::Less)]
+    #[test_case("s7", "hK", Ordering::Greater)]
+    #[test_case("s7", "s7", Ordering::Equal)]
+    fn total_ordering(left: &str, right: &str, expected: Ordering) {
+        let left_card = Card::from_str(left).unwrap();
+        let right_card = Card::from_str(right).unwrap();
+        assert_eq!(left_card.cmp(&right_card), expected);
+    }
 
-        let five_of_diamonds = Card {
-            denomination: Five,
-            suit: Diamonds,
-        };
-        assert_eq!(format!("{}", five_of_diamonds), "♦5");
+    #[test_case(Nine, Clubs, "♣9")]
+    #[test_case(Five, Diamonds, "♦5")]
+    #[test_case(Queen, Hearts, "♥Q")]
+    #[test_case(Ace, Spades, "♠A")]
+    fn display(denomination: Denomination, suit: Suit, expected: &str) {
+        let card = Card { suit, denomination };
+        assert_eq!(format!("{}", card), expected);
+    }
 
-        let queen_of_hearts = Card {
-            denomination: Queen,
-            suit: Hearts,
-        };
-        assert_eq!(format!("{}", queen_of_hearts), "♥Q");
-
-        let ace_of_spades = Card {
-            denomination: Ace,
-            suit: Spades,
-        };
-        assert_eq!(format!("{}", ace_of_spades), "♠A");
+    #[test_case(Spades, Ace)]
+    #[test_case(Hearts, King)]
+    #[test_case(Diamonds, Queen)]
+    #[test_case(Clubs, Jack)]
+    #[test_case(Hearts, Ten)]
+    #[test_case(Diamonds, Nine)]
+    #[test_case(Clubs, Eight)]
+    #[test_case(Spades, Seven)]
+    #[test_case(Diamonds, Six)]
+    #[test_case(Clubs, Five)]
+    #[test_case(Spades, Four)]
+    #[test_case(Hearts, Three)]
+    #[test_case(Clubs, Two)]
+    fn round_trip(suit: Suit, denomination: Denomination) {
+        let card = Card { suit, denomination };
+        let string = format!("{}", card);
+        let new_card = Card::from_str(&string).unwrap();
+        assert_eq!(card, new_card);
     }
 }

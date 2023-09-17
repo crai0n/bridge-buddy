@@ -59,3 +59,67 @@ impl Denomination {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Denomination::*;
+    use crate::card::Denomination;
+    use test_case::test_case;
+
+    #[test_case(King, Ace; "King and Ace")]
+    #[test_case(Ten, Queen; "Ten and Queen")]
+    #[test_case(Eight, Jack; "Eight and Jack")]
+    #[test_case(Two, Ten; "Two and Ten")]
+    fn relative_ranking(lower: Denomination, higher: Denomination) {
+        assert!(lower < higher);
+    }
+
+    #[test_case('A', Ace; "A is Ace")]
+    #[test_case('k', King; "k is King")]
+    #[test_case('q', Queen; "q is Queen")]
+    #[test_case('J', Jack; "J is Jack")]
+    #[test_case('t', Ten; "t is Ten")]
+    #[test_case('9', Nine; "9 is Nine")]
+    #[test_case('7', Seven; "7 is Seven")]
+    #[test_case('3', Three; "3 is Three")]
+    fn parsing(input: char, expected: Denomination) {
+        assert_eq!(Denomination::from_char(input).unwrap(), expected);
+    }
+
+    #[test_case(Ace, "A")]
+    #[test_case(King, "K")]
+    #[test_case(Queen, "Q")]
+    #[test_case(Jack, "J")]
+    #[test_case(Ten, "T")]
+    #[test_case(Nine, "9")]
+    #[test_case(Eight, "8")]
+    #[test_case(Seven, "7")]
+    #[test_case(Six, "6")]
+    #[test_case(Five, "5")]
+    #[test_case(Four, "4")]
+    #[test_case(Three, "3")]
+    #[test_case(Two, "2")]
+    fn display(denomination: Denomination, expected: &str) {
+        assert_eq!(format!("{}", denomination), expected);
+    }
+
+    #[test_case(Ace)]
+    #[test_case(King)]
+    #[test_case(Queen)]
+    #[test_case(Jack)]
+    #[test_case(Ten)]
+    #[test_case(Nine)]
+    #[test_case(Eight)]
+    #[test_case(Seven)]
+    #[test_case(Six)]
+    #[test_case(Five)]
+    #[test_case(Four)]
+    #[test_case(Three)]
+    #[test_case(Two)]
+    fn round_trip(denomination: Denomination) {
+        let string = format!("{}", denomination);
+        let den_char = string.chars().next().unwrap();
+        let new_denomination = Denomination::from_char(den_char).unwrap();
+        assert_eq!(denomination, new_denomination);
+    }
+}

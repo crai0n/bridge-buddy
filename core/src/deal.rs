@@ -67,10 +67,10 @@ impl Deal {
 
         //distribute cards
         let hands_vec = vec![
-            Hand::new(cards_vec.split_off(39).try_into().unwrap()),
-            Hand::new(cards_vec.split_off(26).try_into().unwrap()),
-            Hand::new(cards_vec.split_off(13).try_into().unwrap()),
-            Hand::new(cards_vec.try_into().unwrap()),
+            Hand::from_cards(cards_vec.split_off(39).try_into().unwrap()),
+            Hand::from_cards(cards_vec.split_off(26).try_into().unwrap()),
+            Hand::from_cards(cards_vec.split_off(13).try_into().unwrap()),
+            Hand::from_cards(cards_vec.try_into().unwrap()),
         ];
 
         Deal {
