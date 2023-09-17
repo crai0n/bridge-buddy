@@ -1,3 +1,5 @@
+pub use crate::card::Denomination;
+pub use crate::card::Suit;
 pub use crate::card::*;
 use crate::error::ParseError;
 use strum::IntoEnumIterator;
@@ -143,9 +145,10 @@ impl std::str::FromStr for Hand {
 
 #[cfg(test)]
 mod tests {
-    use super::Denomination::*;
-    use super::Suit::*;
-    use super::*;
+    use super::Card;
+    use super::{Hand, HandType};
+    use crate::card::Denomination::*;
+    use crate::card::Suit::*;
     use std::str::FromStr;
     use test_case::test_case;
 
