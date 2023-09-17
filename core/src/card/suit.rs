@@ -75,8 +75,27 @@ mod tests {
     #[test_case('T')]
     #[test_case('.')]
     #[test_case('o')]
-    #[should_panic()]
+    #[should_panic(expected = "unknown suit")]
     fn fail_for_unknown_letters(input: char) {
         Suit::from_char(input).unwrap();
+    }
+
+    #[test_case(Clubs, "♣")]
+    #[test_case(Diamonds, "♦")]
+    #[test_case(Hearts, "♥")]
+    #[test_case(Spades, "♠")]
+    fn display(suit: Suit, expected: &str) {
+        assert_eq!(format!("{}", suit), expected)
+    }
+
+    #[test_case(Spades)]
+    #[test_case(Hearts)]
+    #[test_case(Diamonds)]
+    #[test_case(Clubs)]
+    fn round_trip(suit: Suit) {
+        let string = format!("{}", suit);
+        let suit_char = string.chars().next().unwrap();
+        let new_suit = Suit::from_char(suit_char).unwrap();
+        assert_eq!(suit, new_suit);
     }
 }
