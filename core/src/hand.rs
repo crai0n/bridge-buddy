@@ -1,5 +1,5 @@
 pub use crate::card::{Card, Denomination, Suit};
-use crate::error::ParseError;
+use crate::error::BBError;
 use strum::IntoEnumIterator;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -91,32 +91,31 @@ impl std::fmt::Display for Hand {
 }
 
 impl std::str::FromStr for Hand {
-    type Err = ParseError;
+    type Err = BBError;
 
     fn from_str(string: &str) -> Result<Hand, Self::Err> {
         let mut cards: Vec<Card> = vec![];
         for cards_in_suit in string.trim().split(['\n', ',']) {
-            let (suit, denominations) = cards_in_suit.split_once(':').ok_or(ParseError {
-                cause: cards_in_suit.into(),
-                description: "missing colon between suit and cards",
-            })?;
+            let (suit, denominations) = cards_in_suit.split_once(':').ok_or(BBError::ParseError(
+                cards_in_suit.into(),
+                "missing colon between suit and cards",
+            ))?;
             for denomination in denominations.trim().chars() {
                 let card = Card {
                     denomination: Denomination::from_char(denomination)?,
                     suit: Suit::from_char(suit.trim().chars().next().unwrap())?,
                 };
                 if cards.contains(&card) {
-                    return Err(ParseError {
-                        cause: cards_in_suit.into(),
-                        description: "suit contains duplicate cards",
-                    });
+                    return Err(BBError::ParseError(
+                        cards_in_suit.into(),
+                        "suit contains duplicate cards",
+                    ));
                 }
                 cards.push(card);
             }
         }
-        Ok(Hand::from_cards(cards.try_into().map_err(|_| ParseError {
-            cause: string.into(),
-            description: "invalid number of cards",
+        Ok(Hand::from_cards(cards.try_into().map_err(|_| {
+            BBError::ParseError(string.into(), "invalid number of cards")
         })?))
     }
 }

@@ -1,4 +1,4 @@
-use crate::error::ParseError;
+use crate::error::BBError;
 use strum::{Display, EnumString};
 
 use crate::card::Suit;
@@ -56,7 +56,7 @@ impl std::fmt::Display for ContractDenomination {
 }
 
 impl std::str::FromStr for ContractDenomination {
-    type Err = ParseError;
+    type Err = BBError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.chars().count() == 1 {
@@ -68,10 +68,7 @@ impl std::str::FromStr for ContractDenomination {
         } else {
             match s {
                 "SA" | "NT" => Ok(ContractDenomination::NoTrump),
-                _ => Err(ParseError {
-                    cause: s.into(),
-                    description: "unknown denomination",
-                }),
+                _ => Err(BBError::ParseError(s.into(), "unknown contract")),
             }
         }
     }
@@ -92,26 +89,18 @@ impl std::fmt::Display for Contract {
 }
 
 impl std::str::FromStr for Contract {
-    type Err = ParseError;
+    type Err = BBError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let len = s.len();
 
         if len < 2 {
-            return Err(ParseError {
-                cause: s.into(),
-                description: "string too short",
-            });
+            return Err(BBError::ParseError(s.into(), "string too short"));
         }
 
         let level = match ContractLevel::from_str(&s[..1]) {
             Ok(l) => l,
-            Err(_) => {
-                return Err(ParseError {
-                    cause: s.into(),
-                    description: "unknown level",
-                })
-            }
+            Err(_) => return Err(BBError::ParseError(s.into(), "unknown level")),
         };
 
         let count_doubles = s.chars().rev().take_while(|x| *x == 'x' || *x == 'X').count();
@@ -120,12 +109,7 @@ impl std::str::FromStr for Contract {
             0 => ContractState::Passed,
             1 => ContractState::Doubled,
             2 => ContractState::Redoubled,
-            _ => {
-                return Err(ParseError {
-                    cause: s.into(),
-                    description: "unknown contract state",
-                })
-            }
+            _ => return Err(BBError::ParseError(s.into(), "unknown contract state")),
         };
 
         // rest of the string must be the denomination
@@ -133,12 +117,7 @@ impl std::str::FromStr for Contract {
 
         let denomination = match ContractDenomination::from_str(den_str) {
             Ok(d) => d,
-            Err(_) => {
-                return Err(ParseError {
-                    cause: s.into(),
-                    description: "unknown contract denomination",
-                })
-            }
+            Err(_) => return Err(BBError::ParseError(s.into(), "unknown contract denomination")),
         };
 
         Ok(Contract {

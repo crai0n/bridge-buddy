@@ -1,4 +1,4 @@
-use crate::error::ParseError;
+use crate::error::BBError;
 pub use denomination::Denomination;
 pub use suit::Suit;
 
@@ -18,7 +18,7 @@ impl std::fmt::Display for Card {
 }
 
 impl std::str::FromStr for Card {
-    type Err = ParseError;
+    type Err = BBError;
 
     fn from_str(string: &str) -> Result<Card, Self::Err> {
         let [s, d] = Self::split_string(string)?;
@@ -29,12 +29,12 @@ impl std::str::FromStr for Card {
 }
 
 impl Card {
-    fn split_string(string: &str) -> Result<[char; 2], ParseError> {
+    fn split_string(string: &str) -> Result<[char; 2], BBError> {
         let chars = string.chars().collect::<Vec<char>>();
-        chars.try_into().or(Err(ParseError {
-            cause: string.into(),
-            description: "cards consist of two characters",
-        }))
+        chars.try_into().or(Err(BBError::ParseError(
+            string.into(),
+            "cards consist of two characters",
+        )))
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::error::ParseError;
+use crate::error::BBError;
 use strum::{Display, EnumIter};
 
 #[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
@@ -32,7 +32,7 @@ pub enum Denomination {
 }
 
 impl Denomination {
-    pub fn from_char(char: char) -> Result<Denomination, ParseError> {
+    pub fn from_char(char: char) -> Result<Denomination, BBError> {
         match char {
             'A' => Ok(Denomination::Ace),
             'a' => Ok(Denomination::Ace),
@@ -52,10 +52,7 @@ impl Denomination {
             '4' => Ok(Denomination::Four),
             '3' => Ok(Denomination::Three),
             '2' => Ok(Denomination::Two),
-            c => Err(ParseError {
-                cause: c.into(),
-                description: "unknown denomination",
-            }),
+            c => Err(BBError::ParseError(c.into(), "unknown denomination")),
         }
     }
 }

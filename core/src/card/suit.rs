@@ -1,4 +1,4 @@
-use crate::error::ParseError;
+use crate::error::BBError;
 use strum::{Display, EnumIter};
 
 #[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
@@ -14,7 +14,7 @@ pub enum Suit {
 }
 
 impl Suit {
-    pub fn from_char(char: char) -> Result<Suit, ParseError> {
+    pub fn from_char(char: char) -> Result<Suit, BBError> {
         match char {
             'S' => Ok(Suit::Spades),
             's' => Ok(Suit::Spades),
@@ -28,10 +28,7 @@ impl Suit {
             'C' => Ok(Suit::Clubs),
             'c' => Ok(Suit::Clubs),
             '♣' => Ok(Suit::Clubs),
-            c => Err(ParseError {
-                cause: c.into(),
-                description: "unknown suit",
-            }),
+            c => Err(BBError::ParseError(c.into(), "unknown suit")),
         }
     }
 }
