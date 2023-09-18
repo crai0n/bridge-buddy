@@ -28,7 +28,7 @@ impl Suit {
             'C' => Ok(Suit::Clubs),
             'c' => Ok(Suit::Clubs),
             '♣' => Ok(Suit::Clubs),
-            c => Err(BBError::ParseError(c.into(), "unknown suit")),
+            c => Err(BBError::UnknownSuit(c.into())),
         }
     }
 }
@@ -37,6 +37,7 @@ impl Suit {
 mod tests {
     use super::Suit::*;
     use crate::card::Suit;
+    use crate::error::BBError;
     use test_case::test_case;
 
     #[test]
@@ -72,9 +73,11 @@ mod tests {
     #[test_case('T')]
     #[test_case('.')]
     #[test_case('o')]
-    #[should_panic(expected = "unknown suit")]
     fn fail_for_unknown_letters(input: char) {
-        Suit::from_char(input).unwrap();
+        assert_eq!(
+            Suit::from_char(input).unwrap_err(),
+            BBError::UnknownSuit(input.try_into().unwrap())
+        );
     }
 
     #[test_case(Clubs, "♣")]

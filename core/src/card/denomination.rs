@@ -52,7 +52,7 @@ impl Denomination {
             '4' => Ok(Denomination::Four),
             '3' => Ok(Denomination::Three),
             '2' => Ok(Denomination::Two),
-            c => Err(BBError::ParseError(c.into(), "unknown denomination")),
+            c => Err(BBError::UnknownDenomination(c.into())),
         }
     }
 }
@@ -61,6 +61,7 @@ impl Denomination {
 mod tests {
     use super::Denomination::*;
     use crate::card::Denomination;
+    use crate::error::BBError;
     use test_case::test_case;
 
     #[test_case(King, Ace; "King and Ace")]
@@ -118,5 +119,17 @@ mod tests {
         let den_char = string.chars().next().unwrap();
         let new_denomination = Denomination::from_char(den_char).unwrap();
         assert_eq!(denomination, new_denomination);
+    }
+
+    #[test_case('.')]
+    #[test_case('C')]
+    #[test_case('H')]
+    #[test_case('s')]
+    #[test_case('d')]
+    fn fail_misc_characters(input: char) {
+        assert_eq!(
+            Denomination::from_char(input).unwrap_err(),
+            BBError::UnknownDenomination(input.try_into().unwrap())
+        )
     }
 }

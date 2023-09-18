@@ -1,7 +1,7 @@
 use crate::card::Card;
 use std::fmt::{Debug, Display, Formatter};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ParseError {
     pub(crate) cause: String,
     pub(crate) description: &'static str,
@@ -13,10 +13,12 @@ impl Display for ParseError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum BBError {
     ParseError(String, &'static str),
     NotUnique(Card),
+    UnknownSuit(String),
+    UnknownDenomination(String),
 }
 
 impl Display for BBError {
@@ -24,6 +26,8 @@ impl Display for BBError {
         match &self {
             BBError::ParseError(cause, description) => writeln!(f, "{}: {}", description, cause),
             BBError::NotUnique(card) => writeln!(f, "card not unique: {}", card),
+            BBError::UnknownDenomination(d) => writeln!(f, "unknown denomination: {}", d),
+            BBError::UnknownSuit(s) => writeln!(f, "unknown suit: {}", s),
         }
     }
 }
