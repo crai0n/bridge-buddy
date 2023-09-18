@@ -1,6 +1,4 @@
-pub use crate::card::Denomination;
-pub use crate::card::Suit;
-pub use crate::card::*;
+pub use crate::card::{Card, Denomination, Suit};
 use crate::error::ParseError;
 use strum::IntoEnumIterator;
 

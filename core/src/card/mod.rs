@@ -31,13 +31,10 @@ impl std::str::FromStr for Card {
 impl Card {
     fn split_string(string: &str) -> Result<[char; 2], ParseError> {
         let chars = string.chars().collect::<Vec<char>>();
-        match chars.try_into() {
-            Ok(c) => Ok(c),
-            _ => Err(ParseError {
-                cause: string.into(),
-                description: "cards consist of two characters",
-            }),
-        }
+        chars.try_into().or(Err(ParseError {
+            cause: string.into(),
+            description: "cards consist of two characters",
+        }))
     }
 }
 
