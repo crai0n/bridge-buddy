@@ -65,8 +65,11 @@ impl ForumDPlus2015Evaluator {
         for suit in Suit::iter() {
             let cards_vec = hand.cards_in(suit).rev().map(|x| x.denomination).collect_vec();
             acc += match cards_vec.len() {
-                1 if (cards_vec[0] >= Jack) => -1.0,
-                2 if (cards_vec[1] >= Jack) => -1.0,
+                1 if (cards_vec[0] >= Jack) => -1.0, // downgrade single honors, even single Ace
+                2 => match cards_vec[..2] {
+                    [King, Queen] | [Queen, _] | [Jack, _] => -1.0, // downgrade KQ, Qx and Jx
+                    _ => 0.0,
+                },
                 _ => 0.0,
             }
         }
@@ -532,18 +535,17 @@ mod test {
         assert_eq!(ForumDPlus2015Evaluator::adjustment_aces_and_tens(&hand), adjustment);
     }
 
-    #[test_case("S:T93,H:AKQ5,D:QJ,C:T542", -1.0 ; "Board 1.N")]
-    #[test_case("S:Q764,H:8,D:AT753,C:AKQ", 0.0 ; "Board 1.E")]
-    #[test_case("S:A,H:JT762,D:K64,C:J963", -1.0 ; "Board 1.S")]
-    #[test_case("S:AKJ52,H:943,D:982,C:QJ", -1.0 ; "Board 1.W")]
-    #[test_case("S:963,H:T97,D:KT42,C:AJT", 0.0 ; "Board 2.N")]
-    #[test_case("S:AQT74,H:Q43,D:A85,C:AT", 0.0 ; "Board 2.E")]
-    #[test_case("S:J,H:A86,D:QJ963,C:Q952", -1.0 ; "Board 2.S")]
-    #[test_case("S:KJ52,H:KJ52,D:K,C:K743", -1.0 ; "Board 2.W")]
-    #[test_case("S:K653,H:KJ7,D:AKQ5,C:J3", 0.0 ; "Board 3.N")]
-    #[test_case("S:AQ7,H:9532,D:K4,C:KJ74", 0.0 ; "Board 3.E")]
-    #[test_case("S:JT2,H:AQ,D:T92,C:AQT62", -1.0; "Board 3.S")]
-    #[test_case("S:984,H:QT86,D:J863,C:AK", -1.0 ; "Board 3.W")]
+    #[test_case("S:Q764,H:T,D:AT753,C:AKQ", 0.0 ; "No unguarded honors")]
+    #[test_case("S:A,H:JT762,D:K64,C:J963", -1.0 ; "Downgrade A")]
+    #[test_case("S:K,H:JT762,D:K64,C:J963", -1.0 ; "Downgrade K")]
+    #[test_case("S:Q,H:JT762,D:K64,C:J963", -1.0 ; "Downgrade Q")]
+    #[test_case("S:J,H:JT762,D:K64,C:J963", -1.0 ; "Downgrade J")]
+    #[test_case("S:J,H:Q,D:K,C:AKQJT98765", -3.0 ; "Downgrade in 3 suits")]
+    #[test_case("S:KQ,H:AKQ5,D:T93,C:T542", -1.0 ; "Downgrade KQ")]
+    #[test_case("S:QJ,H:AKQ5,D:T93,C:T542", -1.0 ; "Downgrade QJ")]
+    #[test_case("S:Q2,H:AKQ5,D:T93,C:T542", -1.0 ; "Downgrade Qx")]
+    #[test_case("S:J2,H:AKQ5,D:T93,C:T542", -1.0 ; "Downgrade Jx")]
+    #[test_case("S:AK,H:AQ,D:KJ,C:T987654", 0.0 ; "Do not downgrade AK, AQ, KJ")]
     fn test_adjustment_unguarded_honors(hand_str: &str, adjustment: f64) {
         let hand = Hand::from_str(hand_str).unwrap();
         assert_eq!(ForumDPlus2015Evaluator::adjustment_unguarded_honors(&hand), adjustment);
