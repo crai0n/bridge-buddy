@@ -1,3 +1,5 @@
+pub use crate::card::Denomination;
+pub use crate::card::Suit;
 pub use crate::card::*;
 use crate::error::ParseError;
 use strum::IntoEnumIterator;
@@ -9,28 +11,8 @@ pub struct Hand {
     hand_type: HandType,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum HandType {
-    ThreeSuited(Suit, Suit, Suit),
-    TwoSuited(Suit, Suit),
-    SingleSuited(Suit),
-    Balanced(Option<Suit>), // might contain a 5-card suit
-}
-
-impl std::fmt::Display for HandType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::ThreeSuited(s1, s2, s3) => write!(f, "three-suited: {}, {} and {}", s1, s2, s3),
-            Self::TwoSuited(s1, s2) => write!(f, "two-suited: {} and {}", s1, s2),
-            Self::SingleSuited(s) => write!(f, "single-suited: {}", s),
-            Self::Balanced(Some(s)) => write!(f, "balanced with five cards in {}", s),
-            Self::Balanced(None) => write!(f, "balanced"),
-        }
-    }
-}
-
 impl Hand {
-    pub fn new(mut cards: [Card; 13]) -> Self {
+    pub fn from_cards(mut cards: [Card; 13]) -> Self {
         cards.sort_unstable();
 
         for i in 0..12 {
@@ -134,24 +116,45 @@ impl std::str::FromStr for Hand {
                 cards.push(card);
             }
         }
-        Ok(Hand::new(cards.try_into().map_err(|_| ParseError {
+        Ok(Hand::from_cards(cards.try_into().map_err(|_| ParseError {
             cause: string.into(),
             description: "invalid number of cards",
         })?))
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum HandType {
+    ThreeSuited(Suit, Suit, Suit),
+    TwoSuited(Suit, Suit),
+    SingleSuited(Suit),
+    Balanced(Option<Suit>), // might contain a 5-card suit
+}
+
+impl std::fmt::Display for HandType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::ThreeSuited(s1, s2, s3) => write!(f, "three-suited: {}, {} and {}", s1, s2, s3),
+            Self::TwoSuited(s1, s2) => write!(f, "two-suited: {} and {}", s1, s2),
+            Self::SingleSuited(s) => write!(f, "single-suited: {}", s),
+            Self::Balanced(Some(s)) => write!(f, "balanced with five cards in {}", s),
+            Self::Balanced(None) => write!(f, "balanced"),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::Denomination::*;
-    use super::Suit::*;
-    use super::*;
+    use super::Card;
+    use super::{Hand, HandType};
+    use crate::card::Denomination::*;
+    use crate::card::Suit::*;
     use std::str::FromStr;
     use test_case::test_case;
 
     #[test]
     fn test_hand_types() {
-        let hand = Hand::new([
+        let hand = Hand::from_cards([
             Card {
                 suit: Clubs,
                 denomination: Ace,
@@ -210,7 +213,7 @@ mod tests {
 
     #[test]
     fn test_methods() {
-        let hand = Hand::new([
+        let hand = Hand::from_cards([
             Card {
                 suit: Clubs,
                 denomination: Ace,
@@ -290,7 +293,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "invalid hand - duplicate cards")]
     fn test_hand_validation() {
-        Hand::new([
+        Hand::from_cards([
             Card {
                 suit: Diamonds,
                 denomination: Two,
