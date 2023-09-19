@@ -17,8 +17,9 @@ impl Display for ParseError {
 pub enum BBError {
     ParseError(String, &'static str),
     NotUnique(Card),
-    UnknownSuit(String),
-    UnknownDenomination(String),
+    UnknownCard(String),
+    UnknownSuit(char),
+    UnknownDenomination(char),
 }
 
 impl Display for BBError {
@@ -26,6 +27,7 @@ impl Display for BBError {
         match &self {
             BBError::ParseError(cause, description) => writeln!(f, "{}: {}", description, cause),
             BBError::NotUnique(card) => writeln!(f, "card not unique: {}", card),
+            BBError::UnknownCard(c) => writeln!(f, "unknown card: {}", c),
             BBError::UnknownDenomination(d) => writeln!(f, "unknown denomination: {}", d),
             BBError::UnknownSuit(s) => writeln!(f, "unknown suit: {}", s),
         }

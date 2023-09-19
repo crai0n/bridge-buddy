@@ -28,7 +28,7 @@ impl Suit {
             'C' => Ok(Suit::Clubs),
             'c' => Ok(Suit::Clubs),
             '♣' => Ok(Suit::Clubs),
-            c => Err(BBError::UnknownSuit(c.into())),
+            c => Err(BBError::UnknownSuit(c)),
         }
     }
 }
@@ -74,10 +74,7 @@ mod tests {
     #[test_case('.')]
     #[test_case('o')]
     fn fail_for_unknown_letters(input: char) {
-        assert_eq!(
-            Suit::from_char(input).unwrap_err(),
-            BBError::UnknownSuit(input.try_into().unwrap())
-        );
+        assert_eq!(Suit::from_char(input).unwrap_err(), BBError::UnknownSuit(input));
     }
 
     #[test_case(Clubs, "♣")]

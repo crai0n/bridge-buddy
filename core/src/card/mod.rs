@@ -31,10 +31,7 @@ impl std::str::FromStr for Card {
 impl Card {
     fn split_string(string: &str) -> Result<[char; 2], BBError> {
         let chars = string.chars().collect::<Vec<char>>();
-        chars.try_into().or(Err(BBError::ParseError(
-            string.into(),
-            "cards consist of two characters",
-        )))
+        chars.try_into().or(Err(BBError::UnknownCard(string.into())))
     }
 }
 

@@ -52,7 +52,7 @@ impl Denomination {
             '4' => Ok(Denomination::Four),
             '3' => Ok(Denomination::Three),
             '2' => Ok(Denomination::Two),
-            c => Err(BBError::UnknownDenomination(c.into())),
+            c => Err(BBError::UnknownDenomination(c)),
         }
     }
 }
@@ -129,7 +129,7 @@ mod tests {
     fn fail_misc_characters(input: char) {
         assert_eq!(
             Denomination::from_char(input).unwrap_err(),
-            BBError::UnknownDenomination(input.try_into().unwrap())
+            BBError::UnknownDenomination(input)
         )
     }
 }
