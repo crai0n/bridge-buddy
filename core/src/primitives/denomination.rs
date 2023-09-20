@@ -114,6 +114,16 @@ mod tests {
         assert!(Denomination::from_str(input).is_err());
     }
 
+    #[test_case("h"; "suit hearts")]
+    #[test_case("b"; "german jack")]
+    #[test_case("l"; "unknown letter")]
+    fn parsing_unknown_str_fails(input: &str) {
+        assert_eq!(
+            Denomination::from_str(input),
+            Err(BBError::UnknownDenomination(input.chars().next().unwrap()))
+        );
+    }
+
     #[test_case(Ace, "A")]
     #[test_case(King, "K")]
     #[test_case(Queen, "Q")]
