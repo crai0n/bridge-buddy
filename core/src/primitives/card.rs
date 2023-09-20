@@ -1,9 +1,6 @@
-use crate::error::ParseError;
-pub use denomination::Denomination;
-pub use suit::Suit;
-
-pub mod denomination;
-pub mod suit;
+pub use super::Denomination;
+pub use super::Suit;
+use crate::error::BBError;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Card {
@@ -18,7 +15,7 @@ impl std::fmt::Display for Card {
 }
 
 impl std::str::FromStr for Card {
-    type Err = ParseError;
+    type Err = BBError;
 
     fn from_str(string: &str) -> Result<Card, Self::Err> {
         let [s, d] = Self::split_string(string)?;
@@ -29,15 +26,9 @@ impl std::str::FromStr for Card {
 }
 
 impl Card {
-    fn split_string(string: &str) -> Result<[char; 2], ParseError> {
+    fn split_string(string: &str) -> Result<[char; 2], BBError> {
         let chars = string.chars().collect::<Vec<char>>();
-        match chars.try_into() {
-            Ok(c) => Ok(c),
-            _ => Err(ParseError {
-                cause: string.into(),
-                description: "cards consist of two characters",
-            }),
-        }
+        chars.try_into().or(Err(BBError::UnknownCard(string.into())))
     }
 }
 

@@ -1,4 +1,5 @@
-use crate::error::ParseError;
+use crate::error::BBError;
+use crate::util;
 use strum::{Display, EnumIter};
 
 #[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
@@ -14,7 +15,7 @@ pub enum Suit {
 }
 
 impl Suit {
-    pub fn from_char(char: char) -> Result<Suit, ParseError> {
+    pub fn from_char(char: char) -> Result<Suit, BBError> {
         match char {
             'S' => Ok(Suit::Spades),
             's' => Ok(Suit::Spades),
@@ -28,18 +29,26 @@ impl Suit {
             'C' => Ok(Suit::Clubs),
             'c' => Ok(Suit::Clubs),
             '♣' => Ok(Suit::Clubs),
-            c => Err(ParseError {
-                cause: c.into(),
-                description: "unknown suit",
-            }),
+            c => Err(BBError::UnknownSuit(c)),
         }
+    }
+}
+
+impl std::str::FromStr for Suit {
+    type Err = BBError;
+
+    fn from_str(string: &str) -> Result<Suit, BBError> {
+        let char = util::single_char_from_str(string)?;
+        Suit::from_char(char)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::Suit::*;
-    use crate::card::Suit;
+    use crate::error::BBError;
+    use crate::primitives::Suit;
+    use std::str::FromStr;
     use test_case::test_case;
 
     #[test]
@@ -66,6 +75,21 @@ mod tests {
         assert_eq!(Suit::from_char(input).unwrap(), expected);
     }
 
+    #[test_case("S", Suit::Spades; "uppercase S")]
+    #[test_case("H", Suit::Hearts; "uppercase H")]
+    #[test_case("d", Suit::Diamonds; "lowercase d")]
+    #[test_case("♣", Suit::Clubs; "clubs symbol")]
+    fn parse_strings(input: &str, expected: Suit) {
+        assert_eq!(Suit::from_str(input).unwrap(), expected);
+    }
+
+    #[test_case(""; "Empty string")]
+    #[test_case(".c"; "additional char")]
+    #[test_case("hd"; "two chars")]
+    fn fail_strings(input: &str) {
+        assert!(Suit::from_str(input).is_err());
+    }
+
     #[test_case('1')]
     #[test_case('6')]
     #[test_case('u')]
@@ -75,9 +99,8 @@ mod tests {
     #[test_case('T')]
     #[test_case('.')]
     #[test_case('o')]
-    #[should_panic(expected = "unknown suit")]
     fn fail_for_unknown_letters(input: char) {
-        Suit::from_char(input).unwrap();
+        assert_eq!(Suit::from_char(input).unwrap_err(), BBError::UnknownSuit(input));
     }
 
     #[test_case(Clubs, "♣")]
@@ -97,5 +120,14 @@ mod tests {
         let suit_char = string.chars().next().unwrap();
         let new_suit = Suit::from_char(suit_char).unwrap();
         assert_eq!(suit, new_suit);
+    }
+
+    #[test_case('.')]
+    #[test_case('A')]
+    #[test_case('k')]
+    #[test_case('j')]
+    #[test_case('u')]
+    fn fail_misc_characters(input: char) {
+        assert_eq!(Suit::from_char(input).unwrap_err(), BBError::UnknownSuit(input))
     }
 }

@@ -1,9 +1,9 @@
 use crate::error::ParseError;
 use strum::{Display, EnumString};
 
-use crate::contract::*;
+use crate::primitives::contract::*;
 
-use crate::deal::PlayerPosition;
+use crate::primitives::deal::PlayerPosition;
 use itertools::Itertools;
 
 use std::fmt::Display;
@@ -278,7 +278,7 @@ impl BidLine {
 #[cfg(test)]
 mod test {
     use crate::bidder::*;
-    use crate::card::Suit;
+    use crate::primitives::Suit;
     use std::str::FromStr;
     // use std::{cmp::Ordering, str::FromStr};
     use test_case::test_case;

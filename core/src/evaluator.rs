@@ -1,8 +1,5 @@
-use crate::card::Denomination::*;
-use crate::{
-    card::{Card, Denomination, Suit},
-    hand::Hand,
-};
+use crate::primitives::Denomination::*;
+use crate::primitives::{Card, Denomination, Hand, Suit};
 use itertools::Itertools;
 use std::cmp::Ordering;
 use strum::{Display, IntoEnumIterator};
@@ -461,9 +458,9 @@ impl ForumDPlus2015Evaluator {
 
 #[cfg(test)]
 mod test {
-    use crate::card::Suit;
     use crate::evaluator::*;
-    use crate::hand::Hand;
+    use crate::primitives::Hand;
+    use crate::primitives::Suit;
     use std::str::FromStr;
     use test_case::test_case;
 

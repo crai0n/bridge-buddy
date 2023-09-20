@@ -1,5 +1,4 @@
-use crate::card::*;
-use crate::hand::Hand;
+use crate::primitives::{Card, Denomination, Hand, Suit};
 use itertools::Itertools;
 use rand::seq::SliceRandom;
 use rand::{random, thread_rng};
@@ -67,10 +66,10 @@ impl Deal {
 
         //distribute cards
         let hands_vec = vec![
-            Hand::from_cards(cards_vec.split_off(39).try_into().unwrap()),
-            Hand::from_cards(cards_vec.split_off(26).try_into().unwrap()),
-            Hand::from_cards(cards_vec.split_off(13).try_into().unwrap()),
-            Hand::from_cards(cards_vec.try_into().unwrap()),
+            Hand::from_cards(&cards_vec.split_off(39)).unwrap(),
+            Hand::from_cards(&cards_vec.split_off(26)).unwrap(),
+            Hand::from_cards(&cards_vec.split_off(13)).unwrap(),
+            Hand::from_cards(&cards_vec).unwrap(),
         ];
 
         Deal {
@@ -113,6 +112,7 @@ mod tests {
     use super::Deal;
     use super::Vulnerable;
     use super::*;
+    use crate::primitives::*;
     use test_case::test_case;
 
     #[test_case( 1, Vulnerable::None, PlayerPosition::North ; "Deal construction 1")]

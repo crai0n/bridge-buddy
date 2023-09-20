@@ -1,7 +1,8 @@
-use crate::error::ParseError;
+use crate::error::BBError;
 use strum::{Display, EnumString};
 
-use crate::card::Suit;
+use crate::primitives::Suit;
+use crate::util;
 
 #[derive(Debug, Display, EnumString, PartialOrd, Ord, PartialEq, Eq, Clone, Copy)]
 pub enum ContractLevel {
@@ -45,22 +46,21 @@ impl std::fmt::Display for ContractDenomination {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ContractDenomination::Trump(s) => {
-                write!(f, "{}", s)?;
+                write!(f, "{}", s)
             }
             ContractDenomination::NoTrump => {
-                write!(f, "NT")?;
+                write!(f, "NT")
             }
         }
-        Ok(())
     }
 }
 
 impl std::str::FromStr for ContractDenomination {
-    type Err = ParseError;
+    type Err = BBError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.chars().count() == 1 {
-            let char = s.chars().next().unwrap();
+            let char = util::single_char_from_str(s)?;
             match Suit::from_char(char) {
                 Ok(s) => Ok(ContractDenomination::Trump(s)),
                 Err(e) => Err(e),
@@ -68,10 +68,7 @@ impl std::str::FromStr for ContractDenomination {
         } else {
             match s {
                 "SA" | "NT" => Ok(ContractDenomination::NoTrump),
-                _ => Err(ParseError {
-                    cause: s.into(),
-                    description: "unknown denomination",
-                }),
+                _ => Err(BBError::ParseError(s.into(), "unknown contract")),
             }
         }
     }
@@ -92,26 +89,18 @@ impl std::fmt::Display for Contract {
 }
 
 impl std::str::FromStr for Contract {
-    type Err = ParseError;
+    type Err = BBError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let len = s.len();
 
         if len < 2 {
-            return Err(ParseError {
-                cause: s.into(),
-                description: "string too short",
-            });
+            return Err(BBError::ParseError(s.into(), "string too short"));
         }
 
         let level = match ContractLevel::from_str(&s[..1]) {
             Ok(l) => l,
-            Err(_) => {
-                return Err(ParseError {
-                    cause: s.into(),
-                    description: "unknown level",
-                })
-            }
+            Err(_) => return Err(BBError::ParseError(s.into(), "unknown level")),
         };
 
         let count_doubles = s.chars().rev().take_while(|x| *x == 'x' || *x == 'X').count();
@@ -120,12 +109,7 @@ impl std::str::FromStr for Contract {
             0 => ContractState::Passed,
             1 => ContractState::Doubled,
             2 => ContractState::Redoubled,
-            _ => {
-                return Err(ParseError {
-                    cause: s.into(),
-                    description: "unknown contract state",
-                })
-            }
+            _ => return Err(BBError::ParseError(s.into(), "unknown contract state")),
         };
 
         // rest of the string must be the denomination
@@ -133,12 +117,7 @@ impl std::str::FromStr for Contract {
 
         let denomination = match ContractDenomination::from_str(den_str) {
             Ok(d) => d,
-            Err(_) => {
-                return Err(ParseError {
-                    cause: s.into(),
-                    description: "unknown contract denomination",
-                })
-            }
+            Err(_) => return Err(BBError::ParseError(s.into(), "unknown contract denomination")),
         };
 
         Ok(Contract {
@@ -151,7 +130,7 @@ impl std::str::FromStr for Contract {
 
 #[cfg(test)]
 mod test {
-    use crate::contract::*;
+    use super::{Contract, ContractDenomination, ContractLevel, ContractState, Suit};
     use std::{cmp::Ordering, str::FromStr};
     use test_case::test_case;
 
