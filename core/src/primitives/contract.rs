@@ -2,6 +2,7 @@ use crate::error::BBError;
 use strum::{Display, EnumString};
 
 use crate::primitives::Suit;
+use crate::util;
 
 #[derive(Debug, Display, EnumString, PartialOrd, Ord, PartialEq, Eq, Clone, Copy)]
 pub enum ContractLevel {
@@ -45,13 +46,12 @@ impl std::fmt::Display for ContractDenomination {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ContractDenomination::Trump(s) => {
-                write!(f, "{}", s)?;
+                write!(f, "{}", s)
             }
             ContractDenomination::NoTrump => {
-                write!(f, "NT")?;
+                write!(f, "NT")
             }
         }
-        Ok(())
     }
 }
 
@@ -60,7 +60,7 @@ impl std::str::FromStr for ContractDenomination {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.chars().count() == 1 {
-            let char = s.chars().next().unwrap();
+            let char = util::single_char_from_str(s)?;
             match Suit::from_char(char) {
                 Ok(s) => Ok(ContractDenomination::Trump(s)),
                 Err(e) => Err(e),
