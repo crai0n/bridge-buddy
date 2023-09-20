@@ -1,7 +1,7 @@
 use crate::error::BBError;
 use strum::{Display, EnumString};
 
-use crate::card::Suit;
+use crate::primitives::Suit;
 
 #[derive(Debug, Display, EnumString, PartialOrd, Ord, PartialEq, Eq, Clone, Copy)]
 pub enum ContractLevel {
@@ -130,7 +130,7 @@ impl std::str::FromStr for Contract {
 
 #[cfg(test)]
 mod test {
-    use crate::contract::*;
+    use super::{Contract, ContractDenomination, ContractLevel, ContractState, Suit};
     use std::{cmp::Ordering, str::FromStr};
     use test_case::test_case;
 

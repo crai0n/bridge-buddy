@@ -1,5 +1,4 @@
-use crate::card::*;
-use crate::hand::Hand;
+use crate::primitives::{Card, Denomination, Hand, Suit};
 use itertools::Itertools;
 use rand::seq::SliceRandom;
 use rand::{random, thread_rng};
@@ -113,6 +112,7 @@ mod tests {
     use super::Deal;
     use super::Vulnerable;
     use super::*;
+    use crate::primitives::*;
     use test_case::test_case;
 
     #[test_case( 1, Vulnerable::None, PlayerPosition::North ; "Deal construction 1")]

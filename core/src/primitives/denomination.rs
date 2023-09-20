@@ -70,8 +70,8 @@ impl std::str::FromStr for Denomination {
 #[cfg(test)]
 mod tests {
     use super::Denomination::*;
-    use crate::card::Denomination;
     use crate::error::BBError;
+    use crate::primitives::Denomination;
     use std::str::FromStr;
     use test_case::test_case;
 

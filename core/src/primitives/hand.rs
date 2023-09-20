@@ -1,5 +1,5 @@
-pub use crate::card::{Card, Denomination, Suit};
 use crate::error::BBError;
+pub use crate::primitives::{Card, Denomination, Suit};
 use std::cmp::Ordering;
 use std::str::FromStr;
 use strum::IntoEnumIterator;
@@ -140,10 +140,10 @@ impl std::fmt::Display for HandType {
 #[cfg(test)]
 mod tests {
     use super::{Hand, HandType};
-    use crate::card::Denomination::*;
-    use crate::card::Suit::*;
-    use crate::card::{Card, Suit};
     use crate::error::BBError;
+    use crate::primitives::Denomination::*;
+    use crate::primitives::Suit::*;
+    use crate::primitives::{Card, Suit};
     use std::str::FromStr;
     use test_case::test_case;
 

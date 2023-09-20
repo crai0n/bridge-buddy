@@ -46,8 +46,8 @@ impl std::str::FromStr for Suit {
 #[cfg(test)]
 mod tests {
     use super::Suit::*;
-    use crate::card::Suit;
     use crate::error::BBError;
+    use crate::primitives::Suit;
     use std::str::FromStr;
     use test_case::test_case;
 

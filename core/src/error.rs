@@ -1,4 +1,4 @@
-use crate::card::Card;
+use crate::primitives::Card;
 use std::fmt::{Debug, Display, Formatter};
 
 #[derive(Debug, PartialEq)]
