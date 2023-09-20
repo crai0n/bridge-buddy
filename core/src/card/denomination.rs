@@ -1,4 +1,5 @@
 use crate::error::BBError;
+use crate::util;
 use strum::{Display, EnumIter};
 
 #[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
@@ -57,11 +58,21 @@ impl Denomination {
     }
 }
 
+impl std::str::FromStr for Denomination {
+    type Err = BBError;
+
+    fn from_str(string: &str) -> Result<Denomination, BBError> {
+        let char = util::single_char_from_str(string)?;
+        Denomination::from_char(char)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::Denomination::*;
     use crate::card::Denomination;
     use crate::error::BBError;
+    use std::str::FromStr;
     use test_case::test_case;
 
     #[test_case(King, Ace; "King and Ace")]
@@ -80,8 +91,27 @@ mod tests {
     #[test_case('9', Nine; "9 is Nine")]
     #[test_case('7', Seven; "7 is Seven")]
     #[test_case('3', Three; "3 is Three")]
-    fn parsing(input: char, expected: Denomination) {
+    fn parsing_char(input: char, expected: Denomination) {
         assert_eq!(Denomination::from_char(input).unwrap(), expected);
+    }
+
+    #[test_case("A", Ace; "A is Ace")]
+    #[test_case("k", King; "k is King")]
+    #[test_case("q", Queen; "q is Queen")]
+    #[test_case("J", Jack; "J is Jack")]
+    #[test_case("t", Ten; "t is Ten")]
+    #[test_case("9", Nine; "9 is Nine")]
+    #[test_case("7", Seven; "7 is Seven")]
+    #[test_case("3", Three; "3 is Three")]
+    fn parsing_str(input: &str, expected: Denomination) {
+        assert_eq!(Denomination::from_str(input).unwrap(), expected);
+    }
+
+    #[test_case(""; "Empty string")]
+    #[test_case(".k"; "additional char")]
+    #[test_case("jk"; "two chars")]
+    fn parsing_multi_char_str_fails(input: &str) {
+        assert!(Denomination::from_str(input).is_err());
     }
 
     #[test_case(Ace, "A")]

@@ -16,7 +16,8 @@ impl Display for ParseError {
 #[derive(Debug, PartialEq)]
 pub enum BBError {
     ParseError(String, &'static str),
-    NotUnique(Card),
+    Duplicate(Card),
+    CardCount,
     UnknownCard(String),
     UnknownSuit(char),
     UnknownDenomination(char),
@@ -26,10 +27,11 @@ impl Display for BBError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match &self {
             BBError::ParseError(cause, description) => writeln!(f, "{}: {}", description, cause),
-            BBError::NotUnique(card) => writeln!(f, "card not unique: {}", card),
+            BBError::Duplicate(card) => writeln!(f, "card not unique: {}", card),
             BBError::UnknownCard(c) => writeln!(f, "unknown card: {}", c),
             BBError::UnknownDenomination(d) => writeln!(f, "unknown denomination: {}", d),
             BBError::UnknownSuit(s) => writeln!(f, "unknown suit: {}", s),
+            BBError::CardCount => writeln!(f, "wrong number of cards"),
         }
     }
 }

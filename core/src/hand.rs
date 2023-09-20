@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+// use crate::card::suit::SuitIter;
 pub use crate::card::{Card, Denomination, Suit};
 use crate::error::BBError;
 use strum::IntoEnumIterator;
@@ -5,54 +7,28 @@ use strum::IntoEnumIterator;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Hand {
     cards: [Card; 13],
-    suit_lengths: [u8; 4],
-    hand_type: HandType,
 }
 
 impl Hand {
-    pub fn from_cards(mut cards: [Card; 13]) -> Self {
+    pub fn from_cards(cards: &[Card]) -> Result<Self, BBError> {
+        let cards = Hand::sanitize_cards(cards)?;
+        Ok(Hand { cards })
+    }
+
+    fn sanitize_cards(cards: &[Card]) -> Result<[Card; 13], BBError> {
+        let mut cards: [Card; 13] = cards.try_into().or(Err(BBError::CardCount))?;
         cards.sort_unstable();
+        Hand::check_for_duplicates(&cards)?;
+        Ok(cards)
+    }
 
-        for i in 0..12 {
+    fn check_for_duplicates(&cards: &[Card; 13]) -> Result<(), BBError> {
+        for i in 0..cards.len() - 1 {
             if cards[i] == cards[i + 1] {
-                panic!("invalid hand - duplicate cards");
+                return Err(BBError::Duplicate(cards[i]));
             }
         }
-
-        let mut sorted_suit_lengths = [
-            (Suit::Clubs, 0),
-            (Suit::Diamonds, 0),
-            (Suit::Hearts, 0),
-            (Suit::Spades, 0),
-        ];
-        for card in &cards {
-            sorted_suit_lengths[card.suit as usize].1 += 1;
-        }
-        let suit_lengths = sorted_suit_lengths.map(|(_suit, length)| length);
-
-        sorted_suit_lengths.sort_unstable_by(|(suit, length), (other_suit, other_length)| {
-            // descending by length, if equal length: descending by suit value
-            if length == other_length {
-                other_suit.cmp(suit)
-            } else {
-                other_length.cmp(length)
-            }
-        });
-
-        let hand_type = match sorted_suit_lengths {
-            // three suits with at least 4 cards (third cannot have more than four)
-            [(s1, _), (s2, _), (s3, 4), _] => HandType::ThreeSuited(s1, s2, s3),
-            [(s1, 5..), (s2, 4..), _, _] => HandType::TwoSuited(s1, s2),
-            [(s1, 6..), _, _, _] => HandType::SingleSuited(s1),
-            [(s1, 5..), _, _, _] => HandType::Balanced(Some(s1)),
-            _ => HandType::Balanced(None),
-        };
-
-        Hand {
-            cards,
-            suit_lengths,
-            hand_type,
-        }
+        Ok(())
     }
 
     pub fn cards(&self) -> impl DoubleEndedIterator<Item = &Card> {
@@ -68,11 +44,29 @@ impl Hand {
     }
 
     pub fn length_in(&self, suit: Suit) -> u8 {
-        self.suit_lengths[suit as usize]
+        self.cards_in(suit).count() as u8
     }
 
     pub fn hand_type(&self) -> HandType {
-        self.hand_type.clone()
+        fn descending_length_and_suit_value(one: &(Suit, u8), other: &(Suit, u8)) -> Ordering {
+            match other.1.cmp(&one.1) {
+                Ordering::Equal => other.0.cmp(&one.0), //for equal length, order by suit value
+                ord => ord,
+            }
+        }
+
+        let mut suit_lengths = Suit::iter().map(|s| (s, self.length_in(s))).collect::<Vec<_>>();
+
+        suit_lengths.sort_unstable_by(descending_length_and_suit_value);
+
+        match suit_lengths[..] {
+            // three suits with at least 4 cards (third cannot have more than four)
+            [(s1, _), (s2, _), (s3, 4), _] => HandType::ThreeSuited(s1, s2, s3),
+            [(s1, 5..), (s2, 4..), _, _] => HandType::TwoSuited(s1, s2),
+            [(s1, 6..), _, _, _] => HandType::SingleSuited(s1),
+            [(s1, 5..), _, _, _] => HandType::Balanced(Some(s1)),
+            _ => HandType::Balanced(None),
+        }
     }
 }
 
@@ -114,13 +108,11 @@ impl std::str::FromStr for Hand {
                 cards.push(card);
             }
         }
-        Ok(Hand::from_cards(cards.try_into().map_err(|_| {
-            BBError::ParseError(string.into(), "invalid number of cards")
-        })?))
+        Hand::from_cards(&cards)
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Copy)]
 pub enum HandType {
     ThreeSuited(Suit, Suit, Suit),
     TwoSuited(Suit, Suit),
@@ -146,12 +138,13 @@ mod tests {
     use super::{Hand, HandType};
     use crate::card::Denomination::*;
     use crate::card::Suit::*;
+    use crate::error::BBError;
     use std::str::FromStr;
     use test_case::test_case;
 
     #[test]
     fn test_hand_types() {
-        let hand = Hand::from_cards([
+        let hand = Hand::from_cards(&[
             Card {
                 suit: Clubs,
                 denomination: Ace,
@@ -204,13 +197,14 @@ mod tests {
                 suit: Spades,
                 denomination: Two,
             },
-        ]);
-        assert_eq!(hand.hand_type, HandType::Balanced(Some(Spades)));
+        ])
+        .unwrap();
+        assert_eq!(hand.hand_type(), HandType::Balanced(Some(Spades)));
     }
 
     #[test]
     fn test_methods() {
-        let hand = Hand::from_cards([
+        let hand = Hand::from_cards(&[
             Card {
                 suit: Clubs,
                 denomination: Ace,
@@ -263,7 +257,8 @@ mod tests {
                 suit: Spades,
                 denomination: Two,
             },
-        ]);
+        ])
+        .unwrap();
         assert_eq!(
             hand.cards().nth(1).unwrap(),
             &Card {
@@ -273,7 +268,8 @@ mod tests {
         );
         assert_eq!(hand.cards_in(Spades).count(), 10);
         assert_eq!(hand.cards_in(Hearts).count(), 0);
-        assert_eq!(hand.suit_lengths, [1, 2, 0, 10]);
+        assert_eq!(hand.cards_in(Diamonds).count(), 2);
+        assert_eq!(hand.cards_in(Clubs).count(), 1);
         assert!(!hand.contains(&Card {
             suit: Diamonds,
             denomination: Queen
@@ -282,68 +278,73 @@ mod tests {
             suit: Diamonds,
             denomination: Ace
         }));
-        assert_eq!(hand.hand_type, HandType::SingleSuited(Spades));
+        assert_eq!(hand.hand_type(), HandType::SingleSuited(Spades));
         assert_eq!(format!("{}", hand), "♠: AKQJT98762\n♥: \n♦: AK\n♣: A\n");
         assert_eq!(hand, Hand::from_str("H:, ♠:9J7A2T6K8Q,♦: AK, C: A").unwrap())
     }
 
     #[test]
-    #[should_panic(expected = "invalid hand - duplicate cards")]
     fn test_hand_validation() {
-        Hand::from_cards([
-            Card {
+        assert_eq!(
+            Hand::from_cards(&[
+                Card {
+                    suit: Diamonds,
+                    denomination: Two,
+                },
+                Card {
+                    suit: Diamonds,
+                    denomination: Three,
+                },
+                Card {
+                    suit: Diamonds,
+                    denomination: Four,
+                },
+                Card {
+                    suit: Diamonds,
+                    denomination: Five,
+                },
+                Card {
+                    suit: Diamonds,
+                    denomination: Six,
+                },
+                Card {
+                    suit: Diamonds,
+                    denomination: Seven,
+                },
+                Card {
+                    suit: Diamonds,
+                    denomination: Eight,
+                },
+                Card {
+                    suit: Diamonds,
+                    denomination: Nine,
+                },
+                Card {
+                    suit: Diamonds,
+                    denomination: Ten,
+                },
+                Card {
+                    suit: Diamonds,
+                    denomination: Jack,
+                },
+                Card {
+                    suit: Diamonds,
+                    denomination: Queen,
+                },
+                Card {
+                    suit: Diamonds,
+                    denomination: King,
+                },
+                Card {
+                    suit: Diamonds,
+                    denomination: Two,
+                },
+            ]),
+            Err(BBError::Duplicate(Card {
                 suit: Diamonds,
-                denomination: Two,
-            },
-            Card {
-                suit: Diamonds,
-                denomination: Three,
-            },
-            Card {
-                suit: Diamonds,
-                denomination: Four,
-            },
-            Card {
-                suit: Diamonds,
-                denomination: Five,
-            },
-            Card {
-                suit: Diamonds,
-                denomination: Six,
-            },
-            Card {
-                suit: Diamonds,
-                denomination: Seven,
-            },
-            Card {
-                suit: Diamonds,
-                denomination: Eight,
-            },
-            Card {
-                suit: Diamonds,
-                denomination: Nine,
-            },
-            Card {
-                suit: Diamonds,
-                denomination: Ten,
-            },
-            Card {
-                suit: Diamonds,
-                denomination: Jack,
-            },
-            Card {
-                suit: Diamonds,
-                denomination: Queen,
-            },
-            Card {
-                suit: Diamonds,
-                denomination: King,
-            },
-            Card {
-                suit: Diamonds,
-                denomination: Two,
-            },
-        ]);
+                denomination: Two
+            }))
+        );
     }
 
     #[test_case("♠:AKQJT98765432", HandType::SingleSuited(Spades) ; "13-0-0-0")]
@@ -359,6 +360,6 @@ mod tests {
     #[test_case("♠:AKQJ,♥:T987,♦:654,♣:32", HandType::Balanced(None); "4-4-3-2")]
     fn test_hand_type(hand: &str, expected_hand_type: HandType) {
         let hand = Hand::from_str(hand).unwrap();
-        assert_eq!(hand.hand_type, expected_hand_type)
+        assert_eq!(hand.hand_type(), expected_hand_type)
     }
 }
