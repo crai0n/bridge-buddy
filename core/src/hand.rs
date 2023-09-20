@@ -88,25 +88,30 @@ impl std::str::FromStr for Hand {
     type Err = BBError;
 
     fn from_str(string: &str) -> Result<Hand, Self::Err> {
-        let mut cards: Vec<Card> = vec![];
-        for cards_in_suit in string.trim().split(['\n', ',']) {
-            let (suit, denominations) = cards_in_suit.split_once(':').ok_or(BBError::ParseError(
-                cards_in_suit.into(),
+        fn split_at_colon(string: &str) -> Result<(&str, &str), BBError> {
+            string.split_once(':').ok_or(BBError::ParseError(
+                string.into(),
                 "missing colon between suit and cards",
-            ))?;
-            for denomination in denominations.trim().chars() {
-                let card = Card {
-                    denomination: Denomination::from_char(denomination)?,
-                    suit: Suit::from_char(suit.trim().chars().next().unwrap())?,
-                };
-                if cards.contains(&card) {
-                    return Err(BBError::ParseError(
-                        cards_in_suit.into(),
-                        "suit contains duplicate cards",
-                    ));
-                }
-                cards.push(card);
+            ))
+        }
+
+        fn create_cards_for_suit(suit_symbol: &str, denominations: &str) -> Result<Vec<Card>, BBError> {
+            let mut suit_cards = vec![];
+            let suit = Suit::from_str(suit_symbol)?;
+            for denomination_char in denominations.trim().chars() {
+                let denomination = Denomination::from_char(denomination_char)?;
+                suit_cards.push(Card { denomination, suit });
             }
+            Ok(suit_cards)
+        }
+
+        let mut cards: Vec<Card> = vec![];
+
+        let separate_suits = string.trim().split(['\n', ',']);
+        for cards_in_suit in separate_suits {
+            let (suit_symbol, denominations) = split_at_colon(cards_in_suit)?;
+            let suit_cards = create_cards_for_suit(suit_symbol, denominations)?;
+            cards.extend_from_slice(&suit_cards);
         }
         Hand::from_cards(&cards)
     }
