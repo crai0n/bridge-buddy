@@ -61,6 +61,7 @@ mod test {
     #[test_case("2S", Contract(ContractBid { level: Two, denomination: Trump(Spades)}); "Two Spades")]
     #[test_case("3d", Contract(ContractBid { level: Three, denomination: Trump(Diamonds)}); "Three Diamonds")]
     #[test_case("4♥", Contract(ContractBid { level: Four, denomination: Trump(Hearts)}); "Four Hearts")]
+    #[test_case("7d", Contract(ContractBid{ level: Seven, denomination: Trump(Diamonds)}); "Diamonds")]
     fn from_str(str: &str, bid: Bid) {
         assert_eq!(Bid::from_str(str).unwrap(), bid)
     }

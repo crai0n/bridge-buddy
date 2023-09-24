@@ -1,103 +1,62 @@
+use crate::primitives::board::vulnerability::Vulnerability;
+use crate::primitives::board::Board;
+use crate::primitives::board::PlayerPosition;
 use crate::primitives::{card::Denomination, Card, Hand, Suit};
 use itertools::Itertools;
 use rand::seq::SliceRandom;
 use rand::{random, thread_rng};
-use std::ops;
 use strum::IntoEnumIterator;
 
 pub struct Deal {
-    pub deal_number: u8,
-    pub vulnerable: Vulnerable,
-    pub dealer: PlayerPosition,
+    pub board: Board,
     pub hands: [Hand; 4],
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum Vulnerable {
-    None,
-    NorthSouth,
-    EastWest,
-    All,
-}
-
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
-pub enum PlayerPosition {
-    North = 0,
-    East = 1,
-    South = 2,
-    West = 3,
-}
-
-impl ops::Add<usize> for PlayerPosition {
-    type Output = PlayerPosition;
-
-    fn add(self, rhs: usize) -> PlayerPosition {
-        match (self as usize + rhs) % 4 {
-            0 => PlayerPosition::North,
-            1 => PlayerPosition::East,
-            2 => PlayerPosition::South,
-            _ => PlayerPosition::West,
-        }
-    }
 }
 
 impl Deal {
     pub fn new() -> Deal {
-        let deal_number = (random::<u8>() % 32) + 1;
-        Self::new_from_number(deal_number)
+        let board_number = (random::<usize>() % 32) + 1;
+        Self::new_with_board_number(board_number)
     }
 
-    pub fn new_from_number(deal_number: u8) -> Deal {
-        // calculate vulnerability
-        let vulnerable = Self::calculate_vulnerability(deal_number);
-        let dealer = Self::calculate_dealer(deal_number);
+    pub fn new_with_board_number(board_number: usize) -> Deal {
+        let mut deck = Deal::shuffled_deck();
 
-        // create the cards for playing
-        let mut cards_vec = Vec::<Card>::from_iter(
-            Suit::iter()
-                .cartesian_product(Denomination::iter())
-                .map(|(suit, denomination)| Card { suit, denomination }),
-        );
-        assert_eq!(cards_vec.len(), 52);
-
-        // shuffle cards
-        let mut rng = thread_rng();
-        cards_vec.shuffle(&mut rng);
-
-        //distribute cards
         let hands_vec = vec![
-            Hand::from_cards(&cards_vec.split_off(39)).unwrap(),
-            Hand::from_cards(&cards_vec.split_off(26)).unwrap(),
-            Hand::from_cards(&cards_vec.split_off(13)).unwrap(),
-            Hand::from_cards(&cards_vec).unwrap(),
+            Hand::from_cards(&deck.split_off(39)).unwrap(),
+            Hand::from_cards(&deck.split_off(26)).unwrap(),
+            Hand::from_cards(&deck.split_off(13)).unwrap(),
+            Hand::from_cards(&deck).unwrap(),
         ];
 
         Deal {
-            deal_number,
-            vulnerable,
-            dealer,
+            board: Board::from_number(board_number),
             hands: hands_vec.try_into().unwrap(),
         }
     }
 
-    fn calculate_vulnerability(deal_number: u8) -> Vulnerable {
-        let v = deal_number - 1;
-        let vul = v + v / 4;
-        match vul % 4 {
-            0 => Vulnerable::None,
-            1 => Vulnerable::NorthSouth,
-            2 => Vulnerable::EastWest,
-            _ => Vulnerable::All,
-        }
+    fn sorted_deck() -> Vec<Card> {
+        let deck = Vec::<Card>::from_iter(
+            Suit::iter()
+                .cartesian_product(Denomination::iter())
+                .map(|(suit, denomination)| Card { suit, denomination }),
+        );
+        assert_eq!(deck.len(), 52);
+        deck
     }
 
-    fn calculate_dealer(deal_number: u8) -> PlayerPosition {
-        match (deal_number - 1) % 4 {
-            0 => PlayerPosition::North,
-            1 => PlayerPosition::East,
-            2 => PlayerPosition::South,
-            _ => PlayerPosition::West,
-        }
+    fn shuffled_deck() -> Vec<Card> {
+        let mut deck = Deal::sorted_deck();
+        let mut rng = thread_rng();
+        deck.shuffle(&mut rng);
+        deck
+    }
+
+    fn vulnerable(&self) -> Vulnerability {
+        self.board.vulnerable()
+    }
+
+    fn dealer(&self) -> PlayerPosition {
+        self.board.dealer()
     }
 }
 
@@ -110,36 +69,8 @@ impl Default for Deal {
 #[cfg(test)]
 mod tests {
     use super::Deal;
-    use super::Vulnerable;
     use super::*;
     use crate::primitives::*;
-    use test_case::test_case;
-
-    #[test_case( 1, Vulnerable::None, PlayerPosition::North ; "Deal construction 1")]
-    #[test_case( 2, Vulnerable::NorthSouth, PlayerPosition::East ; "Deal construction 2 ")]
-    #[test_case( 3, Vulnerable::EastWest, PlayerPosition::South ; "Deal construction 3")]
-    #[test_case( 4, Vulnerable::All, PlayerPosition::West; "Deal construction 4")]
-    #[test_case( 5, Vulnerable::NorthSouth, PlayerPosition::North ; "Deal construction 5")]
-    #[test_case( 6, Vulnerable::EastWest, PlayerPosition::East ; "Deal construction 6")]
-    #[test_case( 7, Vulnerable::All, PlayerPosition::South ; "Deal construction 7")]
-    #[test_case( 8, Vulnerable::None, PlayerPosition::West; "Deal construction 8")]
-    #[test_case( 9, Vulnerable::EastWest, PlayerPosition::North ; "Deal construction 9")]
-    #[test_case(10, Vulnerable::All, PlayerPosition::East ; "Deal construction 10")]
-    #[test_case(11, Vulnerable::None, PlayerPosition::South ; "Deal construction 11")]
-    #[test_case(12, Vulnerable::NorthSouth, PlayerPosition::West ; "Deal construction 12")]
-    #[test_case(13, Vulnerable::All, PlayerPosition::North ; "Deal construction 13")]
-    #[test_case(14, Vulnerable::None, PlayerPosition::East ; "Deal construction 14")]
-    #[test_case(15, Vulnerable::NorthSouth, PlayerPosition::South ; "Deal construction 15")]
-    #[test_case(16, Vulnerable::EastWest, PlayerPosition::West ; "Deal construction 16")]
-    #[test_case(17, Vulnerable::None, PlayerPosition::North ; "Deal construction 17")]
-    #[test_case(18, Vulnerable::NorthSouth, PlayerPosition::East ; "Deal construction 18")]
-
-    fn test_deal_construction(deal_number: u8, vulnerable: Vulnerable, dealer: PlayerPosition) {
-        let deal = Deal::new_from_number(deal_number);
-        assert_eq!(deal.dealer, dealer);
-        assert_eq!(deal.vulnerable, vulnerable);
-        assert_eq!(deal.hands[0].cards().count(), 13);
-    }
 
     #[test]
     fn test_deck_integrity() {

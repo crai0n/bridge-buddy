@@ -5,6 +5,8 @@ pub use deal::Deal;
 pub use hand::Hand;
 
 pub mod bid;
+pub mod bid_line;
+mod board;
 pub mod card;
 pub mod contract;
 pub mod deal;

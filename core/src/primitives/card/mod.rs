@@ -57,6 +57,15 @@ mod tests {
         assert_eq!(Card::from_str(input).unwrap(), Card { suit, denomination });
     }
 
+    #[test_case("oQ")]
+    #[test_case("SL")]
+    #[test_case("D;")]
+    #[test_case("C1")]
+    #[test_case(";")]
+    fn parsing_fails(input: &str) {
+        assert!(Card::from_str(input).is_err());
+    }
+
     #[test_case("h7", "hA", Ordering::Less)]
     #[test_case("s7", "hK", Ordering::Greater)]
     #[test_case("s7", "s7", Ordering::Equal)]
@@ -93,5 +102,37 @@ mod tests {
         let string = format!("{}", card);
         let new_card = Card::from_str(&string).unwrap();
         assert_eq!(card, new_card);
+    }
+
+    #[test_case(Card { suit: Spades, denomination: King }, "Card { suit: Spades, denomination: King }")]
+    fn debug(input: Card, expected: &str) {
+        assert_eq!(format!("{:?}", input), expected)
+    }
+
+    #[test]
+    fn copy() {
+        let mut x = Card {
+            suit: Spades,
+            denomination: King,
+        };
+        let y = x;
+        x = Card {
+            suit: Hearts,
+            denomination: Queen,
+        };
+        assert_eq!(
+            x,
+            Card {
+                suit: Hearts,
+                denomination: Queen,
+            }
+        );
+        assert_eq!(
+            y,
+            Card {
+                suit: Spades,
+                denomination: King,
+            }
+        );
     }
 }

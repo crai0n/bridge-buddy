@@ -1,11 +1,13 @@
 use crate::primitives::bid::*;
 use crate::primitives::contract::*;
 
-use crate::primitives::deal::PlayerPosition;
+use crate::primitives::board::PlayerPosition;
 use itertools::Itertools;
 
+use crate::error::BBError;
 use std::fmt::Display;
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct BidLine {
     bids: Vec<Bid>,
     first_bid: PlayerPosition,
@@ -162,30 +164,42 @@ impl BidLine {
             }
         }
     }
-
-    // pub fn bids_are_valid(bids: &Bid[]) -> bool {
-
-    //     let checker = BidLine {bids: vec![]};
-
-    // }
 }
 
-#[cfg(test)]
-mod test {
-    use crate::bidder::*;
-    use crate::primitives::Suit;
+// impl std::str::FromStr for BidLine {
+//     type Err = BBError;
+//
+//     fn from_str(s: &str) -> Result<Self, Self::Err> {
+//         let (player_key, line) = BidLine::split_at_colon(s)?;
+//         todo!()
+//     }
+// }
 
-    use std::str::FromStr;
-    use test_case::test_case;
-
-    #[test_case("1NT", Bid::Contract(ContractBid{ level: ContractLevel::One, denomination: ContractDenomination::NoTrump}); "No Trump")]
-    #[test_case("2S", Bid::Contract(ContractBid{ level: ContractLevel::Two, denomination: ContractDenomination::Trump(Suit::Spades)}); "Spades")]
-    #[test_case("7d", Bid::Contract(ContractBid{ level: ContractLevel::Seven, denomination: ContractDenomination::Trump(Suit::Diamonds)}); "Diamonds")]
-    #[test_case("4♥",Bid::Contract(ContractBid{ level: ContractLevel::Four, denomination: ContractDenomination::Trump(Suit::Hearts)}); "Hearts")]
-    #[test_case("p",Bid::Auxiliary(AuxiliaryBid::Pass); "pass")]
-    #[test_case("x",Bid::Auxiliary(AuxiliaryBid::Double); "double")]
-    #[test_case("Xx",Bid::Auxiliary(AuxiliaryBid::Redouble); "redouble")]
-    fn bid_from_str(str: &str, bid: Bid) {
-        assert_eq!(Bid::from_str(str).unwrap(), bid)
+impl BidLine {
+    pub fn split_at_colon(string: &str) -> Result<(&str, &str), BBError> {
+        string.split_once(':').ok_or(BBError::ParseError(
+            string.into(),
+            "missing colon between StartingPlayer and Bid",
+        ))
     }
 }
+
+// #[cfg(test)]
+// mod test {
+//     use crate::primitives::bid::AuxiliaryBid::*;
+//     use crate::primitives::bid::Bid::Contract;
+//     use crate::primitives::bid::Bid::*;
+//     use crate::primitives::bid::ContractBid;
+//     use crate::primitives::bid_line::BidLine;
+//     use crate::primitives::contract::{ContractDenomination::*, ContractLevel::*};
+//     use crate::primitives::player_position::PlayerPosition::*;
+//
+//     use test_case::test_case;
+//
+//     #[test_case("N:P-1NT", BidLine{ bids: vec![Auxiliary(Pass), Contract(ContractBid{level: One, denomination: NoTrump})], first_bid: North }; "Pass then 1NT")]
+//     // #[test_case("N:P-1NT-P-2C-P-2D-", vec![Auxiliary(Pass), Contract(NoTrump)]; )]
+//     fn from_str(input: &str, bid_line: BidLine) {
+//         let input_line = BidLine::from_str(input).unwrap();
+//         assert_eq!(input_line, bid_line);
+//     }
+// }
