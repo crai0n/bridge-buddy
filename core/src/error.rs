@@ -21,6 +21,8 @@ pub enum BBError {
     UnknownCard(String),
     UnknownSuit(char),
     UnknownDenomination(char),
+    UnknownContract(String),
+    UnknownBid(String),
 }
 
 impl Display for BBError {
@@ -32,6 +34,8 @@ impl Display for BBError {
             BBError::UnknownDenomination(d) => writeln!(f, "unknown denomination: {}", d),
             BBError::UnknownSuit(s) => writeln!(f, "unknown suit: {}", s),
             BBError::CardCount => writeln!(f, "wrong number of cards"),
+            BBError::UnknownContract(c) => writeln!(f, "unknown contract: {}", c),
+            BBError::UnknownBid(c) => writeln!(f, "unknown bid: {}", c),
         }
     }
 }

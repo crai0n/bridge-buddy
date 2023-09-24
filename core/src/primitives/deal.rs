@@ -1,4 +1,4 @@
-use crate::primitives::{Card, Denomination, Hand, Suit};
+use crate::primitives::{card::Denomination, Card, Hand, Suit};
 use itertools::Itertools;
 use rand::seq::SliceRandom;
 use rand::{random, thread_rng};

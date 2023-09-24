@@ -1,6 +1,9 @@
-pub use super::Denomination;
-pub use super::Suit;
 use crate::error::BBError;
+pub use denomination::Denomination;
+pub use suit::Suit;
+
+pub mod denomination;
+pub mod suit;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Card {

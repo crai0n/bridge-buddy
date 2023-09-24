@@ -1,5 +1,5 @@
 use crate::error::BBError;
-pub use crate::primitives::{Card, Denomination, Suit};
+pub use crate::primitives::{card::Denomination, Card, Suit};
 use std::cmp::Ordering;
 use std::str::FromStr;
 use strum::IntoEnumIterator;
@@ -141,7 +141,7 @@ impl std::fmt::Display for HandType {
 mod tests {
     use super::{Hand, HandType};
     use crate::error::BBError;
-    use crate::primitives::Denomination::*;
+    use crate::primitives::card::Denomination::*;
     use crate::primitives::Suit::*;
     use crate::primitives::{Card, Suit};
     use std::str::FromStr;
