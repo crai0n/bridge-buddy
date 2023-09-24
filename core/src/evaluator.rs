@@ -1,5 +1,5 @@
-use crate::primitives::Denomination::*;
-use crate::primitives::{Card, Denomination, Hand, Suit};
+use crate::primitives::card::Denomination::*;
+use crate::primitives::{card::Denomination, Card, Hand, Suit};
 use itertools::Itertools;
 use std::cmp::Ordering;
 use strum::{Display, IntoEnumIterator};
