@@ -1,5 +1,5 @@
 pub use player_position::PlayerPosition;
-use rand::random;
+use rand::prelude::*;
 pub use vulnerability::Vulnerability;
 
 pub mod player_position;
@@ -10,22 +10,28 @@ pub struct Board {
 }
 
 impl Board {
-    const MAX_NUMBER: usize = 64;
+    pub const MAX_NUMBER: usize = 32;
 
     pub fn new() -> Self {
-        Board::from_number(random())
+        let mut rng = thread_rng();
+        Self::from_rng(&mut rng)
+    }
+
+    pub fn from_rng(rng: &mut impl Rng) -> Self {
+        let num = rng.gen_range(1..=Self::MAX_NUMBER);
+        Self::from_number(num)
     }
 
     pub fn from_number(num: usize) -> Self {
-        match num {
-            0 => Board { number: 64 },
-            _ => Board {
-                number: (num - 1) % Board::MAX_NUMBER + 1,
-            },
-        }
+        let number = match num {
+            0 => Self::MAX_NUMBER,
+            1..=64 => num,
+            _ => (num - 1) % Board::MAX_NUMBER + 1,
+        };
+        Board { number }
     }
 
-    pub const fn vulnerable(&self) -> Vulnerability {
+    pub fn vulnerable(&self) -> Vulnerability {
         let v = self.number - 1;
         let vul = v + v / 4;
         match vul % 4 {
@@ -36,7 +42,7 @@ impl Board {
         }
     }
 
-    pub const fn dealer(&self) -> PlayerPosition {
+    pub fn dealer(&self) -> PlayerPosition {
         match (self.number - 1) % 4 {
             0 => PlayerPosition::North,
             1 => PlayerPosition::East,
@@ -59,6 +65,8 @@ mod test {
     use crate::primitives::board::vulnerability::Vulnerability::*;
     use crate::primitives::board::PlayerPosition;
     use crate::primitives::board::PlayerPosition::*;
+    use rand::prelude::*;
+    use rand_chacha::ChaCha8Rng;
     use test_case::test_case;
 
     #[test_case(0, EastWest, West)]
@@ -84,5 +92,29 @@ mod test {
         let deal = Board::from_number(number);
         assert_eq!(deal.dealer(), dealer);
         assert_eq!(deal.vulnerable(), vulnerable);
+    }
+
+    #[test_case( 1u64,  20; "Test A")]
+    #[test_case( 2u64,  29; "Test B")]
+    #[test_case( 3u64,  11; "Test C")]
+    #[test_case( 4u64,  24; "Test D")]
+    #[test_case( 5u64,   7; "Test E")]
+    #[test_case( 6u64,  14; "Test F")]
+    #[test_case( 7u64,   6; "Test G")]
+    #[test_case( 8u64,   3; "Test H")]
+    #[test_case( 9u64,  26; "Test I")]
+    #[test_case(10u64,   1; "Test Range Beginning")]
+    #[test_case(35u64,  32; "Test Range End")]
+    #[test_case( 1234567890123456789u64, 31; "Test 1")]
+    #[test_case( 9274615494946216468u64,  6; "Test 2")]
+    #[test_case(10284072810178401816u64, 22; "Test 3")]
+    #[test_case( 3756139473478105616u64,  3; "Test 4")]
+    #[test_case( 9375569024856384856u64, 24; "Test 5")]
+    #[test_case( 1294661341901337513u64,  1; "Test 6")]
+    #[test_case(18446744073709551615u64, 13; "Test Max")]
+    fn determinism(seed: u64, expected: usize) {
+        let mut rng = ChaCha8Rng::seed_from_u64(seed);
+        let board = Board::from_rng(&mut rng);
+        assert_eq!(board.number, expected);
     }
 }

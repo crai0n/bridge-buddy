@@ -10,4 +10,5 @@ mod board;
 pub mod card;
 pub mod contract;
 pub mod deal;
+pub mod deck;
 pub mod hand;

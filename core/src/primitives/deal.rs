@@ -1,11 +1,9 @@
 use crate::primitives::board::vulnerability::Vulnerability;
 use crate::primitives::board::Board;
 use crate::primitives::board::PlayerPosition;
-use crate::primitives::{card::Denomination, Card, Hand, Suit};
-use itertools::Itertools;
-use rand::seq::SliceRandom;
-use rand::{random, thread_rng};
-use strum::IntoEnumIterator;
+use crate::primitives::deck::Deck;
+use crate::primitives::Hand;
+use rand::prelude::*;
 
 pub struct Deal {
     pub board: Board,
@@ -14,48 +12,37 @@ pub struct Deal {
 
 impl Deal {
     pub fn new() -> Deal {
-        let board_number = (random::<usize>() % 32) + 1;
-        Self::new_with_board_number(board_number)
-    }
-
-    pub fn new_with_board_number(board_number: usize) -> Deal {
-        let mut deck = Deal::shuffled_deck();
-
-        let hands_vec = vec![
-            Hand::from_cards(&deck.split_off(39)).unwrap(),
-            Hand::from_cards(&deck.split_off(26)).unwrap(),
-            Hand::from_cards(&deck.split_off(13)).unwrap(),
-            Hand::from_cards(&deck).unwrap(),
-        ];
-
-        Deal {
-            board: Board::from_number(board_number),
-            hands: hands_vec.try_into().unwrap(),
-        }
-    }
-
-    fn sorted_deck() -> Vec<Card> {
-        let deck = Vec::<Card>::from_iter(
-            Suit::iter()
-                .cartesian_product(Denomination::iter())
-                .map(|(suit, denomination)| Card { suit, denomination }),
-        );
-        assert_eq!(deck.len(), 52);
-        deck
-    }
-
-    fn shuffled_deck() -> Vec<Card> {
-        let mut deck = Deal::sorted_deck();
         let mut rng = thread_rng();
-        deck.shuffle(&mut rng);
-        deck
+        Self::from_rng(&mut rng)
     }
 
-    fn vulnerable(&self) -> Vulnerability {
+    pub fn from_rng(rng: &mut impl Rng) -> Self {
+        let board_number = rng.gen_range(1..=Board::MAX_NUMBER);
+        Self::from_rng_with_board_number(board_number, rng)
+    }
+    fn new_with_board_number(board_number: usize) -> Self {
+        let mut rng = thread_rng();
+        Self::from_rng_with_board_number(board_number, &mut rng)
+    }
+
+    pub fn from_rng_with_board_number(board_number: usize, rng: &mut impl Rng) -> Self {
+        let board = Board::from_number(board_number);
+        let hands = Self::hands_from_rng(rng);
+
+        Deal { board, hands }
+    }
+
+    fn hands_from_rng(rng: &mut impl Rng) -> [Hand; 4] {
+        let mut deck = Deck::new();
+        deck.shuffle_with_rng(rng);
+        deck.deal()
+    }
+
+    pub fn vulnerable(&self) -> Vulnerability {
         self.board.vulnerable()
     }
 
-    fn dealer(&self) -> PlayerPosition {
+    pub fn dealer(&self) -> PlayerPosition {
         self.board.dealer()
     }
 }
@@ -69,7 +56,7 @@ impl Default for Deal {
 #[cfg(test)]
 mod tests {
     use super::Deal;
-    use super::*;
+    use crate::primitives::card::Denomination;
     use crate::primitives::*;
 
     #[test]
