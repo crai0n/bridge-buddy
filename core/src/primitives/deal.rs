@@ -33,8 +33,7 @@ impl Deal {
     }
 
     fn hands_from_rng(rng: &mut impl Rng) -> [Hand; 4] {
-        let mut deck = Deck::new();
-        deck.shuffle_with_rng(rng);
+        let deck = Deck::shuffled_from_rng(rng);
         deck.deal()
     }
 
@@ -55,57 +54,28 @@ impl Default for Deal {
 
 #[cfg(test)]
 mod tests {
-    use super::Deal;
-    use crate::primitives::card::Denomination;
-    use crate::primitives::*;
+    use crate::primitives::{Card, Deal};
+    use rand::prelude::*;
+    use rand_chacha::ChaCha8Rng;
+    use std::str::FromStr;
+    use test_case::test_case;
 
-    #[test]
-    fn test_deck_integrity() {
-        let deal = Deal::new();
-        let mut cards: Vec<Card> = Vec::with_capacity(52);
-
-        for hand in deal.hands {
-            for &card in hand.cards() {
-                cards.push(card)
-            }
-        }
-
-        cards.sort_unstable();
-
+    #[test_case( 1u64,  20, "C4", "SK"; "Test A")]
+    #[test_case( 2u64,  29, "C4", "SQ"; "Test B")]
+    #[test_case( 3u64,  11, "C3", "SA"; "Test C")]
+    #[test_case( 4u64,  24, "C4", "ST"; "Test D")]
+    #[test_case( 5u64,   7, "C5", "SA"; "Test E")]
+    fn determinism(seed: u64, board_number: usize, lowest_card: &str, highest_card: &str) {
+        let mut rng = ChaCha8Rng::seed_from_u64(seed);
+        let deal = Deal::from_rng(&mut rng);
+        assert_eq!(deal.board.number(), board_number);
         assert_eq!(
-            cards.get(1).unwrap(),
-            &Card {
-                suit: Suit::Clubs,
-                denomination: Denomination::Three
-            }
+            deal.hands.first().unwrap().cards().next().unwrap(),
+            &Card::from_str(lowest_card).unwrap()
         );
         assert_eq!(
-            cards.get(13).unwrap(),
-            &Card {
-                suit: Suit::Diamonds,
-                denomination: Denomination::Two
-            }
-        );
-        assert_eq!(
-            cards.get(17).unwrap(),
-            &Card {
-                suit: Suit::Diamonds,
-                denomination: Denomination::Six
-            }
-        );
-        assert_eq!(
-            cards.get(32).unwrap(),
-            &Card {
-                suit: Suit::Hearts,
-                denomination: Denomination::Eight
-            }
-        );
-        assert_eq!(
-            cards.get(48).unwrap(),
-            &Card {
-                suit: Suit::Spades,
-                denomination: Denomination::Jack
-            }
+            deal.hands.first().unwrap().cards().last().unwrap(),
+            &Card::from_str(highest_card).unwrap()
         );
     }
 }

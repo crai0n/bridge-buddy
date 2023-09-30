@@ -25,8 +25,8 @@ impl Board {
     pub fn from_number(num: usize) -> Self {
         let number = match num {
             0 => Self::MAX_NUMBER,
-            1..=64 => num,
-            _ => (num - 1) % Board::MAX_NUMBER + 1,
+            1..=Self::MAX_NUMBER => num,
+            _ => (num - 1) % Self::MAX_NUMBER + 1,
         };
         Board { number }
     }
@@ -49,6 +49,10 @@ impl Board {
             2 => PlayerPosition::South,
             _ => PlayerPosition::West,
         }
+    }
+
+    pub fn number(&self) -> usize {
+        self.number
     }
 }
 
@@ -115,6 +119,6 @@ mod test {
     fn determinism(seed: u64, expected: usize) {
         let mut rng = ChaCha8Rng::seed_from_u64(seed);
         let board = Board::from_rng(&mut rng);
-        assert_eq!(board.number, expected);
+        assert_eq!(board.number(), expected);
     }
 }
