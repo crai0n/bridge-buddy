@@ -1,5 +1,6 @@
 use bridge_buddy_core::evaluator::ForumDPlus2015Evaluator;
-use bridge_buddy_core::primitives::hand::{Hand, Suit};
+use bridge_buddy_core::primitives::card::Suit;
+use bridge_buddy_core::primitives::deal::Hand;
 use bridge_buddy_core::IntoEnumIterator;
 use clap::{Parser, Subcommand};
 use std::io::stdin;

@@ -1,7 +1,7 @@
 use crate::primitives::bid::*;
 use crate::primitives::contract::*;
 
-use crate::primitives::board::PlayerPosition;
+use crate::primitives::deal::player_position::PlayerPosition;
 use itertools::Itertools;
 
 use crate::error::BBError;

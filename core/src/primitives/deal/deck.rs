@@ -62,7 +62,7 @@ impl Default for Deck {
 
 #[cfg(test)]
 mod test {
-    use crate::primitives::deck::Deck;
+    use super::Deck;
     use crate::primitives::Card;
     use rand::prelude::*;
     use rand_chacha::ChaCha8Rng;

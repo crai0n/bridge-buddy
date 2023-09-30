@@ -1,9 +1,6 @@
-pub use player_position::PlayerPosition;
+use crate::primitives::deal::player_position::PlayerPosition;
+use crate::primitives::deal::vulnerability::Vulnerability;
 use rand::prelude::*;
-pub use vulnerability::Vulnerability;
-
-pub mod player_position;
-pub mod vulnerability;
 
 pub struct Board {
     number: usize,
@@ -65,10 +62,10 @@ impl Default for Board {
 #[cfg(test)]
 mod test {
     use super::Board;
-    use crate::primitives::board::vulnerability::Vulnerability;
-    use crate::primitives::board::vulnerability::Vulnerability::*;
-    use crate::primitives::board::PlayerPosition;
-    use crate::primitives::board::PlayerPosition::*;
+    use crate::primitives::deal::board::PlayerPosition;
+    use crate::primitives::deal::board::PlayerPosition::*;
+    use crate::primitives::deal::vulnerability::Vulnerability;
+    use crate::primitives::deal::vulnerability::Vulnerability::*;
     use rand::prelude::*;
     use rand_chacha::ChaCha8Rng;
     use test_case::test_case;

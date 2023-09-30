@@ -1,9 +1,15 @@
-use crate::primitives::board::vulnerability::Vulnerability;
-use crate::primitives::board::Board;
-use crate::primitives::board::PlayerPosition;
-use crate::primitives::deck::Deck;
-use crate::primitives::Hand;
+pub use board::Board;
+pub use deck::Deck;
+pub use hand::Hand;
+pub use player_position::PlayerPosition;
 use rand::prelude::*;
+pub use vulnerability::Vulnerability;
+
+pub mod board;
+pub mod deck;
+pub mod hand;
+pub mod player_position;
+pub mod vulnerability;
 
 pub struct Deal {
     pub board: Board,
