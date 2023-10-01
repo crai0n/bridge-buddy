@@ -1,3 +1,4 @@
+use crate::primitives::bid::Bid;
 use crate::primitives::Card;
 use std::fmt::{Debug, Display, Formatter};
 
@@ -22,7 +23,9 @@ pub enum BBError {
     UnknownSuit(char),
     UnknownDenomination(char),
     UnknownContract(String),
+    UnknownContractDenomination(String),
     UnknownBid(String),
+    InvalidBid(Bid),
 }
 
 impl Display for BBError {
@@ -35,7 +38,9 @@ impl Display for BBError {
             BBError::UnknownSuit(s) => writeln!(f, "unknown suit: {}", s),
             BBError::CardCount => writeln!(f, "wrong number of cards"),
             BBError::UnknownContract(c) => writeln!(f, "unknown contract: {}", c),
+            BBError::UnknownContractDenomination(c) => writeln!(f, "unknown contract denomination: {}", c),
             BBError::UnknownBid(c) => writeln!(f, "unknown bid: {}", c),
+            BBError::InvalidBid(b) => writeln!(f, "invalid bid: {}", b),
         }
     }
 }

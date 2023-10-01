@@ -1,5 +1,5 @@
 use crate::error::BBError;
-pub use crate::primitives::{card::Denomination, Card, Suit};
+use crate::primitives::{card::Denomination, Card, Suit};
 use std::cmp::Ordering;
 use std::str::FromStr;
 use strum::IntoEnumIterator;

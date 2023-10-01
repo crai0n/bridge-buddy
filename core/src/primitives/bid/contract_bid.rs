@@ -12,16 +12,20 @@ impl std::str::FromStr for ContractBid {
     type Err = BBError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.len() < 2 {
+            return Err(BBError::UnknownBid(s.into()));
+        }
+
         let level = match ContractLevel::from_str(&s[..1]) {
             Ok(l) => l,
-            Err(_) => return Err(BBError::ParseError(s.into(), "unknown level")),
+            Err(_) => return Err(BBError::UnknownBid(s.into())),
         };
 
         let den_str = &s[1..];
 
         let denomination = match ContractDenomination::from_str(den_str) {
             Ok(d) => d,
-            Err(_) => return Err(BBError::ParseError(s.into(), "unknown contract denomination")),
+            Err(_) => return Err(BBError::UnknownBid(s.into())),
         };
 
         Ok(ContractBid { level, denomination })
@@ -54,6 +58,15 @@ mod test {
     #[test_case("4♥", Four, Trump(Hearts); "Hearts")]
     fn from_str(str: &str, level: ContractLevel, denomination: ContractDenomination) {
         assert_eq!(ContractBid::from_str(str).unwrap(), ContractBid { level, denomination })
+    }
+
+    #[test_case(""; "Empty")]
+    #[test_case("j"; "single letter")]
+    #[test_case("j4"; "letter and number")]
+    #[test_case("6k"; "number and letter")]
+    fn fails(input: &str) {
+        let c1 = Contract::from_str(input);
+        assert!(c1.is_err())
     }
 
     #[test_case(One, NoTrump, "1NT"; "No Trump")]

@@ -73,6 +73,7 @@ mod tests {
     use crate::error::BBError;
     use crate::primitives::card::Denomination;
     use std::str::FromStr;
+    use strum::IntoEnumIterator;
     use test_case::test_case;
 
     #[test_case(King, Ace; "King and Ace")]
@@ -83,7 +84,7 @@ mod tests {
         assert!(lower < higher);
     }
 
-    #[test_case('A', Ace; "A is Ace")]
+    #[test_case('a', Ace; "A is Ace")]
     #[test_case('k', King; "k is King")]
     #[test_case('q', Queen; "q is Queen")]
     #[test_case('J', Jack; "J is Jack")]
@@ -171,5 +172,27 @@ mod tests {
             Denomination::from_char(input).unwrap_err(),
             BBError::UnknownDenomination(input)
         )
+    }
+
+    #[test]
+    fn copy() {
+        let mut x = King;
+        let y = x;
+        x = Queen;
+        assert_eq!(x, Queen);
+        assert_eq!(y, King);
+    }
+
+    #[test]
+    fn iteration() {
+        assert_eq!(
+            Denomination::iter().collect::<Vec<Denomination>>(),
+            vec![Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King, Ace]
+        )
+    }
+
+    #[test]
+    fn debug() {
+        assert_eq!(format!("{:?}", Jack), "Jack")
     }
 }

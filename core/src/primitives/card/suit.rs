@@ -49,6 +49,7 @@ mod tests {
     use crate::error::BBError;
     use crate::primitives::Suit;
     use std::str::FromStr;
+    use strum::IntoEnumIterator;
     use test_case::test_case;
 
     #[test]
@@ -129,5 +130,27 @@ mod tests {
     #[test_case('u')]
     fn fail_misc_characters(input: char) {
         assert_eq!(Suit::from_char(input).unwrap_err(), BBError::UnknownSuit(input))
+    }
+
+    #[test]
+    fn copy() {
+        let mut x = Hearts;
+        let y = x;
+        x = Spades;
+        assert_eq!(x, Spades);
+        assert_eq!(y, Hearts);
+    }
+
+    #[test]
+    fn iteration() {
+        assert_eq!(
+            Suit::iter().collect::<Vec<Suit>>(),
+            vec![Clubs, Diamonds, Hearts, Spades]
+        )
+    }
+
+    #[test]
+    fn debug() {
+        assert_eq!(format!("{:?}", Spades), "Spades")
     }
 }
