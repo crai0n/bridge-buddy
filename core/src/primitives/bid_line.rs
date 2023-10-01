@@ -4,6 +4,7 @@ use crate::primitives::contract::*;
 use itertools::Itertools;
 
 use crate::error::BBError;
+use crate::primitives::contract::Contract;
 use std::fmt::Display;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -21,30 +22,32 @@ impl Display for BidLine {
 
 impl BidLine {
     pub fn implied_contract(&self) -> Option<Contract> {
-        let mut bid_iter = self.bids.iter().rev().peekable();
-        let state = match bid_iter
-            .peeking_take_while(|x| matches!(x, Bid::Auxiliary(_)))
-            .map(|x| match x {
-                Bid::Auxiliary(aux_bid) => aux_bid,
-                _ => unreachable!(),
-            })
-            .max()
-        {
-            Some(AuxiliaryBid::Double) => ContractState::Doubled,
-            Some(AuxiliaryBid::Redouble) => ContractState::Redoubled,
-            _ => ContractState::Passed,
-        };
+        if let Some(last_contract_bid) = self.last_contract_bid() {
+            let state = self.calculate_contract_state();
 
-        if let Some(Bid::Contract(contract_bid)) = bid_iter.next() {
-            let level = contract_bid.level;
-            let denomination = contract_bid.denomination;
             Some(Contract {
-                level,
-                denomination,
+                level: last_contract_bid.level,
+                denomination: last_contract_bid.denomination,
                 state,
             })
         } else {
-            None // if no one has bid yet, there is no contract
+            None
+        }
+    }
+
+    fn calculate_contract_state(&self) -> ContractState {
+        match self.bids.iter().rev().map_while(Self::access_auxiliary).max() {
+            Some(AuxiliaryBid::Pass) => ContractState::Passed,
+            Some(AuxiliaryBid::Double) => ContractState::Doubled,
+            Some(AuxiliaryBid::Redouble) => ContractState::Redoubled,
+            _ => ContractState::Passed,
+        }
+    }
+
+    fn access_auxiliary(bid: &Bid) -> Option<&AuxiliaryBid> {
+        match bid {
+            Bid::Contract(_) => None,
+            Bid::Auxiliary(ab) => Some(ab),
         }
     }
 
@@ -191,14 +194,51 @@ mod test {
     use crate::primitives::bid_line::BidLine;
     use std::str::FromStr;
 
+    use crate::error::BBError;
     use crate::primitives::bid::Bid;
+    use crate::primitives::contract::Contract;
     use test_case::test_case;
 
     #[test_case("P-1NT", &["P", "1NT"]; "Pass then 1NT")]
-    #[test_case("P-1NT-P-2C-P-2D-", &["P", "1NT", "P", "2C", "P", "2D"]; "Two Diamonds")]
+    #[test_case("p-1NT-P-2C-Pass-2D-", &["P", "1NT", "P", "2C", "P", "2D"]; "Two Diamonds")]
+    #[test_case("P-1NT-X-Pass-p-xX", &["P", "1NT", "X", "P", "P", "XX"]; "Redoubled 1NT")]
+    #[test_case("P-1NT-P-P-x", &["P", "1NT", "P", "P", "X"]; "Doubled 1NT")]
     fn from_str(input: &str, expect_line: &[&str]) {
         let input_line = BidLine::from_str(input).unwrap();
         let expected = expect_line.iter().map(|x| Bid::from_str(x).unwrap()).collect();
         assert_eq!(input_line, BidLine { bids: expected });
+    }
+
+    #[test_case("P-1NT", "Pass-1NT"; "Pass then 1NT")]
+    #[test_case("p-1NT-P-2C-Pass-2D-", "Pass-1NT-Pass-2♣-Pass-2♦"; "Two Diamonds")]
+    #[test_case("P-1NT-X-Pass-p-xX", "Pass-1NT-X-Pass-Pass-XX"; "Redoubled 1NT")]
+    #[test_case("P-1NT-P-P-x", "Pass-1NT-Pass-Pass-X"; "Doubled 1NT")]
+    fn round_trip(input: &str, expected: &str) {
+        let input_line = BidLine::from_str(input).unwrap();
+        let string = format!("{}", input_line);
+        assert_eq!(string, expected);
+    }
+
+    #[test_case("P-X", "X"; "Double without Contract")]
+    #[test_case("1NT-1S", "1S"; "1 Spades after 1NT")]
+    #[test_case("1NT-P-X", "X"; "Double partners contract")]
+    #[test_case("1NT-X-P-XX", "XX"; "Redouble partners double")]
+    #[test_case("1NT-X-1H", "1H"; "Hearts after doubled No-Trump")]
+    fn invalid_bid(input: &str, invalid: &str) {
+        let bid_line = BidLine::from_str(input);
+        let invalid_bid = Bid::from_str(invalid).unwrap();
+        assert_eq!(bid_line, Err(BBError::InvalidBid(invalid_bid)))
+    }
+
+    #[test_case("P-P", ""; "No Contract implied")]
+    #[test_case("1NT-2S-P-P", "2S"; "2 Spades")]
+    #[test_case("1NT-X-P", "1NTX"; "Doubled 1NT")]
+    #[test_case("1NT-X-XX-P", "1NTXX"; "Redoubled 1NT")]
+    #[test_case("2D", "2D"; "Two Diamonds")]
+    #[test_case("1NT-X-2H-P-P-P", "2H"; "Two Hearts")]
+    fn implied_contract(input: &str, implied: &str) {
+        let bid_line = BidLine::from_str(input).unwrap();
+        let implied_contract = Contract::from_str(implied).ok();
+        assert_eq!(bid_line.implied_contract(), implied_contract)
     }
 }
