@@ -48,10 +48,21 @@ impl BidLine {
         }
     }
 
-    pub fn can_bid(&self, bid: Bid) -> bool {
-        if self.contract_is_final() {
-            return false;
-        };
+    pub fn new() -> Self {
+        let bids = vec![];
+        BidLine { bids }
+    }
+
+    pub fn bid(&mut self, bid: Bid) -> Result<(), BBError> {
+        if self.can_bid(&bid) {
+            self.bids.push(bid);
+            Ok(())
+        } else {
+            Err(BBError::InvalidBid(bid))
+        }
+    }
+
+    pub fn can_bid(&self, bid: &Bid) -> bool {
         match bid {
             Bid::Auxiliary(AuxiliaryBid::Pass) => self.can_pass(),
             Bid::Auxiliary(AuxiliaryBid::Double) => self.can_double(),
@@ -65,23 +76,25 @@ impl BidLine {
     }
 
     fn three_passes_in_a_row(&self) -> bool {
-        self.bids
-            .iter()
-            .rev()
-            .take(3)
-            .all(|x| x == &Bid::Auxiliary(AuxiliaryBid::Pass))
+        self.bids.len() == 3
+            && self
+                .bids
+                .iter()
+                .rev()
+                .take(3)
+                .all(|x| x == &Bid::Auxiliary(AuxiliaryBid::Pass))
     }
 
     fn can_pass(&self) -> bool {
-        // everyone can pass as long as the bidding is open
-        true
+        !self.contract_is_final()
     }
 
-    fn can_bid_contract(&self, new_bid: ContractBid) -> bool {
-        match self.last_contract_bid() {
-            Some(last) => new_bid > *last,
-            None => true,
-        }
+    fn can_bid_contract(&self, new: &ContractBid) -> bool {
+        !self.contract_is_final()
+            && match self.last_contract_bid() {
+                Some(last) => new > last,
+                None => true,
+            }
     }
 
     fn last_contract_bid(&self) -> Option<&ContractBid> {
@@ -95,7 +108,9 @@ impl BidLine {
     }
 
     fn can_redouble(&self) -> bool {
-        self.last_bid_was_double_from_right_hand_opponent() || self.last_bid_was_double_from_left_hand_opponent()
+        !self.contract_is_final()
+            && (self.last_bid_was_double_from_right_hand_opponent()
+                || self.last_bid_was_double_from_left_hand_opponent())
     }
 
     fn last_bid_was_double_from_right_hand_opponent(&self) -> bool {
@@ -122,8 +137,9 @@ impl BidLine {
     }
 
     fn can_double(&self) -> bool {
-        self.last_bid_was_contract_bid_from_right_hand_opponent()
-            || self.last_bid_was_contract_bid_from_left_hand_opponent()
+        !self.contract_is_final()
+            && (self.last_bid_was_contract_bid_from_right_hand_opponent()
+                || self.last_bid_was_contract_bid_from_left_hand_opponent())
     }
 
     fn last_bid_was_contract_bid_from_right_hand_opponent(&self) -> bool {
@@ -156,7 +172,17 @@ impl std::str::FromStr for BidLine {
             .split('-')
             .map(Bid::from_str)
             .collect::<Result<Vec<_>, _>>()?;
-        Ok(BidLine { bids })
+        let mut bidline = BidLine::new();
+        for bid in bids {
+            bidline.bid(bid)?;
+        }
+        Ok(bidline)
+    }
+}
+
+impl Default for BidLine {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
