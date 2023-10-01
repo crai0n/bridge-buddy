@@ -34,7 +34,7 @@ impl std::str::FromStr for ContractDenomination {
         } else {
             match s {
                 "SA" | "NT" => Ok(ContractDenomination::NoTrump),
-                _ => Err(BBError::ParseError(s.into(), "unknown contract")),
+                _ => Err(BBError::UnknownContractDenomination(s.into())),
             }
         }
     }

@@ -18,14 +18,14 @@ impl std::str::FromStr for ContractBid {
 
         let level = match ContractLevel::from_str(&s[..1]) {
             Ok(l) => l,
-            Err(_) => return Err(BBError::ParseError(s.into(), "unknown level")),
+            Err(_) => return Err(BBError::UnknownBid(s.into())),
         };
 
         let den_str = &s[1..];
 
         let denomination = match ContractDenomination::from_str(den_str) {
             Ok(d) => d,
-            Err(_) => return Err(BBError::ParseError(s.into(), "unknown contract denomination")),
+            Err(_) => return Err(BBError::UnknownBid(s.into())),
         };
 
         Ok(ContractBid { level, denomination })
