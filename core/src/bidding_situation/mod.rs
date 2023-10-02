@@ -1,6 +1,6 @@
 use strum::{Display, EnumString};
 
-mod situation_finder;
+pub mod situation_finder;
 mod situation_rule;
 
 // use crate::primitives::bid_line::BidLine;

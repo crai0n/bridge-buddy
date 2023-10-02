@@ -35,13 +35,30 @@ impl SituationFinder {
         Ok(situation_finder)
     }
 
-    pub fn from_str(s: &str) -> Result<Self, BBError> {
+    pub fn find_situation_after(&self, bid_line: BidLine) -> BiddingSituation {
+        match self.ruleset.get(&bid_line) {
+            None => BiddingSituation::Unknown,
+            Some(sit) => *sit,
+        }
+    }
+}
+
+impl FromStr for SituationFinder {
+    type Err = BBError;
+
+    fn from_str(s: &str) -> Result<Self, BBError> {
         let rules = s
             .trim()
             .split('\n')
             .map(SituationRule::from_str)
             .collect::<Result<Vec<_>, BBError>>()?;
         SituationFinder::from_rules(&rules)
+    }
+}
+
+impl Default for SituationFinder {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

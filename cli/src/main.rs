@@ -1,4 +1,6 @@
+use bridge_buddy_core::bidding_situation::situation_finder::SituationFinder;
 use bridge_buddy_core::evaluator::ForumDPlus2015Evaluator;
+use bridge_buddy_core::primitives::bid_line::BidLine;
 use bridge_buddy_core::primitives::card::Suit;
 use bridge_buddy_core::primitives::deal::Hand;
 use bridge_buddy_core::IntoEnumIterator;
@@ -22,6 +24,9 @@ enum Command {
     Evaluate {
         /// Hand to evaluate (if not given, it will be queried interactively)
         hand: Option<String>,
+    },
+    AnalyzeBids {
+        bid_line: Option<String>,
     },
 }
 
@@ -74,6 +79,28 @@ fn main() {
                 }
                 Err(err) => {
                     println!("invalid hand: {}", err);
+                    exit(1);
+                }
+            }
+        }
+        Command::AnalyzeBids { bid_line } => {
+            let bid_line_result = match bid_line {
+                None => {
+                    let mut bid_string = String::new();
+                    println!("What was the bidding until now?");
+                    stdin().read_line(&mut bid_string).unwrap();
+                    BidLine::from_str(&bid_string)
+                }
+                Some(bid_string) => BidLine::from_str(&bid_string),
+            };
+            match bid_line_result {
+                Ok(bl) => {
+                    let situation_finder = SituationFinder::from_str("1S;Answer1Major\n1NT;Answer1NoTrump\n1D;Answer1Minor\nP-P;OpeningThirdFourth\n;OpeningFirstSecond\n2NT;Unknown").unwrap();
+                    let situation = situation_finder.find_situation_after(bl);
+                    println!("Your situation is {}", situation)
+                }
+                Err(err) => {
+                    println!("{}", err);
                     exit(1);
                 }
             }
