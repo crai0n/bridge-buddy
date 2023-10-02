@@ -7,7 +7,7 @@ use crate::error::BBError;
 use crate::primitives::contract::Contract;
 use std::fmt::Display;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct BidLine {
     bids: Vec<Bid>,
 }
@@ -169,13 +169,16 @@ impl std::str::FromStr for BidLine {
     type Err = BBError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut bidline = BidLine::new();
+        if s.is_empty() {
+            return Ok(bidline);
+        }
         let bids = s
             .trim()
             .trim_matches('-')
             .split('-')
             .map(Bid::from_str)
             .collect::<Result<Vec<_>, _>>()?;
-        let mut bidline = BidLine::new();
         for bid in bids {
             bidline.bid(bid)?;
         }
@@ -203,6 +206,7 @@ mod test {
     #[test_case("p-1NT-P-2C-Pass-2D-", &["P", "1NT", "P", "2C", "P", "2D"]; "Two Diamonds")]
     #[test_case("P-1NT-X-Pass-p-xX", &["P", "1NT", "X", "P", "P", "XX"]; "Redoubled 1NT")]
     #[test_case("P-1NT-P-P-x", &["P", "1NT", "P", "P", "X"]; "Doubled 1NT")]
+    #[test_case("", &[]; "unbid")]
     fn from_str(input: &str, expect_line: &[&str]) {
         let input_line = BidLine::from_str(input).unwrap();
         let expected = expect_line.iter().map(|x| Bid::from_str(x).unwrap()).collect();

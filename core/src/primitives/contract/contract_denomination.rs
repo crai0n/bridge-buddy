@@ -2,7 +2,7 @@ use crate::error::BBError;
 use crate::primitives::Suit;
 use crate::util;
 
-#[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum ContractDenomination {
     Trump(Suit),
     NoTrump,

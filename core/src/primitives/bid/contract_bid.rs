@@ -2,7 +2,7 @@ use crate::error::BBError;
 use crate::primitives::contract::ContractDenomination;
 use crate::primitives::contract::*;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone, Hash)]
 pub struct ContractBid {
     pub level: ContractLevel,
     pub denomination: ContractDenomination,

@@ -1,4 +1,6 @@
+use crate::bidding_situation::BiddingSituation;
 use crate::primitives::bid::Bid;
+use crate::primitives::bid_line::BidLine;
 use crate::primitives::Card;
 use std::fmt::{Debug, Display, Formatter};
 
@@ -26,6 +28,8 @@ pub enum BBError {
     UnknownContractDenomination(String),
     UnknownBid(String),
     InvalidBid(Bid),
+    UnknownBiddingSituation(String),
+    DuplicateRule(BidLine, BiddingSituation),
 }
 
 impl Display for BBError {
@@ -41,6 +45,8 @@ impl Display for BBError {
             BBError::UnknownContractDenomination(c) => writeln!(f, "unknown contract denomination: {}", c),
             BBError::UnknownBid(c) => writeln!(f, "unknown bid: {}", c),
             BBError::InvalidBid(b) => writeln!(f, "invalid bid: {}", b),
+            BBError::UnknownBiddingSituation(s) => writeln!(f, "unknown bidding situation: {}", s),
+            BBError::DuplicateRule(bl, sit) => writeln!(f, "line {} is already marked as {}", bl, sit),
         }
     }
 }

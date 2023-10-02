@@ -1,6 +1,6 @@
 use strum::{Display, EnumString};
 
-#[derive(Debug, Display, EnumString, PartialOrd, Ord, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, Display, EnumString, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum ContractLevel {
     #[strum(to_string = "1")]
     One,

@@ -8,7 +8,7 @@ use crate::error::BBError;
 use std::fmt::Display;
 use std::str::FromStr;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub enum Bid {
     Contract(ContractBid),
     Auxiliary(AuxiliaryBid),
@@ -57,6 +57,7 @@ mod test {
     #[test_case("X", Auxiliary(Double); "x is Double")]
     #[test_case("x", Auxiliary(Double); "x_Double")]
     #[test_case("XX", Auxiliary(Redouble); "XX_Redouble")]
+    #[test_case("1S", Contract(ContractBid { level: One, denomination: Trump(Spades)}); "1 Spades")]
     #[test_case("1NT", Contract(ContractBid { level: One, denomination: NoTrump}); "No Trump")]
     #[test_case("2S", Contract(ContractBid { level: Two, denomination: Trump(Spades)}); "Two Spades")]
     #[test_case("3d", Contract(ContractBid { level: Three, denomination: Trump(Diamonds)}); "Three Diamonds")]

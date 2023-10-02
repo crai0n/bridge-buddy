@@ -2,7 +2,7 @@ use crate::error::BBError;
 use crate::util;
 use strum::{Display, EnumIter};
 
-#[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
+#[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter, Hash)]
 pub enum Suit {
     #[strum(serialize = "♣")]
     Clubs = 0,
