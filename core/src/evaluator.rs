@@ -1,24 +1,9 @@
 use crate::primitives::card::Denomination::*;
+use crate::primitives::hand_info::SuitQuality;
 use crate::primitives::{card::Denomination, Card, Hand, Suit};
 use itertools::Itertools;
 use std::cmp::Ordering;
-use strum::{Display, IntoEnumIterator};
-
-#[derive(Debug, Display, PartialEq, Eq, PartialOrd, Ord)]
-pub enum SuitQuality {
-    #[strum(serialize = "weak")]
-    Weak,
-    #[strum(serialize = "acceptable")]
-    Acceptable,
-    #[strum(serialize = "good")]
-    Good,
-    #[strum(serialize = "very good")]
-    VeryGood,
-    #[strum(serialize = "almost standing")]
-    AlmostStanding,
-    #[strum(serialize = "standing")]
-    Standing,
-}
+use strum::IntoEnumIterator;
 
 #[derive(Debug)]
 pub struct ForumDPlus2015Evaluator {}

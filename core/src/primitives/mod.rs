@@ -9,3 +9,4 @@ pub mod bid_line;
 pub mod card;
 pub mod contract;
 pub mod deal;
+pub mod hand_info;
