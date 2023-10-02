@@ -1,6 +1,6 @@
 pub use strum::IntoEnumIterator;
 
-pub mod bidding_situation;
+pub mod bid_analyzer;
 pub mod error;
 pub mod evaluator;
 pub mod primitives;

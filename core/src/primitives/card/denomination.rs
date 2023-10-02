@@ -70,7 +70,6 @@ impl std::str::FromStr for Denomination {
 #[cfg(test)]
 mod tests {
     use super::Denomination::*;
-    use crate::error::BBError;
     use crate::primitives::card::Denomination;
     use std::str::FromStr;
     use strum::IntoEnumIterator;
@@ -119,10 +118,7 @@ mod tests {
     #[test_case("b"; "german jack")]
     #[test_case("l"; "unknown letter")]
     fn parsing_unknown_str_fails(input: &str) {
-        assert_eq!(
-            Denomination::from_str(input),
-            Err(BBError::UnknownDenomination(input.chars().next().unwrap()))
-        );
+        assert!(Denomination::from_str(input).is_err());
     }
 
     #[test_case(Ace, "A")]
@@ -168,10 +164,7 @@ mod tests {
     #[test_case('s')]
     #[test_case('d')]
     fn fail_misc_characters(input: char) {
-        assert_eq!(
-            Denomination::from_char(input).unwrap_err(),
-            BBError::UnknownDenomination(input)
-        )
+        assert!(Denomination::from_char(input).is_err())
     }
 
     #[test]

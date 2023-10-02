@@ -1,4 +1,4 @@
-use bridge_buddy_core::bidding_situation::situation_finder::SituationFinder;
+use bridge_buddy_core::bid_analyzer::situation_mapper::SituationMapper;
 use bridge_buddy_core::evaluator::ForumDPlus2015Evaluator;
 use bridge_buddy_core::primitives::bid_line::BidLine;
 use bridge_buddy_core::primitives::card::Suit;
@@ -95,8 +95,8 @@ fn main() {
             };
             match bid_line_result {
                 Ok(bl) => {
-                    let situation_finder = SituationFinder::from_str("1S;Answer1Major\n1NT;Answer1NoTrump\n1D;Answer1Minor\nP-P;OpeningThirdFourth\n;OpeningFirstSecond\n2NT;Unknown").unwrap();
-                    let situation = situation_finder.find_situation_after(bl);
+                    let situation_finder = SituationMapper::from_file("config/situation_rules.bb").unwrap();
+                    let situation = situation_finder.situation_from_bid_line(bl);
                     println!("Your situation is {}", situation)
                 }
                 Err(err) => {

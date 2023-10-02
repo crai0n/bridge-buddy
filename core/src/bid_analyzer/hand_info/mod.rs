@@ -6,7 +6,8 @@ pub use suit_quality::SuitQuality;
 mod ranges;
 pub mod suit_quality;
 
-enum HandInfo {
+#[derive(PartialEq)]
+pub enum HandInfo {
     HandType(HandType),
     SuitLength(Suit, LengthRange),
     SuitQuality(Suit, SuitQuality),
@@ -32,8 +33,8 @@ mod test {
     use super::ranges::LengthRange;
     use super::ranges::PointRange;
     use super::HandInfo;
+    use crate::bid_analyzer::hand_info::SuitQuality;
     use crate::primitives::deal::hand::HandType;
-    use crate::primitives::hand_info::SuitQuality;
     use crate::primitives::Suit::*;
     use test_case::test_case;
 

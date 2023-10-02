@@ -1,5 +1,5 @@
+use crate::bid_analyzer::hand_info::SuitQuality;
 use crate::primitives::card::Denomination::*;
-use crate::primitives::hand_info::SuitQuality;
 use crate::primitives::{card::Denomination, Card, Hand, Suit};
 use itertools::Itertools;
 use std::cmp::Ordering;

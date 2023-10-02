@@ -1,10 +1,15 @@
 use std::fmt::Display;
 use std::ops::RangeInclusive;
 
+#[derive(PartialEq)]
 pub struct LengthRange(pub RangeInclusive<usize>);
+#[derive(PartialEq)]
 pub struct HcpRange(pub RangeInclusive<f64>);
+#[derive(PartialEq)]
 pub struct PointRange(pub RangeInclusive<f64>);
+#[derive(PartialEq)]
 pub struct WinnerRange(pub RangeInclusive<f64>);
+#[derive(PartialEq)]
 pub struct LoserRange(pub RangeInclusive<f64>);
 
 impl Display for LengthRange {

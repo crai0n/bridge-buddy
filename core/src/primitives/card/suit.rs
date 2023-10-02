@@ -46,7 +46,6 @@ impl std::str::FromStr for Suit {
 #[cfg(test)]
 mod tests {
     use super::Suit::*;
-    use crate::error::BBError;
     use crate::primitives::Suit;
     use std::str::FromStr;
     use strum::IntoEnumIterator;
@@ -101,7 +100,7 @@ mod tests {
     #[test_case('.')]
     #[test_case('o')]
     fn fail_for_unknown_letters(input: char) {
-        assert_eq!(Suit::from_char(input).unwrap_err(), BBError::UnknownSuit(input));
+        assert!(Suit::from_char(input).is_err());
     }
 
     #[test_case(Clubs, "♣")]
@@ -129,7 +128,7 @@ mod tests {
     #[test_case('j')]
     #[test_case('u')]
     fn fail_misc_characters(input: char) {
-        assert_eq!(Suit::from_char(input).unwrap_err(), BBError::UnknownSuit(input))
+        assert!(Suit::from_char(input).is_err())
     }
 
     #[test]

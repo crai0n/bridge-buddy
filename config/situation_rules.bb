@@ -1,0 +1,14 @@
+ ;OpeningFirstSecond
+P;OpeningFirstSecond
+P-P;OpeningThirdFourth
+P-P-P;OpeningThirdFourth
+1C-P;Answer1Minor
+1D-P;Answer1Minor
+1H-P;Answer1Major
+1S-P;Answer1Major
+1NT-P;Answer1NoTrump
+P-1C-P;Answer1Minor
+P-1D-P;Answer1Minor
+P-1H-P;Answer1Major
+P-1S-P;Answer1Major
+P-1NT-P;Answer1NoTrump

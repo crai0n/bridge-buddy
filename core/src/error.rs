@@ -1,4 +1,4 @@
-use crate::bidding_situation::BiddingSituation;
+use crate::bid_analyzer::bidding_situation::BiddingSituation;
 use crate::primitives::bid::Bid;
 use crate::primitives::bid_line::BidLine;
 use crate::primitives::Card;
@@ -16,7 +16,7 @@ impl Display for ParseError {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub enum BBError {
     ParseError(String, &'static str),
     Duplicate(Card),
@@ -30,6 +30,7 @@ pub enum BBError {
     InvalidBid(Bid),
     UnknownBiddingSituation(String),
     DuplicateRule(BidLine, BiddingSituation),
+    IoError(std::io::Error),
 }
 
 impl Display for BBError {
@@ -47,6 +48,13 @@ impl Display for BBError {
             BBError::InvalidBid(b) => writeln!(f, "invalid bid: {}", b),
             BBError::UnknownBiddingSituation(s) => writeln!(f, "unknown bidding situation: {}", s),
             BBError::DuplicateRule(bl, sit) => writeln!(f, "line {} is already marked as {}", bl, sit),
+            BBError::IoError(err) => writeln!(f, "{}", err),
         }
+    }
+}
+
+impl From<std::io::Error> for BBError {
+    fn from(err: std::io::Error) -> BBError {
+        BBError::IoError(err)
     }
 }

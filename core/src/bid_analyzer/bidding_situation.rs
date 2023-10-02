@@ -1,10 +1,4 @@
 use strum::{Display, EnumString};
-
-pub mod situation_finder;
-mod situation_rule;
-
-// use crate::primitives::bid_line::BidLine;
-
 #[derive(PartialEq, Debug, EnumString, Clone, Copy, Display)]
 pub enum BiddingSituation {
     Unknown,
