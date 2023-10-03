@@ -1,15 +1,15 @@
 pub use board::Board;
+pub use board_vulnerability::BoardVulnerability;
 pub use deck::Deck;
 pub use hand::Hand;
 pub use player_position::PlayerPosition;
 use rand::prelude::*;
-pub use vulnerability::Vulnerability;
 
 pub mod board;
+pub mod board_vulnerability;
 pub mod deck;
 pub mod hand;
 pub mod player_position;
-pub mod vulnerability;
 
 pub struct Deal {
     pub board: Board,
@@ -43,12 +43,16 @@ impl Deal {
         deck.deal()
     }
 
-    pub fn vulnerable(&self) -> Vulnerability {
+    pub fn vulnerable(&self) -> BoardVulnerability {
         self.board.vulnerable()
     }
 
     pub fn dealer(&self) -> PlayerPosition {
         self.board.dealer()
+    }
+
+    pub fn hand(&self, position: PlayerPosition) -> &Hand {
+        &self.hands[position as usize]
     }
 }
 

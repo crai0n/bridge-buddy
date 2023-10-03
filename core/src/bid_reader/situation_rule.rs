@@ -38,7 +38,7 @@ impl SituationRule {
 #[cfg(test)]
 mod test {
     use super::SituationRule;
-    use crate::bid_analyzer::bidding_situation::BiddingSituation;
+    use crate::bid_reader::bidding_situation::BiddingSituation;
     use crate::primitives::bid_line::BidLine;
     // use crate::primitives::contract::ContractDenomination::*;
     // use crate::primitives::contract::ContractLevel::*;

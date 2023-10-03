@@ -1,9 +1,9 @@
+use crate::primitives::deal::board_vulnerability::BoardVulnerability;
 use crate::primitives::deal::player_position::PlayerPosition;
-use crate::primitives::deal::vulnerability::Vulnerability;
 use rand::prelude::*;
 
 pub struct Board {
-    number: usize,
+    pub number: usize,
 }
 
 impl Board {
@@ -28,14 +28,14 @@ impl Board {
         Board { number }
     }
 
-    pub fn vulnerable(&self) -> Vulnerability {
+    pub fn vulnerable(&self) -> BoardVulnerability {
         let v = self.number - 1;
         let vul = v + v / 4;
         match vul % 4 {
-            0 => Vulnerability::None,
-            1 => Vulnerability::NorthSouth,
-            2 => Vulnerability::EastWest,
-            _ => Vulnerability::All,
+            0 => BoardVulnerability::None,
+            1 => BoardVulnerability::NorthSouth,
+            2 => BoardVulnerability::EastWest,
+            _ => BoardVulnerability::All,
         }
     }
 
@@ -64,8 +64,8 @@ mod test {
     use super::Board;
     use crate::primitives::deal::board::PlayerPosition;
     use crate::primitives::deal::board::PlayerPosition::*;
-    use crate::primitives::deal::vulnerability::Vulnerability;
-    use crate::primitives::deal::vulnerability::Vulnerability::*;
+    use crate::primitives::deal::board_vulnerability::BoardVulnerability;
+    use crate::primitives::deal::board_vulnerability::BoardVulnerability::*;
     use rand::prelude::*;
     use rand_chacha::ChaCha8Rng;
     use test_case::test_case;
@@ -89,7 +89,7 @@ mod test {
     #[test_case(16, EastWest, West)]
     #[test_case(17, None, North)]
     #[test_case(18, NorthSouth, East)]
-    fn construction(number: usize, vulnerable: Vulnerability, dealer: PlayerPosition) {
+    fn construction(number: usize, vulnerable: BoardVulnerability, dealer: PlayerPosition) {
         let deal = Board::from_number(number);
         assert_eq!(deal.dealer(), dealer);
         assert_eq!(deal.vulnerable(), vulnerable);

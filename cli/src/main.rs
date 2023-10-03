@@ -1,5 +1,6 @@
-use bridge_buddy_core::bid_analyzer::situation_mapper::SituationMapper;
+use bridge_buddy_core::bid_reader::situation_mapper::SituationMapper;
 use bridge_buddy_core::evaluator::ForumDPlus2015Evaluator;
+use bridge_buddy_core::game_context::GameContext;
 use bridge_buddy_core::primitives::bid_line::BidLine;
 use bridge_buddy_core::primitives::card::Suit;
 use bridge_buddy_core::primitives::deal::Hand;
@@ -58,23 +59,21 @@ fn main() {
                 Ok(hand) => {
                     println!("{}", hand);
                     println!("hand_type: {}", hand.hand_type());
-                    println!("high-card points: {}", ForumDPlus2015Evaluator::hcp(&hand));
-                    println!(
-                        "length points: {}",
-                        ForumDPlus2015Evaluator::length_points(&hand, None, &[])
-                    );
+                    let game = GameContext::basic_context_from_hand(&hand);
+                    println!("high-card points: {}", ForumDPlus2015Evaluator::hcp(&game));
+                    println!("length points: {}", ForumDPlus2015Evaluator::length_points(&game));
                     println!("adjustments:");
                     println!(
                         "  aces and tens: {}",
-                        ForumDPlus2015Evaluator::adjustment_aces_and_tens(&hand)
+                        ForumDPlus2015Evaluator::adjustment_aces_and_tens(&game)
                     );
                     println!(
                         "  unguarded honors: {}",
-                        ForumDPlus2015Evaluator::adjustment_unguarded_honors(&hand)
+                        ForumDPlus2015Evaluator::adjustment_unguarded_honors(&game)
                     );
                     println!("suit qualities:");
                     for suit in Suit::iter().rev() {
-                        println!("{}: {}", suit, ForumDPlus2015Evaluator::suit_quality(&hand, suit));
+                        println!("{}: {}", suit, ForumDPlus2015Evaluator::suit_quality(suit, &game));
                     }
                 }
                 Err(err) => {

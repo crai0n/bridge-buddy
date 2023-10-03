@@ -1,6 +1,7 @@
+use crate::evaluator::hcp::HcpRange;
 use crate::primitives::deal::hand::HandType;
 use crate::primitives::Suit;
-use ranges::{HcpRange, LengthRange, PointRange};
+use ranges::{LengthRange, PointRange};
 pub use suit_quality::SuitQuality;
 
 mod ranges;
@@ -29,11 +30,11 @@ impl std::fmt::Display for HandInfo {
 
 #[cfg(test)]
 mod test {
-    use super::ranges::HcpRange;
     use super::ranges::LengthRange;
     use super::ranges::PointRange;
     use super::HandInfo;
-    use crate::bid_analyzer::hand_info::SuitQuality;
+    use crate::evaluator::hcp::HcpRange;
+    use crate::game_context::hand_info::SuitQuality;
     use crate::primitives::deal::hand::HandType;
     use crate::primitives::Suit::*;
     use test_case::test_case;

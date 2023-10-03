@@ -76,8 +76,8 @@ impl Default for SituationMapper {
 #[cfg(test)]
 mod test {
     use super::BiddingSituation;
-    use crate::bid_analyzer::situation_mapper::SituationMapper;
-    use crate::bid_analyzer::situation_rule::SituationRule;
+    use crate::bid_reader::situation_mapper::SituationMapper;
+    use crate::bid_reader::situation_rule::SituationRule;
     use crate::primitives::bid_line::BidLine;
     use std::str::FromStr;
     use test_case::test_case;

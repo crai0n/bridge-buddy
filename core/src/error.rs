@@ -1,4 +1,4 @@
-use crate::bid_analyzer::bidding_situation::BiddingSituation;
+use crate::bid_reader::bidding_situation::BiddingSituation;
 use crate::primitives::bid::Bid;
 use crate::primitives::bid_line::BidLine;
 use crate::primitives::Card;

@@ -30,6 +30,14 @@ impl ops::Add<usize> for PlayerPosition {
     }
 }
 
+impl ops::Sub<Self> for PlayerPosition {
+    type Output = usize;
+
+    fn sub(self, rhs: Self) -> usize {
+        (4 + self as usize - rhs as usize) % 4
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::PlayerPosition;
