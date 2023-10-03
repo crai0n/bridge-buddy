@@ -1,4 +1,5 @@
 use crate::error::BBError;
+use crate::primitives::Card;
 use crate::util;
 use strum::{Display, EnumIter};
 
@@ -43,10 +44,16 @@ impl std::str::FromStr for Suit {
     }
 }
 
+impl From<Card> for Suit {
+    fn from(card: Card) -> Suit {
+        card.suit
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::Suit::*;
-    use crate::primitives::Suit;
+    use crate::primitives::{card::Denomination, Card, Suit};
     use std::str::FromStr;
     use strum::IntoEnumIterator;
     use test_case::test_case;
@@ -151,5 +158,10 @@ mod tests {
     #[test]
     fn debug() {
         assert_eq!(format!("{:?}", Spades), "Spades")
+    }
+
+    #[test_case(Card { suit: Suit::Spades, denomination: Denomination::King}, Suit::Spades; "King of Spades is a Spades")]
+    fn from_card(card: Card, expected: Suit) {
+        assert_eq!(expected, card.into())
     }
 }

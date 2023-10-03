@@ -18,11 +18,11 @@ impl ForumDPlus2015Evaluator {
     }
 
     fn hcp_for_cards<'a>(cards: &mut impl DoubleEndedIterator<Item = &'a Card>) -> f64 {
-        cards.fold(0.0, |hcp, c| hcp + ForumDPlus2015Evaluator::card_value(c) as f64)
+        cards.fold(0.0, |hcp, &c| hcp + ForumDPlus2015Evaluator::value(&(c.into())) as f64)
     }
 
-    const fn card_value(card: &Card) -> u8 {
-        match card.denomination {
+    const fn value(denomination: &Denomination) -> u8 {
+        match denomination {
             Ace => 4,
             King => 3,
             Queen => 2,
