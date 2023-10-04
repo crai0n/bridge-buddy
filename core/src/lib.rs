@@ -6,4 +6,5 @@ pub mod error;
 pub mod evaluator;
 pub mod game_context;
 pub mod primitives;
+pub mod table_master;
 mod util;

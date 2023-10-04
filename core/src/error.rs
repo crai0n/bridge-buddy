@@ -31,6 +31,7 @@ pub enum BBError {
     UnknownBiddingSituation(String),
     DuplicateRule(BidLine, BiddingSituation),
     IoError(std::io::Error),
+    TransitionError,
 }
 
 impl Display for BBError {
@@ -49,6 +50,7 @@ impl Display for BBError {
             BBError::UnknownBiddingSituation(s) => writeln!(f, "unknown bidding situation: {}", s),
             BBError::DuplicateRule(bl, sit) => writeln!(f, "line {} is already marked as {}", bl, sit),
             BBError::IoError(err) => writeln!(f, "{}", err),
+            BBError::TransitionError => writeln!(f, "unsupported transition between game states"),
         }
     }
 }

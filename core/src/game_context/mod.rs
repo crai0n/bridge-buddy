@@ -1,19 +1,19 @@
 // Game context stored all the hints derived from openly available information about the game.
 
-pub mod hand_info;
+pub mod hand_description;
 mod turn_rank;
 mod vulnerability;
 
-use crate::game_context::hand_info::HandInfo;
+use crate::game_context::hand_description::HandDescription;
 use crate::game_context::turn_rank::TurnRank;
 use crate::primitives::deal::PlayerPosition;
 use crate::primitives::{Deal, Hand, Suit};
 use vulnerability::Vulnerability;
 
 pub struct GameContext<'a> {
-    pub partner: Vec<HandInfo>,
-    pub lho: Vec<HandInfo>,
-    pub rho: Vec<HandInfo>,
+    pub partner: Vec<HandDescription>,
+    pub lho: Vec<HandDescription>,
+    pub rho: Vec<HandDescription>,
     pub vulnerable: Vulnerability,
     pub my_turn_rank: TurnRank,
     pub my_hand: &'a Hand,

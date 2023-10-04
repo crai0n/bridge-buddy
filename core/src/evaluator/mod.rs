@@ -1,7 +1,7 @@
 pub mod hcp;
 
 use crate::evaluator::hcp::{HcpEvaluator, HcpValue};
-use crate::game_context::hand_info::SuitQuality;
+use crate::game_context::hand_description::SuitQuality;
 use crate::game_context::GameContext;
 use crate::primitives::card::Denomination::*;
 use crate::primitives::{card::Denomination, Hand, Suit};
