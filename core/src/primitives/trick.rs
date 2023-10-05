@@ -1,128 +1,91 @@
 use crate::primitives::deal::PlayerPosition;
-use crate::primitives::Card;
+use crate::primitives::{Card, Suit};
 
-struct TrickData<S> {
+pub struct ActiveTrick {
     lead: PlayerPosition,
-    state: S,
+    cards: Vec<Card>,
 }
 
-enum Trick {
-    Empty(TrickData<EmptyTrick>),
-    OneCard(TrickData<OneCardTrick>),
-    TwoCard(TrickData<TwoCardTrick>),
-    ThreeCard(TrickData<ThreeCardTrick>),
-    Complete(TrickData<CompleteTrick>),
+impl ActiveTrick {
+    pub fn new(lead: PlayerPosition) -> ActiveTrick {
+        ActiveTrick {
+            lead,
+            cards: Vec::with_capacity(4),
+        }
+    }
+    pub fn play(&mut self, card: Card) {
+        self.cards.push(card);
+    }
 }
 
 pub struct TrickManager {
-    trick: Trick,
+    trump_suit: Option<Suit>,
+    current_trick: ActiveTrick,
+    played_tricks: Vec<PlayedTrick>,
 }
 
 impl TrickManager {
-    pub fn new(lead: PlayerPosition) -> TrickManager {
+    pub fn new(lead: PlayerPosition, trump_suit: Option<Suit>) -> TrickManager {
         TrickManager {
-            trick: Trick::Empty(TrickData {
-                lead,
-                state: EmptyTrick::new(),
-            }),
+            current_trick: ActiveTrick::new(lead),
+            played_tricks: Vec::with_capacity(13),
+            trump_suit,
         }
     }
-}
 
-struct EmptyTrick {}
-
-impl EmptyTrick {
-    fn new() -> EmptyTrick {
-        EmptyTrick {}
-    }
-}
-struct OneCardTrick {
-    first: Card,
-}
-struct TwoCardTrick {
-    first: Card,
-    second: Card,
-}
-
-struct ThreeCardTrick {
-    first: Card,
-    second: Card,
-    third: Card,
-}
-
-struct CompleteTrick {
-    first: Card,
-    second: Card,
-    third: Card,
-    fourth: Card,
-}
-
-impl TrickData<EmptyTrick> {
-    pub fn new(lead: PlayerPosition) -> TrickData<EmptyTrick> {
-        TrickData {
-            lead,
-            state: EmptyTrick {},
+    pub fn play(&mut self, card: Card) {
+        self.current_trick.play(card);
+        if self.current_trick.cards.len() == 4 {
+            self.move_to_next_trick();
         }
     }
-    pub fn play(self, card: &Card) -> TrickData<OneCardTrick> {
-        TrickData {
-            lead: self.lead,
-            state: OneCardTrick { first: *card },
-        }
-    }
-}
 
-impl TrickData<OneCardTrick> {
-    pub fn play(self, card: &Card) -> TrickData<TwoCardTrick> {
-        TrickData {
-            lead: self.lead,
-            state: TwoCardTrick {
-                first: self.state.first,
-                second: *card,
-            },
-        }
+    pub fn trick_winner(&self) -> PlayerPosition {
+        let winning_card = self.winning_card();
+        let winner = self.current_trick.lead
+            + self
+                .current_trick
+                .cards
+                .iter()
+                .position(|x| *x == winning_card)
+                .unwrap();
+        winner
     }
-}
 
-impl TrickData<TwoCardTrick> {
-    pub fn play(self, card: &Card) -> TrickData<ThreeCardTrick> {
-        TrickData {
-            lead: self.lead,
-            state: ThreeCardTrick {
-                first: self.state.first,
-                second: self.state.second,
-                third: *card,
-            },
+    pub fn winning_card(&self) -> Card {
+        let mut cards = self.current_trick.cards.iter();
+        let mut winner = cards.next().unwrap();
+        for card in cards {
+            if let Some(trump) = self.trump_suit {
+                if card.suit == trump && winner.suit != trump {
+                    winner = card;
+                }
+            } else if card.suit == winner.suit && card.denomination > winner.denomination {
+                winner = card;
+            }
         }
+        *winner
     }
-}
 
-impl TrickData<ThreeCardTrick> {
-    pub fn play(self, card: &Card) -> TrickData<CompleteTrick> {
-        TrickData {
-            lead: self.lead,
-            state: CompleteTrick {
-                first: self.state.first,
-                second: self.state.second,
-                third: self.state.third,
-                fourth: *card,
-            },
-        }
-    }
-}
-
-impl TrickData<CompleteTrick> {
-    pub fn won_by(self, winner: PlayerPosition) -> PlayedTrick {
-        PlayedTrick {
-            lead: self.lead,
-            cards: [self.state.first, self.state.second, self.state.third, self.state.fourth],
+    pub fn move_to_next_trick(&mut self) {
+        let winner = self.trick_winner();
+        let played_trick = PlayedTrick {
+            lead: self.current_trick.lead,
+            cards: self.current_trick.cards.clone(),
             winner,
-        }
+        };
+        self.played_tricks.push(played_trick);
+        self.current_trick = ActiveTrick::new(winner);
+    }
+
+    pub fn tricks(&self) -> Vec<PlayedTrick> {
+        self.played_tricks.clone()
     }
 }
 
+#[derive(Clone)]
 pub struct PlayedTrick {
     lead: PlayerPosition,
-    cards: [Card; 4],
+    cards: Vec<Card>,
     winner: PlayerPosition,
 }

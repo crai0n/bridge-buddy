@@ -1,4 +1,10 @@
-// Game context stored all the hints derived from openly available information about the game.
+// GameContext contains a reference to the publicly available game-state, which it uses to present information in a
+// format usable to the engine (abstracting away the absolute seating position for example). In addition, it contains
+// information that is not explicitly available from the Game's state, that is which does
+// not immediately follow from the rules of the game, but is learned through interpretation of the actions of the
+// players according to the inner rules of the engine. It is therefore the main data structure for communication between
+// the different parts of the engine, that is the separate modules responsible for hand evaluation, bid interpretation
+// and card play.
 
 pub mod hand_description;
 mod turn_rank;
