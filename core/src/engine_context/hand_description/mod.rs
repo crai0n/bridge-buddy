@@ -33,8 +33,8 @@ mod test {
     use super::ranges::LengthRange;
     use super::ranges::PointRange;
     use super::HandDescription;
+    use crate::engine_context::hand_description::SuitQuality;
     use crate::evaluator::hcp::HcpRange;
-    use crate::game_context::hand_description::SuitQuality;
     use crate::primitives::deal::hand::HandType;
     use crate::primitives::Suit::*;
     use test_case::test_case;

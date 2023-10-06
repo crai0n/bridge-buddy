@@ -1,5 +1,5 @@
+use crate::engine_context::EngineContext;
 use crate::evaluator::hcp::HcpValue;
-use crate::game_context::GameContext;
 use crate::primitives::card::Denomination;
 use crate::primitives::card::Denomination::*;
 use crate::primitives::{Card, Suit};
@@ -10,11 +10,11 @@ use strum::IntoEnumIterator;
 pub struct HcpEvaluator {}
 
 impl HcpEvaluator {
-    pub fn hcp(game: &GameContext) -> HcpValue {
+    pub fn hcp(game: &EngineContext) -> HcpValue {
         Self::hcp_for_cards(&mut game.my_hand.cards())
     }
 
-    pub fn hcp_in(suit: Suit, game: &GameContext) -> HcpValue {
+    pub fn hcp_in(suit: Suit, game: &EngineContext) -> HcpValue {
         Self::hcp_for_cards(&mut game.my_hand.cards_in(suit))
     }
 
@@ -26,7 +26,7 @@ impl HcpEvaluator {
         HcpValue::from(*denomination)
     }
 
-    pub fn adjustment_aces_and_tens(game: &GameContext) -> f64 {
+    pub fn adjustment_aces_and_tens(game: &EngineContext) -> f64 {
         let tens = game.my_hand.cards().filter(|&&x| x.denomination == Ten).count();
         let aces = game.my_hand.cards().filter(|&&x| x.denomination == Ace).count();
         match (tens, aces) {
@@ -38,7 +38,7 @@ impl HcpEvaluator {
         }
     }
 
-    pub fn adjustment_unguarded_honors(game: &GameContext) -> f64 {
+    pub fn adjustment_unguarded_honors(game: &EngineContext) -> f64 {
         let mut acc = 0.0;
         for suit in Suit::iter() {
             let cards_vec = game.my_hand.cards_in(suit).rev().map(|x| x.denomination).collect_vec();

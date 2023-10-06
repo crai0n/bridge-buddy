@@ -1,4 +1,4 @@
-// GameContext contains a reference to the publicly available game-state, which it uses to present information in a
+// EngineContext contains a reference to the publicly available game-state, which it uses to present information in a
 // format usable to the engine (abstracting away the absolute seating position for example). In addition, it contains
 // information that is not explicitly available from the Game's state, that is which does
 // not immediately follow from the rules of the game, but is learned through interpretation of the actions of the
@@ -10,16 +10,17 @@ pub mod hand_description;
 mod turn_rank;
 mod vulnerability;
 
-use crate::game_context::hand_description::HandDescription;
-use crate::game_context::turn_rank::TurnRank;
+use crate::engine_context::hand_description::HandDescription;
+use crate::engine_context::turn_rank::TurnRank;
 use crate::primitives::deal::PlayerPosition;
 use crate::primitives::{Deal, Hand, Suit};
 use vulnerability::Vulnerability;
 
-pub struct GameContext<'a> {
-    pub partner: Vec<HandDescription>,
-    pub lho: Vec<HandDescription>,
-    pub rho: Vec<HandDescription>,
+pub struct EngineContext<'a> {
+    pub partners_hand: Vec<HandDescription>,
+    pub lhos_hand: Vec<HandDescription>,
+    pub rhos_hand: Vec<HandDescription>,
+    pub my_hand_description: Vec<HandDescription>,
     pub vulnerable: Vulnerability,
     pub my_turn_rank: TurnRank,
     pub my_hand: &'a Hand,
@@ -27,20 +28,22 @@ pub struct GameContext<'a> {
     pub long_suits_shown_by_opponents: Vec<Suit>,
 }
 
-impl<'a> GameContext<'a> {
-    fn play_deal_as(deal: &Deal, position: PlayerPosition) -> GameContext {
-        let partner = Vec::new();
-        let lho = Vec::new();
-        let rho = Vec::new();
+impl<'a> EngineContext<'a> {
+    fn play_deal_as(deal: &Deal, position: PlayerPosition) -> EngineContext {
+        let partners_hand = Vec::new();
+        let lhos_hand = Vec::new();
+        let rhos_hand = Vec::new();
+        let my_hand_description = Vec::new();
         let long_suits_shown_by_opponents = Vec::new();
         let vulnerable = Vulnerability::interpret_board_vulnerability(&deal.board.vulnerable(), position);
         let my_turn_rank = TurnRank::turn_rank_for_board(&deal.board, position);
         let my_hand = deal.hand(position);
         let trump_suit = None;
-        GameContext {
-            partner,
-            lho,
-            rho,
+        EngineContext {
+            partners_hand,
+            lhos_hand,
+            rhos_hand,
+            my_hand_description,
             vulnerable,
             my_turn_rank,
             my_hand,
@@ -49,19 +52,21 @@ impl<'a> GameContext<'a> {
         }
     }
 
-    pub fn basic_context_from_hand(hand: &Hand) -> GameContext {
-        let partner = Vec::new();
-        let lho = Vec::new();
-        let rho = Vec::new();
+    pub fn basic_context_from_hand(hand: &Hand) -> EngineContext {
+        let partners_hand = Vec::new();
+        let lhos_hand = Vec::new();
+        let rhos_hand = Vec::new();
+        let my_hand_description = Vec::new();
         let long_suits_shown_by_opponents = Vec::new();
         let vulnerable = Vulnerability::None;
         let my_turn_rank = TurnRank::First;
         let my_hand = hand;
         let trump_suit = None;
-        GameContext {
-            partner,
-            lho,
-            rho,
+        EngineContext {
+            partners_hand,
+            lhos_hand,
+            rhos_hand,
+            my_hand_description,
             vulnerable,
             my_turn_rank,
             my_hand,
@@ -71,7 +76,7 @@ impl<'a> GameContext<'a> {
     }
 }
 
-impl<'a> From<&'a Hand> for GameContext<'a> {
+impl<'a> From<&'a Hand> for EngineContext<'a> {
     fn from(hand: &'a Hand) -> Self {
         Self::basic_context_from_hand(hand)
     }

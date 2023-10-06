@@ -1,6 +1,6 @@
 use bridge_buddy_core::bid_reader::situation_mapper::SituationMapper;
+use bridge_buddy_core::engine_context::EngineContext;
 use bridge_buddy_core::evaluator::ForumDPlus2015Evaluator;
-use bridge_buddy_core::game_context::GameContext;
 use bridge_buddy_core::primitives::bid_line::BidLine;
 use bridge_buddy_core::primitives::card::Suit;
 use bridge_buddy_core::primitives::deal::Hand;
@@ -59,7 +59,7 @@ fn main() {
                 Ok(hand) => {
                     println!("{}", hand);
                     println!("hand_type: {}", hand.hand_type());
-                    let game = GameContext::basic_context_from_hand(&hand);
+                    let game = EngineContext::basic_context_from_hand(&hand);
                     println!("high-card points: {}", ForumDPlus2015Evaluator::hcp(&game));
                     println!("length points: {}", ForumDPlus2015Evaluator::length_points(&game));
                     println!("adjustments:");

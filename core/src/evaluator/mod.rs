@@ -1,8 +1,8 @@
 pub mod hcp;
 
+use crate::engine_context::hand_description::SuitQuality;
+use crate::engine_context::EngineContext;
 use crate::evaluator::hcp::{HcpEvaluator, HcpValue};
-use crate::game_context::hand_description::SuitQuality;
-use crate::game_context::GameContext;
 use crate::primitives::card::Denomination::*;
 use crate::primitives::{card::Denomination, Hand, Suit};
 use itertools::Itertools;
@@ -13,24 +13,24 @@ use strum::IntoEnumIterator;
 pub struct ForumDPlus2015Evaluator {}
 
 impl ForumDPlus2015Evaluator {
-    pub fn hcp(game: &GameContext) -> HcpValue {
-        HcpEvaluator::hcp(game)
+    pub fn hcp(ctx: &EngineContext) -> HcpValue {
+        HcpEvaluator::hcp(ctx)
     }
 
-    pub fn hcp_in(suit: Suit, game: &GameContext) -> HcpValue {
-        HcpEvaluator::hcp_in(suit, game)
+    pub fn hcp_in(suit: Suit, ctx: &EngineContext) -> HcpValue {
+        HcpEvaluator::hcp_in(suit, ctx)
     }
 
-    pub fn adjustment_aces_and_tens(game: &GameContext) -> f64 {
-        HcpEvaluator::adjustment_aces_and_tens(game)
+    pub fn adjustment_aces_and_tens(ctx: &EngineContext) -> f64 {
+        HcpEvaluator::adjustment_aces_and_tens(ctx)
     }
 
-    pub fn adjustment_unguarded_honors(game: &GameContext) -> f64 {
-        HcpEvaluator::adjustment_unguarded_honors(game)
+    pub fn adjustment_unguarded_honors(ctx: &EngineContext) -> f64 {
+        HcpEvaluator::adjustment_unguarded_honors(ctx)
     }
 
-    pub fn suit_quality(suit: Suit, game: &GameContext) -> SuitQuality {
-        let denominations = game.my_hand.cards_in(suit).map(|c| c.denomination).rev().collect_vec();
+    pub fn suit_quality(suit: Suit, ctx: &EngineContext) -> SuitQuality {
+        let denominations = ctx.my_hand.cards_in(suit).map(|c| c.denomination).rev().collect_vec();
 
         //check for Standing Suit
         // AKQJ, for 7-card-suits and longer AKQ are sufficient
@@ -61,15 +61,15 @@ impl ForumDPlus2015Evaluator {
 
         // check for Acceptable Suit
         // at least 3 HCP
-        if Self::is_acceptable_suit(game, suit) {
+        if Self::is_acceptable_suit(ctx, suit) {
             return SuitQuality::Acceptable;
         }
 
         SuitQuality::Weak // less than acceptable
     }
 
-    fn is_acceptable_suit(game: &GameContext, suit: Suit) -> bool {
-        Self::hcp_in(suit, game) >= HcpValue(3.0)
+    fn is_acceptable_suit(ctx: &EngineContext, suit: Suit) -> bool {
+        Self::hcp_in(suit, ctx) >= HcpValue(3.0)
     }
 
     fn is_good_suit(denominations: &[Denomination]) -> bool {
@@ -105,28 +105,28 @@ impl ForumDPlus2015Evaluator {
             .count()
     }
 
-    pub fn length_points(game: &GameContext) -> f64 {
+    pub fn length_points(ctx: &EngineContext) -> f64 {
         let mut acc = 0.0;
-        let trump_suit = game.trump_suit;
-        let long_suits_shown_by_opponents = &game.long_suits_shown_by_opponents;
+        let trump_suit = ctx.trump_suit;
+        let long_suits_shown_by_opponents = &ctx.long_suits_shown_by_opponents;
         //in each suit that contains at least 3 HCP, is not the trump suit, and for which no opponent has shown 5+ cards, count 1 point for each card past the fourth.
         for suit in Suit::iter() {
             if trump_suit == Some(suit) || long_suits_shown_by_opponents.contains(&suit) {
                 continue;
             }
-            if Self::hcp_in(suit, game) >= HcpValue(3.0) {
-                acc += match game.my_hand.length_in(suit) {
+            if Self::hcp_in(suit, ctx) >= HcpValue(3.0) {
+                acc += match ctx.my_hand.length_in(suit) {
                     0..=4 => 0.0,
-                    _ => game.my_hand.length_in(suit) as f64 - 4.0,
+                    _ => ctx.my_hand.length_in(suit) as f64 - 4.0,
                 }
             }
         }
         acc
     }
 
-    pub fn side_suit_distribution_points(game: &GameContext) -> f64 {
-        let hand = game.my_hand;
-        let trump_suit = game.trump_suit;
+    pub fn side_suit_distribution_points(ctx: &EngineContext) -> f64 {
+        let hand = ctx.my_hand;
+        let trump_suit = ctx.trump_suit;
         match trump_suit {
             None => 0.0,
             Some(trump_suit) => {
@@ -426,19 +426,19 @@ impl ForumDPlus2015Evaluator {
         }
     }
 
-    pub fn rule_of_twenty(game: &GameContext) -> bool {
+    pub fn rule_of_twenty(ctx: &EngineContext) -> bool {
         Suit::iter()
-            .map(|x| game.my_hand.length_in(x))
+            .map(|x| ctx.my_hand.length_in(x))
             .sorted()
             .rev()
             .take(2)
             .sum::<u8>() as f64
-            + Self::hcp(game)
+            + Self::hcp(ctx)
             >= HcpValue(20.0)
     }
 
-    pub fn rule_of_fifteen(game: &GameContext) -> bool {
-        game.my_hand.length_in(Suit::Spades) as f64 + Self::hcp(game) >= HcpValue(15.0)
+    pub fn rule_of_fifteen(ctx: &EngineContext) -> bool {
+        ctx.my_hand.length_in(Suit::Spades) as f64 + Self::hcp(ctx) >= HcpValue(15.0)
     }
 }
 
@@ -464,8 +464,8 @@ mod test {
     #[test_case("S:984,H:QT86,D:J863,C:98", 3.0 ; "Board 3.W")]
     fn test_hcp(hand_str: &str, hcp: f64) {
         let hand = Hand::from_str(hand_str).unwrap();
-        let game = GameContext::basic_context_from_hand(&hand);
-        assert_eq!(ForumDPlus2015Evaluator::hcp(&game), HcpValue(hcp));
+        let ctx = EngineContext::basic_context_from_hand(&hand);
+        assert_eq!(ForumDPlus2015Evaluator::hcp(&ctx), HcpValue(hcp));
     }
 
     #[test_case("S:T93,H:AKQ5,D:QJ,C:T542", Suit::Hearts, 9.0 ; "Board 1.N")]
@@ -482,8 +482,8 @@ mod test {
     #[test_case("S:984,H:QT86,D:J863,C:98", Suit::Diamonds, 1.0 ; "Board 3.W")]
     fn test_hcp_in(hand_str: &str, suit: Suit, hcp: f64) {
         let hand = Hand::from_str(hand_str).unwrap();
-        let game = GameContext::basic_context_from_hand(&hand);
-        assert_eq!(ForumDPlus2015Evaluator::hcp_in(suit, &game), HcpValue(hcp));
+        let ctx = EngineContext::basic_context_from_hand(&hand);
+        assert_eq!(ForumDPlus2015Evaluator::hcp_in(suit, &ctx), HcpValue(hcp));
     }
 
     #[test_case("S:T93,H:AKQ5,D:QJ,C:T542", Suit::Hearts, SuitQuality::VeryGood ; "Board 1.N")]
@@ -500,8 +500,8 @@ mod test {
     #[test_case("S:984,H:QT86,D:J863,C:98", Suit::Clubs, SuitQuality::Weak ; "Board 3.W")]
     fn test_suit_quality(hand_str: &str, suit: Suit, quality: SuitQuality) {
         let hand = Hand::from_str(hand_str).unwrap();
-        let game = GameContext::basic_context_from_hand(&hand);
-        assert_eq!(ForumDPlus2015Evaluator::suit_quality(suit, &game), quality);
+        let ctx = EngineContext::basic_context_from_hand(&hand);
+        assert_eq!(ForumDPlus2015Evaluator::suit_quality(suit, &ctx), quality);
     }
 
     #[test_case("S:T93,H:AKQ5,D:QJ,C:T542", 0.0 ; "Board 1.N")]
@@ -518,8 +518,8 @@ mod test {
     #[test_case("S:984,H:QT86,D:J863,C:98", -0.5 ; "Board 3.W")]
     fn test_adjustment_aces_and_tens(hand_str: &str, adjustment: f64) {
         let hand = Hand::from_str(hand_str).unwrap();
-        let game = GameContext::basic_context_from_hand(&hand);
-        assert_eq!(ForumDPlus2015Evaluator::adjustment_aces_and_tens(&game), adjustment);
+        let ctx = EngineContext::basic_context_from_hand(&hand);
+        assert_eq!(ForumDPlus2015Evaluator::adjustment_aces_and_tens(&ctx), adjustment);
     }
 
     #[test_case("S:Q764,H:T,D:AT753,C:AKQ", 0.0 ; "No unguarded honors")]
@@ -535,8 +535,8 @@ mod test {
     #[test_case("S:AK,H:AQ,D:KJ,C:T987654", 0.0 ; "Do not downgrade AK, AQ, KJ")]
     fn test_adjustment_unguarded_honors(hand_str: &str, adjustment: f64) {
         let hand = Hand::from_str(hand_str).unwrap();
-        let game = GameContext::basic_context_from_hand(&hand);
-        assert_eq!(ForumDPlus2015Evaluator::adjustment_unguarded_honors(&game), adjustment);
+        let ctx = EngineContext::basic_context_from_hand(&hand);
+        assert_eq!(ForumDPlus2015Evaluator::adjustment_unguarded_honors(&ctx), adjustment);
     }
 
     #[test_case("S:Q764,H:8,D:AT753,C:AKQ", Some(Suit::Spades), &[Suit::Hearts, Suit::Clubs], 1.0 ; "Board 1.E")]
@@ -545,10 +545,10 @@ mod test {
     #[test_case("S:AKJ9532,H:9,D:982,C:87", Some(Suit::Diamonds), &[], 3.0 ; "Board 1.W")]
     fn test_length_points(hand_str: &str, trump_suit: Option<Suit>, suits: &[Suit], lp: f64) {
         let hand = Hand::from_str(hand_str).unwrap();
-        let mut game = GameContext::basic_context_from_hand(&hand);
-        game.trump_suit = trump_suit;
-        game.long_suits_shown_by_opponents = suits.to_vec();
-        assert_eq!(ForumDPlus2015Evaluator::length_points(&game), lp);
+        let mut ctx = EngineContext::basic_context_from_hand(&hand);
+        ctx.trump_suit = trump_suit;
+        ctx.long_suits_shown_by_opponents = suits.to_vec();
+        assert_eq!(ForumDPlus2015Evaluator::length_points(&ctx), lp);
     }
 
     #[test_case("S:Q764,H:8,D:AT753,C:AKQ", Suit::Spades, 2.0 ; "2 V")]
@@ -557,9 +557,9 @@ mod test {
     #[test_case("S:AK52,H:943,D:982,C:872", Suit::Spades, 0.0 ; "0 V")]
     fn test_side_suit_dp(hand_str: &str, trump_suit: Suit, dp: f64) {
         let hand = Hand::from_str(hand_str).unwrap();
-        let mut game = GameContext::basic_context_from_hand(&hand);
-        game.trump_suit = Some(trump_suit);
-        assert_eq!(ForumDPlus2015Evaluator::side_suit_distribution_points(&game), dp);
+        let mut ctx = EngineContext::basic_context_from_hand(&hand);
+        ctx.trump_suit = Some(trump_suit);
+        assert_eq!(ForumDPlus2015Evaluator::side_suit_distribution_points(&ctx), dp);
     }
 
     #[test_case("S:Q764,H:8,D:AT753,C:AKQ", Suit::Spades, 4, 4, 0.0 ; "Eight-card fit")]
@@ -632,8 +632,8 @@ mod test {
     #[test_case("S:AKT96,H:QT9,D:Q97,C:63", false)]
     fn rule_of_twenty(hand_str: &str, exp: bool) {
         let hand = Hand::from_str(hand_str).unwrap();
-        let game = GameContext::basic_context_from_hand(&hand);
-        assert_eq!(ForumDPlus2015Evaluator::rule_of_twenty(&game), exp)
+        let ctx = EngineContext::basic_context_from_hand(&hand);
+        assert_eq!(ForumDPlus2015Evaluator::rule_of_twenty(&ctx), exp)
     }
 
     #[test_case("S:AKT96,H:QT96,D:J9,C:63", true)]
@@ -641,7 +641,7 @@ mod test {
     #[test_case("S:AKT96,H:JT96,D:J9,C:63", false)]
     fn rule_of_fifteen(hand_str: &str, exp: bool) {
         let hand = Hand::from_str(hand_str).unwrap();
-        let game = GameContext::basic_context_from_hand(&hand);
-        assert_eq!(ForumDPlus2015Evaluator::rule_of_fifteen(&game), exp)
+        let ctx = EngineContext::basic_context_from_hand(&hand);
+        assert_eq!(ForumDPlus2015Evaluator::rule_of_fifteen(&ctx), exp)
     }
 }

@@ -1,5 +1,5 @@
 use crate::bid_reader::bidding_situation::BiddingSituation;
-use crate::game_context::hand_description::HandDescription;
+use crate::engine_context::hand_description::HandDescription;
 use crate::primitives::bid::Bid;
 
 #[derive(PartialEq)]

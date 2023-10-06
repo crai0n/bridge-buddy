@@ -21,6 +21,7 @@ impl ActiveTrick {
 pub struct TrickManager {
     trump_suit: Option<Suit>,
     current_trick: ActiveTrick,
+    turn: PlayerPosition,
     played_tricks: Vec<PlayedTrick>,
 }
 
@@ -28,6 +29,7 @@ impl TrickManager {
     pub fn new(lead: PlayerPosition, trump_suit: Option<Suit>) -> TrickManager {
         TrickManager {
             current_trick: ActiveTrick::new(lead),
+            turn: lead,
             played_tricks: Vec::with_capacity(13),
             trump_suit,
         }
@@ -37,6 +39,8 @@ impl TrickManager {
         self.current_trick.play(card);
         if self.current_trick.cards.len() == 4 {
             self.move_to_next_trick();
+        } else {
+            self.turn = self.turn + 1;
         }
     }
 
@@ -76,6 +80,7 @@ impl TrickManager {
         };
         self.played_tricks.push(played_trick);
         self.current_trick = ActiveTrick::new(winner);
+        self.turn = winner;
     }
 
     pub fn tricks(&self) -> Vec<PlayedTrick> {

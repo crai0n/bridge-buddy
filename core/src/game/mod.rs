@@ -5,7 +5,8 @@ use crate::primitives::deal::PlayerPosition;
 use crate::primitives::trick::{PlayedTrick, TrickManager};
 use crate::primitives::{Card, Contract, Deal};
 
-// Game is a state machine that contains all information that immediately follow from the rules of the game.
+// Together, the different versions of game form a state machine that encapsulates the logic of the game and contains
+// all information that immediately follow from the rules of the game.
 
 pub struct Game<Phase> {
     phase: Phase,
@@ -14,10 +15,10 @@ pub struct Game<Phase> {
 
 enum GameWrapper {
     Setup(Game<Setup>),
-    Bidding(Game<BiddingPhase>),
-    OpeningLead(Game<OpeningLeadPhase>),
-    CardPlay(Game<CardPlayPhase>),
-    Ended(Game<EndedPhase>),
+    Bidding(Game<Bidding>),
+    OpeningLead(Game<OpeningLead>),
+    CardPlay(Game<CardPlay>),
+    Ended(Game<Ended>),
 }
 struct Setup {}
 
@@ -25,27 +26,23 @@ impl Game<Setup> {
     fn new(deal: Deal) -> Self {
         Game { deal, phase: Setup {} }
     }
-    fn start(self) -> Game<BiddingPhase> {
+    fn start(self) -> Game<Bidding> {
         Game {
-            phase: BiddingPhase {
+            phase: Bidding {
                 bid_line: BidLine::new(),
                 current_turn: self.deal.dealer(),
-                declarer: None,
-                contract: None,
             },
             deal: self.deal,
         }
     }
 }
 
-struct BiddingPhase {
+struct Bidding {
     bid_line: BidLine,
     current_turn: PlayerPosition,
-    declarer: Option<PlayerPosition>,
-    contract: Option<Contract>,
 }
 
-impl Game<BiddingPhase> {
+impl Game<Bidding> {
     fn bid() -> Self {
         todo!()
     }
@@ -54,30 +51,38 @@ impl Game<BiddingPhase> {
         todo!()
     }
 
-    fn contract_is_final() -> bool {
+    fn contract_is_final(&self) -> bool {
+        self.phase.bid_line.contract_is_final()
+    }
+
+    pub fn implied_contract(&self) -> Option<Contract> {
+        self.phase.bid_line.implied_contract()
+    }
+
+    fn implied_declarer(&self) -> Option<PlayerPosition> {
         todo!()
     }
 
-    fn end_bidding(self, declarer: PlayerPosition, contract: Contract) -> Game<OpeningLeadPhase> {
+    fn end_bidding(self) -> Game<OpeningLead> {
         Game {
-            phase: OpeningLeadPhase {
+            phase: OpeningLead {
+                declarer: self.implied_declarer().unwrap(),
+                contract: self.implied_contract().unwrap(),
                 bid_line: self.phase.bid_line,
-                declarer,
-                contract,
             },
             deal: self.deal,
         }
     }
 }
 
-struct OpeningLeadPhase {
+struct OpeningLead {
     bid_line: BidLine,
     contract: Contract,
     declarer: PlayerPosition,
 }
 
-impl Game<OpeningLeadPhase> {
-    fn lead(self, opening_lead: Card) -> Game<CardPlayPhase> {
+impl Game<OpeningLead> {
+    fn lead(self, opening_lead: Card) -> Game<CardPlay> {
         let trump_suit = match self.phase.contract.denomination {
             ContractDenomination::NoTrump => None,
             ContractDenomination::Trump(suit) => Some(suit),
@@ -85,7 +90,7 @@ impl Game<OpeningLeadPhase> {
         let mut trick_manager = TrickManager::new(self.phase.declarer + 1, trump_suit);
         trick_manager.play(opening_lead);
         Game {
-            phase: CardPlayPhase {
+            phase: CardPlay {
                 bid_line: self.phase.bid_line,
                 opening_lead,
                 contract: self.phase.contract,
@@ -97,7 +102,7 @@ impl Game<OpeningLeadPhase> {
     }
 }
 
-pub struct CardPlayPhase {
+pub struct CardPlay {
     bid_line: BidLine,
     contract: Contract,
     opening_lead: Card,
@@ -105,18 +110,18 @@ pub struct CardPlayPhase {
     tricks: TrickManager,
 }
 
-impl Game<CardPlayPhase> {
+impl Game<CardPlay> {
     fn play_card(mut self, card: &Card) -> Self {
         self.phase.tricks.play(*card);
         self
     }
 
-    fn end_play(self, _card: &Card) -> Game<EndedPhase> {
+    fn end_play(self, _card: &Card) -> Game<Ended> {
         todo!()
     }
 }
 
-struct EndedPhase {
+struct Ended {
     bid_line: BidLine,
     contract: Contract,
     declarer: PlayerPosition,
@@ -129,10 +134,10 @@ pub enum Move {
     Card(Card),
 }
 
-impl Game<CardPlayPhase> {
-    fn end(self) -> Game<EndedPhase> {
+impl Game<CardPlay> {
+    fn end(self) -> Game<Ended> {
         Game {
-            phase: EndedPhase {
+            phase: Ended {
                 bid_line: self.phase.bid_line,
                 opening_lead: self.phase.opening_lead,
                 contract: self.phase.contract,
