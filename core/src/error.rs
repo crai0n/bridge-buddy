@@ -32,6 +32,9 @@ pub enum BBError {
     DuplicateRule(BidLine, BiddingSituation),
     IoError(std::io::Error),
     TransitionError,
+    CannotBid(String),
+    OutOfTurn,
+    WrongCard,
 }
 
 impl Display for BBError {
@@ -50,7 +53,10 @@ impl Display for BBError {
             BBError::UnknownBiddingSituation(s) => writeln!(f, "unknown bidding situation: {}", s),
             BBError::DuplicateRule(bl, sit) => writeln!(f, "line {} is already marked as {}", bl, sit),
             BBError::IoError(err) => writeln!(f, "{}", err),
+            BBError::CannotBid(reason) => writeln!(f, "{}", reason),
             BBError::TransitionError => writeln!(f, "unsupported transition between game states"),
+            BBError::OutOfTurn => writeln!(f, "It's not your turn to play!"),
+            BBError::WrongCard => writeln!(f, "You do not have this card!"),
         }
     }
 }

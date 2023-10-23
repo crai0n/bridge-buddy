@@ -9,4 +9,5 @@ pub mod bid_line;
 pub mod card;
 pub mod contract;
 pub mod deal;
+mod score;
 pub mod trick;

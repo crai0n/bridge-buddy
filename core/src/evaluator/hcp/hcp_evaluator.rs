@@ -26,9 +26,9 @@ impl HcpEvaluator {
         HcpValue::from(*denomination)
     }
 
-    pub fn adjustment_aces_and_tens(game: &EngineContext) -> f64 {
-        let tens = game.my_hand.cards().filter(|&&x| x.denomination == Ten).count();
-        let aces = game.my_hand.cards().filter(|&&x| x.denomination == Ace).count();
+    pub fn adjustment_aces_and_tens(ctx: &EngineContext) -> f64 {
+        let tens = ctx.my_hand.cards().filter(|&&x| x.denomination == Ten).count();
+        let aces = ctx.my_hand.cards().filter(|&&x| x.denomination == Ace).count();
         match (tens, aces) {
             (0, 0) => -1.0,
             (0, 1) | (1, 0) => -0.5,

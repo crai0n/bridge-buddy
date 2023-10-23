@@ -17,6 +17,12 @@ pub struct Contract {
     pub state: ContractState,
 }
 
+impl Contract {
+    pub fn expected_tricks(&self) -> usize {
+        self.level.expected_tricks()
+    }
+}
+
 impl Display for Contract {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}{}{}", self.level, self.denomination, self.state)?;

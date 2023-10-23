@@ -86,6 +86,14 @@ impl TrickManager {
     pub fn tricks(&self) -> Vec<PlayedTrick> {
         self.played_tricks.clone()
     }
+
+    pub fn turn(&self) -> PlayerPosition {
+        self.turn
+    }
+
+    pub fn count_played_tricks(&self) -> usize {
+        self.played_tricks.len()
+    }
 }
 
 #[derive(Clone)]

@@ -33,6 +33,19 @@ impl Suit {
             c => Err(BBError::UnknownSuit(c)),
         }
     }
+
+    pub fn is_major(&self) -> bool {
+        match self {
+            Suit::Spades => true,
+            Suit::Hearts => true,
+            Suit::Diamonds => false,
+            Suit::Clubs => false,
+        }
+    }
+
+    pub fn is_minor(&self) -> bool {
+        !self.is_major()
+    }
 }
 
 impl std::str::FromStr for Suit {
