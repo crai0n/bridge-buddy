@@ -1,4 +1,6 @@
+mod bid_manager;
 mod game_phase;
+mod trick_manager;
 
 use crate::error::BBError;
 use crate::game::game_phase::{Bidding, CardPlay, Ended, GamePhase, OpeningLead, Setup};

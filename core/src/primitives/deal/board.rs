@@ -39,6 +39,15 @@ impl Board {
         }
     }
 
+    pub fn is_vulnerable(&self, player: PlayerPosition) -> bool {
+        match self.vulnerable() {
+            BoardVulnerability::None => false,
+            BoardVulnerability::All => true,
+            BoardVulnerability::EastWest => matches!(player, PlayerPosition::East | PlayerPosition::West),
+            BoardVulnerability::NorthSouth => matches!(player, PlayerPosition::North | PlayerPosition::South),
+        }
+    }
+
     pub fn dealer(&self) -> PlayerPosition {
         match (self.number - 1) % 4 {
             0 => PlayerPosition::North,

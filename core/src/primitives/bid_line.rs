@@ -75,11 +75,7 @@ impl BidLine {
     }
 
     pub fn contract_is_final(&self) -> bool {
-        self.three_passes_in_a_row()
-    }
-
-    fn three_passes_in_a_row(&self) -> bool {
-        self.bids.len() == 3
+        self.bids.len() > 3
             && self
                 .bids
                 .iter()

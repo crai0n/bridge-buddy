@@ -42,7 +42,7 @@ impl MulAssign<isize> for ScorePoints {
     }
 }
 
-struct Score;
+pub struct Score;
 impl Score {
     const MINOR_TRICK_POINTS: ScorePoints = ScorePoints(20);
     const MAJOR_TRICK_POINTS: ScorePoints = ScorePoints(30);

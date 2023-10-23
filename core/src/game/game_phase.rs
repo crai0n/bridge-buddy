@@ -1,8 +1,10 @@
 use crate::error::BBError;
+use crate::game::trick_manager::TrickManager;
 use crate::primitives::bid_line::BidLine;
 use crate::primitives::contract::ContractDenomination;
 use crate::primitives::deal::PlayerPosition;
-use crate::primitives::trick::{PlayedTrick, TrickManager};
+use crate::primitives::score::{Score, ScorePoints};
+use crate::primitives::trick::PlayedTrick;
 use crate::primitives::{Card, Contract, Deal};
 
 pub struct GamePhase<Phase> {
@@ -130,13 +132,22 @@ impl GamePhase<CardPlay> {
     }
 
     pub fn end_play(self) -> GamePhase<Ended> {
+        let tricks_won = self.phase.tricks.tricks_won_by_axis(self.phase.declarer);
+        let declarer = self.phase.declarer;
+        let score = Score::score(
+            self.phase.contract,
+            tricks_won,
+            declarer,
+            self.deal.board.is_vulnerable(declarer),
+        );
         GamePhase {
             phase: Ended {
                 bid_line: self.phase.bid_line,
                 opening_lead: self.phase.opening_lead,
                 contract: self.phase.contract,
-                declarer: self.phase.declarer,
-                played_tricks: self.phase.tricks.tricks(),
+                declarer,
+                played_tricks: self.phase.tricks.played_tricks().into(),
+                score,
             },
             deal: self.deal,
         }
@@ -149,10 +160,11 @@ pub struct Ended {
     declarer: PlayerPosition,
     opening_lead: Card,
     played_tricks: Vec<PlayedTrick>,
+    score: ScorePoints,
 }
 
 impl GamePhase<Ended> {
-    pub fn get_score(&self) -> usize {
-        todo!()
+    pub fn get_score(&self) -> ScorePoints {
+        self.phase.score
     }
 }

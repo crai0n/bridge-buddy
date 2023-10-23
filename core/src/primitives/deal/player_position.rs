@@ -38,6 +38,17 @@ impl ops::Sub<Self> for PlayerPosition {
     }
 }
 
+impl PlayerPosition {
+    pub const fn partner(&self) -> Self {
+        match self {
+            PlayerPosition::North => PlayerPosition::South,
+            PlayerPosition::East => PlayerPosition::West,
+            PlayerPosition::South => PlayerPosition::North,
+            PlayerPosition::West => PlayerPosition::East,
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::PlayerPosition;
