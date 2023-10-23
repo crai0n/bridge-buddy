@@ -1,6 +1,5 @@
 use crate::error::BBError;
 use crate::primitives::Card;
-use crate::util;
 use strum::{Display, EnumIter};
 
 #[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter, Hash)]
@@ -30,7 +29,7 @@ impl Suit {
             'C' => Ok(Suit::Clubs),
             'c' => Ok(Suit::Clubs),
             '♣' => Ok(Suit::Clubs),
-            c => Err(BBError::UnknownSuit(c)),
+            c => Err(BBError::UnknownSuit(c.into())),
         }
     }
 
@@ -52,7 +51,11 @@ impl std::str::FromStr for Suit {
     type Err = BBError;
 
     fn from_str(string: &str) -> Result<Suit, BBError> {
-        let char = util::single_char_from_str(string)?;
+        let mut chars = string.trim().chars();
+        let char = chars.next().ok_or(BBError::UnknownSuit(string.into()))?;
+        if chars.next().is_some() {
+            return Err(BBError::UnknownSuit(string.into()));
+        }
         Suit::from_char(char)
     }
 }

@@ -7,4 +7,3 @@ pub mod error;
 pub mod evaluator;
 pub mod game;
 pub mod primitives;
-mod util;
