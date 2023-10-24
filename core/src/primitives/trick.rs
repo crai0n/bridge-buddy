@@ -41,12 +41,15 @@ impl PlayedTrick {
             winner,
         }
     }
-
     pub fn cards(&self) -> &[Card] {
         &self.cards
     }
 
     pub fn winner(&self) -> PlayerPosition {
         self.winner
+    }
+
+    pub fn won_by(&self, player: PlayerPosition) -> bool {
+        self.winner == player
     }
 }
