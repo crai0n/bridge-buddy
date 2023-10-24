@@ -3,19 +3,25 @@ use strum::{Display, EnumString};
 #[derive(Debug, Display, EnumString, PartialOrd, Ord, PartialEq, Eq, Clone, Copy)]
 pub enum ContractLevel {
     #[strum(to_string = "1")]
-    One,
+    One = 1,
     #[strum(to_string = "2")]
-    Two,
+    Two = 2,
     #[strum(to_string = "3")]
-    Three,
+    Three = 3,
     #[strum(to_string = "4")]
-    Four,
+    Four = 4,
     #[strum(to_string = "5")]
-    Five,
+    Five = 5,
     #[strum(to_string = "6")]
-    Six,
+    Six = 6,
     #[strum(to_string = "7")]
-    Seven,
+    Seven = 7,
+}
+
+impl ContractLevel {
+    pub fn expected_tricks(&self) -> usize {
+        *self as usize + 6
+    }
 }
 
 #[cfg(test)]
@@ -59,5 +65,16 @@ mod test {
     fn ordering(one: ContractLevel, other: ContractLevel, expected: Ordering) {
         let ord = one.cmp(&other);
         assert_eq!(ord, expected);
+    }
+
+    #[test_case(One, 7; "One")]
+    #[test_case(Two, 8; "Two")]
+    #[test_case(Three, 9; "Three")]
+    #[test_case(Four, 10; "Four")]
+    #[test_case(Five, 11; "Five")]
+    #[test_case(Six, 12; "Six")]
+    #[test_case(Seven, 13; "Seven")]
+    fn expected_tricks(level: ContractLevel, expected: usize) {
+        assert_eq!(level.expected_tricks(), expected);
     }
 }
