@@ -1,7 +1,7 @@
 use crate::primitives::deal::PlayerPosition;
 use crate::primitives::Card;
 
-trait Trick {
+pub trait Trick {
     fn lead(&self) -> PlayerPosition;
     fn cards(&self) -> &[Card];
 }
