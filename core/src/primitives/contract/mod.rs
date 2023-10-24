@@ -62,6 +62,11 @@ impl FromStr for Contract {
     }
 }
 
+impl Contract {
+    pub fn expected_tricks(&self) -> usize {
+        self.level.expected_tricks()
+    }
+}
 #[cfg(test)]
 mod test {
     use super::ContractDenomination::*;
@@ -113,5 +118,17 @@ mod test {
         let c1 = Contract::from_str(one).unwrap();
         let c2 = Contract::from_str(other).unwrap();
         assert_eq!(c1.cmp(&c2), expected)
+    }
+
+    #[test_case("1S", 7; "One")]
+    #[test_case("2H", 8; "Two")]
+    #[test_case("3D", 9; "Three")]
+    #[test_case("4C", 10; "Four")]
+    #[test_case("5NT", 11; "Five")]
+    #[test_case("6H", 12; "Six")]
+    #[test_case("7C", 13; "Seven")]
+    fn expected_tricks(contract_string: &str, expected: usize) {
+        let contract = Contract::from_str(contract_string).unwrap();
+        assert_eq!(contract.expected_tricks(), expected);
     }
 }

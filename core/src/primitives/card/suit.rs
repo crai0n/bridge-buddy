@@ -32,6 +32,19 @@ impl Suit {
             c => Err(BBError::UnknownSuit(c)),
         }
     }
+
+    pub fn is_major(&self) -> bool {
+        match self {
+            Suit::Spades => true,
+            Suit::Hearts => true,
+            Suit::Diamonds => false,
+            Suit::Clubs => false,
+        }
+    }
+
+    pub fn is_minor(&self) -> bool {
+        !self.is_major()
+    }
 }
 
 impl std::str::FromStr for Suit {
@@ -152,5 +165,21 @@ mod tests {
     #[test]
     fn debug() {
         assert_eq!(format!("{:?}", Spades), "Spades")
+    }
+
+    #[test_case(Spades, true; "Spades is Major")]
+    #[test_case(Hearts, true; "Hearts is Major")]
+    #[test_case(Diamonds, false; "Diamonds is minor")]
+    #[test_case(Clubs, false; "Clubs is minor")]
+    fn is_major(suit: Suit, expected: bool) {
+        assert_eq!(suit.is_major(), expected)
+    }
+
+    #[test_case(Spades, false; "Spades is Major")]
+    #[test_case(Hearts, false; "Hearts is Major")]
+    #[test_case(Diamonds, true; "Diamonds is Minor")]
+    #[test_case(Clubs, true; "Clubs is Minor")]
+    fn is_minor(suit: Suit, expected: bool) {
+        assert_eq!(suit.is_minor(), expected)
     }
 }
