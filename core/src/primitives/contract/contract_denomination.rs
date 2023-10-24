@@ -1,6 +1,5 @@
 use crate::error::BBError;
 use crate::primitives::Suit;
-use crate::util;
 
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy)]
 pub enum ContractDenomination {
@@ -26,7 +25,7 @@ impl std::str::FromStr for ContractDenomination {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.chars().count() == 1 {
-            let char = util::single_char_from_str(s)?;
+            let char = s.chars().next().unwrap();
             match Suit::from_char(char) {
                 Ok(s) => Ok(ContractDenomination::Trump(s)),
                 Err(e) => Err(e),

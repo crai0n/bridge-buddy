@@ -1,6 +1,5 @@
 use crate::error::BBError;
 use crate::primitives::Card;
-use crate::util;
 use strum::{Display, EnumIter};
 
 #[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
@@ -60,7 +59,7 @@ impl Denomination {
             '4' => Ok(Denomination::Four),
             '3' => Ok(Denomination::Three),
             '2' => Ok(Denomination::Two),
-            c => Err(BBError::UnknownDenomination(c)),
+            c => Err(BBError::UnknownDenomination(c.into())),
         }
     }
 }
@@ -69,7 +68,11 @@ impl std::str::FromStr for Denomination {
     type Err = BBError;
 
     fn from_str(string: &str) -> Result<Denomination, BBError> {
-        let char = util::single_char_from_str(string)?;
+        let mut chars = string.trim().chars();
+        let char = chars.next().ok_or(BBError::UnknownDenomination(string.into()))?;
+        if chars.next().is_some() {
+            return Err(BBError::UnknownDenomination(string.into()));
+        }
         Denomination::from_char(char)
     }
 }
@@ -129,7 +132,7 @@ mod tests {
     fn parsing_unknown_str_fails(input: &str) {
         assert_eq!(
             Denomination::from_str(input),
-            Err(BBError::UnknownDenomination(input.chars().next().unwrap()))
+            Err(BBError::UnknownDenomination(input.into()))
         );
     }
 
@@ -178,7 +181,7 @@ mod tests {
     fn fail_misc_characters(input: char) {
         assert_eq!(
             Denomination::from_char(input).unwrap_err(),
-            BBError::UnknownDenomination(input)
+            BBError::UnknownDenomination(input.into())
         )
     }
 
