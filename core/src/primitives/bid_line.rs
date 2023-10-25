@@ -75,11 +75,7 @@ impl BidLine {
     }
 
     pub fn contract_is_final(&self) -> bool {
-        self.three_passes_in_a_row()
-    }
-
-    fn three_passes_in_a_row(&self) -> bool {
-        self.bids.len() == 3
+        self.bids.len() > 3 // every player has bid at least once
             && self
                 .bids
                 .iter()
@@ -240,5 +236,14 @@ mod test {
         let bid_line = BidLine::from_str(input).unwrap();
         let implied_contract = Contract::from_str(implied).ok();
         assert_eq!(bid_line.implied_contract(), implied_contract)
+    }
+
+    #[test_case("P-P-P", false; "Third player passes")]
+    #[test_case("P-P-P-P", true; "All pass")]
+    #[test_case("1NT-X-P", false; "Doubled 1NT")]
+    #[test_case("1NT-X-2H-P-P-P", true; "Two Hearts")]
+    fn contract_is_final(input: &str, expected: bool) {
+        let bid_line = BidLine::from_str(input).unwrap();
+        assert_eq!(bid_line.contract_is_final(), expected);
     }
 }
