@@ -29,6 +29,16 @@ impl ops::Add<usize> for PlayerPosition {
         }
     }
 }
+impl PlayerPosition {
+    pub const fn partner(&self) -> Self {
+        match self {
+            PlayerPosition::North => PlayerPosition::South,
+            PlayerPosition::East => PlayerPosition::West,
+            PlayerPosition::South => PlayerPosition::North,
+            PlayerPosition::West => PlayerPosition::East,
+        }
+    }
+}
 
 #[cfg(test)]
 mod test {
@@ -76,5 +86,13 @@ mod test {
     #[test_case(West, North, false; "West")]
     fn equality(one: PlayerPosition, other: PlayerPosition, expected: bool) {
         assert_eq!(one.eq(&other), expected)
+    }
+
+    #[test_case(North, South; "North's partner is South")]
+    #[test_case(South, North; "South's partner is North")]
+    #[test_case(West, East; "West's partner is East")]
+    #[test_case(East, West; "East's partner is West")]
+    fn partner(player: PlayerPosition, expected: PlayerPosition) {
+        assert_eq!(player.partner(), expected)
     }
 }
