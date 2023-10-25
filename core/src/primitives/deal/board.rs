@@ -39,6 +39,15 @@ impl Board {
         }
     }
 
+    pub fn is_vulnerable(&self, player: PlayerPosition) -> bool {
+        match self.vulnerable() {
+            Vulnerability::None => false,
+            Vulnerability::All => true,
+            Vulnerability::EastWest => matches!(player, PlayerPosition::East | PlayerPosition::West),
+            Vulnerability::NorthSouth => matches!(player, PlayerPosition::North | PlayerPosition::South),
+        }
+    }
+
     pub fn dealer(&self) -> PlayerPosition {
         match (self.number - 1) % 4 {
             0 => PlayerPosition::North,
@@ -89,10 +98,34 @@ mod test {
     #[test_case(16, EastWest, West)]
     #[test_case(17, None, North)]
     #[test_case(18, NorthSouth, East)]
-    fn construction(number: usize, vulnerable: Vulnerability, dealer: PlayerPosition) {
+    fn dealer_and_vulnerability(number: usize, vulnerable: Vulnerability, dealer: PlayerPosition) {
         let deal = Board::from_number(number);
         assert_eq!(deal.dealer(), dealer);
         assert_eq!(deal.vulnerable(), vulnerable);
+    }
+
+    #[test_case(0, West, true)]
+    #[test_case(1, North, false)]
+    #[test_case(2, East, false)]
+    #[test_case(3, South, false)]
+    #[test_case(4, West, true)]
+    #[test_case(5, North, true)]
+    #[test_case(6, East, true)]
+    #[test_case(7, South, true)]
+    #[test_case(8, West, false)]
+    #[test_case(9, North, false)]
+    #[test_case(10, East, true)]
+    #[test_case(11, South, false)]
+    #[test_case(12, West, false)]
+    #[test_case(13, North, true)]
+    #[test_case(14, East, false)]
+    #[test_case(15, South, true)]
+    #[test_case(16, West, true)]
+    #[test_case(17, North, false)]
+    #[test_case(18, East, false)]
+    fn is_vulnerable(number: usize, player: PlayerPosition, expected: bool) {
+        let deal = Board::from_number(number);
+        assert_eq!(deal.is_vulnerable(player), expected);
     }
 
     #[test_case( 1u64,  20; "Test A")]
