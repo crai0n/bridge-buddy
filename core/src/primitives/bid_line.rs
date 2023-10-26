@@ -74,7 +74,7 @@ impl BidLine {
         }
     }
 
-    pub fn contract_is_final(&self) -> bool {
+    pub fn bidding_has_ended(&self) -> bool {
         self.bids.len() > 3 // every player has bid at least once
             && self
                 .bids
@@ -89,7 +89,7 @@ impl BidLine {
     }
 
     fn can_bid_contract(&self, new: &ContractBid) -> bool {
-        !self.contract_is_final()
+        !self.bidding_has_ended()
             && match self.last_contract_bid() {
                 Some(last) => new > last,
                 None => true,
@@ -107,7 +107,7 @@ impl BidLine {
     }
 
     fn can_redouble(&self) -> bool {
-        !self.contract_is_final()
+        !self.bidding_has_ended()
             && (self.last_bid_was_double_from_right_hand_opponent()
                 || self.last_bid_was_double_from_left_hand_opponent())
     }
@@ -136,7 +136,7 @@ impl BidLine {
     }
 
     fn can_double(&self) -> bool {
-        !self.contract_is_final()
+        !self.bidding_has_ended()
             && (self.last_bid_was_contract_bid_from_right_hand_opponent()
                 || self.last_bid_was_contract_bid_from_left_hand_opponent())
     }
@@ -158,6 +158,38 @@ impl BidLine {
                 Bid::Auxiliary(AuxiliaryBid::Pass)
             ]
         )
+    }
+
+    pub fn implied_declarer_position(&self) -> Option<usize> {
+        let auction_winner = self.bids.iter().rposition(|x| matches!(x, Bid::Contract(_)));
+
+        match auction_winner {
+            None => None,
+            Some(offset) => {
+                let denomination = self.implied_contract().unwrap().denomination;
+                self.first_occurence_of_contract_denomination(denomination, offset)
+            }
+        }
+    }
+
+    fn first_occurence_of_contract_denomination(
+        &self,
+        denomination: ContractDenomination,
+        offset: usize,
+    ) -> Option<usize> {
+        self.bids
+            .iter()
+            .enumerate()
+            .find(|(i, x)| Self::bid_matches_denomination(x, denomination) && Self::same_axis(i, offset))
+            .map(|(i, _)| i)
+    }
+
+    fn same_axis(position: &usize, other_position: usize) -> bool {
+        (position + other_position) % 2 == 0
+    }
+
+    fn bid_matches_denomination(bid: &&Bid, denomination: ContractDenomination) -> bool {
+        matches!(bid, Bid::Contract(y) if y.denomination == denomination)
     }
 }
 
@@ -236,6 +268,13 @@ mod test {
         let bid_line = BidLine::from_str(input).unwrap();
         let implied_contract = Contract::from_str(implied).ok();
         assert_eq!(bid_line.implied_contract(), implied_contract)
+    }
+
+    #[test_case("1NT-2NT-P-3NT-P-P-P", 1)]
+    #[test_case("1NT-2H-P-3NT-P-P-P", 3)]
+    fn implied_declarer_position(input: &str, expected: usize) {
+        let bid_line = BidLine::from_str(input).unwrap();
+        assert_eq!(bid_line.implied_declarer_position().unwrap(), expected);
     }
 
     #[test_case("P-P-P", false; "Third player passes")]
