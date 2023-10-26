@@ -50,6 +50,10 @@ impl Deal {
     pub fn dealer(&self) -> PlayerPosition {
         self.board.dealer()
     }
+
+    pub fn hand_of(&self, position: PlayerPosition) -> &Hand {
+        &self.hands[position as usize]
+    }
 }
 
 impl Default for Deal {
