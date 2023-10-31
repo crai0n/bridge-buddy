@@ -85,7 +85,7 @@ impl BidLine {
     }
 
     fn can_pass(&self) -> bool {
-        !self.contract_is_final()
+        !self.bidding_has_ended()
     }
 
     fn can_bid_contract(&self, new: &ContractBid) -> bool {
@@ -283,6 +283,6 @@ mod test {
     #[test_case("1NT-X-2H-P-P-P", true; "Two Hearts")]
     fn contract_is_final(input: &str, expected: bool) {
         let bid_line = BidLine::from_str(input).unwrap();
-        assert_eq!(bid_line.contract_is_final(), expected);
+        assert_eq!(bid_line.bidding_has_ended(), expected);
     }
 }
