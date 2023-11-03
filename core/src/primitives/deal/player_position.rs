@@ -1,3 +1,7 @@
+use super::turn_rank::TurnRank;
+use crate::primitives::deal::axis::Axis;
+use crate::primitives::deal::Board;
+use crate::primitives::Deal;
 use std::ops;
 use strum::{Display, EnumIter, EnumString};
 
@@ -17,6 +21,19 @@ pub enum PlayerPosition {
     West = 3,
 }
 
+impl ops::Add<TurnRank> for PlayerPosition {
+    type Output = PlayerPosition;
+
+    fn add(self, rhs: TurnRank) -> PlayerPosition {
+        match (self as usize + rhs as usize) % 4 {
+            0 => PlayerPosition::North,
+            1 => PlayerPosition::East,
+            2 => PlayerPosition::South,
+            _ => PlayerPosition::West,
+        }
+    }
+}
+
 impl ops::Add<usize> for PlayerPosition {
     type Output = PlayerPosition;
 
@@ -30,12 +47,50 @@ impl ops::Add<usize> for PlayerPosition {
     }
 }
 impl PlayerPosition {
+    pub fn turn_rank_on_deal(&self, deal: &Deal) -> TurnRank {
+        self.turn_rank_on_board(&deal.board)
+    }
+
+    pub fn turn_rank_on_board(&self, board: &Board) -> TurnRank {
+        self.turn_rank_relative_to(&board.dealer())
+    }
+
+    pub fn turn_rank_relative_to(&self, other: &PlayerPosition) -> TurnRank {
+        TurnRank::from(4 - *other as usize + *self as usize)
+    }
+
     pub const fn partner(&self) -> Self {
         match self {
             PlayerPosition::North => PlayerPosition::South,
             PlayerPosition::East => PlayerPosition::West,
             PlayerPosition::South => PlayerPosition::North,
             PlayerPosition::West => PlayerPosition::East,
+        }
+    }
+
+    pub const fn same_axis(&self, other: &PlayerPosition) -> bool {
+        (*self as usize + *other as usize) % 2 == 0
+    }
+
+    pub const fn axis(&self) -> Axis {
+        match self {
+            PlayerPosition::North => Axis::NorthSouth,
+            PlayerPosition::South => Axis::NorthSouth,
+            PlayerPosition::East => Axis::EastWest,
+            PlayerPosition::West => Axis::EastWest,
+        }
+    }
+
+    pub const fn is_on_axis(&self, axis: &Axis) -> bool {
+        match (axis, self) {
+            (Axis::NorthSouth, PlayerPosition::North) => true,
+            (Axis::NorthSouth, PlayerPosition::South) => true,
+            (Axis::NorthSouth, PlayerPosition::East) => false,
+            (Axis::NorthSouth, PlayerPosition::West) => false,
+            (Axis::EastWest, PlayerPosition::North) => false,
+            (Axis::EastWest, PlayerPosition::South) => false,
+            (Axis::EastWest, PlayerPosition::East) => true,
+            (Axis::EastWest, PlayerPosition::West) => true,
         }
     }
 }
@@ -45,6 +100,7 @@ mod test {
     use super::PlayerPosition;
     use super::PlayerPosition::*;
 
+    use crate::primitives::deal::turn_rank::TurnRank;
     use std::str::FromStr;
     use test_case::test_case;
 
@@ -78,6 +134,17 @@ mod test {
     #[test_case(West, 2, East; "West2")]
     fn add(start: PlayerPosition, add: usize, expected: PlayerPosition) {
         assert_eq!(start + add, expected)
+    }
+
+    #[test_case(North, North, TurnRank::First)]
+    #[test_case(East, East, TurnRank::First)]
+    #[test_case(East, North, TurnRank::Second)]
+    #[test_case(South, North, TurnRank::Third)]
+    #[test_case(West, South, TurnRank::Second)]
+    #[test_case(North, West, TurnRank::Second)]
+    #[test_case(East, West, TurnRank::Third)]
+    fn turn_rank_relative_to(player: PlayerPosition, other: PlayerPosition, expected: TurnRank) {
+        assert_eq!(player.turn_rank_relative_to(&other), expected);
     }
 
     #[test_case(North, South, false; "North")]
