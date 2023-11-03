@@ -44,6 +44,7 @@ impl MulAssign<isize> for ScorePoints {
 
 pub struct Score;
 impl Score {
+    pub const NO_SCORE: ScorePoints = ScorePoints(0);
     const MINOR_TRICK_POINTS: ScorePoints = ScorePoints(20);
     const MAJOR_TRICK_POINTS: ScorePoints = ScorePoints(30);
     const NO_TRUMP_EXTRA_TRICK_POINTS: ScorePoints = ScorePoints(10);
@@ -154,7 +155,7 @@ impl Score {
                 Self::GRAND_SLAM_BONUS_NOT_VULNERABLE
             }
         } else {
-            ScorePoints(0)
+            Self::NO_SCORE
         }
     }
 
