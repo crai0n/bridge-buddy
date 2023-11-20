@@ -4,6 +4,7 @@ use crate::primitives::deal::{Board, PlayerPosition};
 use crate::primitives::{Card, Contract, Hand};
 use crate::score::ScorePoints;
 
+#[derive(Debug)]
 pub enum GameEvent {
     DiscloseHand(DiscloseHandEvent),
     GameStarted,
@@ -14,31 +15,37 @@ pub enum GameEvent {
     GameEnded(GameEndedEvent),
 }
 
+#[derive(Debug)]
 pub struct DiscloseHandEvent {
     pub board: Board,
     pub seat: PlayerPosition,
     pub hand: Hand,
 }
 
+#[derive(Debug)]
 pub struct BidMadeEvent {
     pub player: PlayerPosition,
     pub bid: Bid,
 }
 
+#[derive(Debug)]
 pub struct MoveToCardPlayEvent {
     pub final_contract: Contract,
     pub declarer: PlayerPosition,
 }
 
+#[derive(Debug)]
 pub struct CardPlayedEvent {
     pub player: PlayerPosition,
     pub card: Card,
 }
 
+#[derive(Debug)]
 pub struct DummyUncoveredEvent {
     pub dummy: Hand,
 }
 
+#[derive(Debug)]
 pub struct GameEndedEvent {
     pub score: ScorePoints,
 }

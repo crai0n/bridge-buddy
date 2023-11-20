@@ -3,6 +3,7 @@ use crate::primitives::deal::PlayerPosition;
 use crate::primitives::trick::Trick;
 use crate::primitives::trick::{ActiveTrick, PlayedTrick};
 use crate::primitives::{Card, Deal, Hand, Suit};
+use itertools::Itertools;
 use std::collections::{BTreeMap, BTreeSet};
 use std::mem;
 use strum::IntoEnumIterator;
@@ -58,13 +59,9 @@ impl CardManager {
     }
 
     pub fn play(&mut self, card: Card) -> Result<(), BBError> {
-        if self.played_cards.contains(&card) {
-            return Err(BBError::InvalidCard(card));
-        } else if let Some(owner) = self.known_cards.get(&card) {
-            if *owner != self.turn {
-                return Err(BBError::InvalidCard(card));
-            }
-        }
+        self.check_if_card_belongs_to_another_player(&card)?;
+        self.check_if_card_has_already_been_played(&card)?;
+        self.check_if_card_can_be_played(&card)?;
 
         self.current_trick.play(card);
         if self.current_trick.cards().len() == 4 {
@@ -77,6 +74,44 @@ impl CardManager {
         self.known_cards.insert(card, self.turn);
 
         Ok(())
+    }
+
+    fn check_if_card_belongs_to_another_player(&self, card: &Card) -> Result<(), BBError> {
+        if let Some(owner) = self.known_cards.get(card) {
+            if *owner != self.turn {
+                return Err(BBError::InvalidCard(*card));
+            }
+        }
+        Ok(())
+    }
+
+    fn check_if_card_has_already_been_played(&self, card: &Card) -> Result<(), BBError> {
+        if self.played_cards.contains(card) {
+            return Err(BBError::InvalidCard(*card));
+        }
+        Ok(())
+    }
+
+    fn check_if_card_can_be_played(&self, card: &Card) -> Result<(), BBError> {
+        if self.current_player_must_follow_suit() && Some(card.suit) != self.current_trick.suit_to_follow() {
+            return Err(BBError::InvalidCard(*card));
+        }
+        Ok(())
+    }
+
+    fn current_player_must_follow_suit(&self) -> bool {
+        if let Some(suit) = self.current_trick.suit_to_follow() {
+            let cards_in_suit: BTreeSet<_> = self
+                .known_cards
+                .iter()
+                .filter(|(c, p)| **p == self.turn && c.suit == suit)
+                .map(|(c, _)| *c)
+                .collect();
+            let remaining_cards_in_suit = cards_in_suit.difference(&self.played_cards).collect_vec();
+            !remaining_cards_in_suit.is_empty()
+        } else {
+            false
+        }
     }
 
     fn trick_winner(&self) -> PlayerPosition {

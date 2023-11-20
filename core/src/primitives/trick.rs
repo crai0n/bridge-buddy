@@ -1,5 +1,5 @@
 use crate::primitives::deal::PlayerPosition;
-use crate::primitives::Card;
+use crate::primitives::{Card, Suit};
 
 pub trait Trick {
     fn lead(&self) -> PlayerPosition;
@@ -20,6 +20,10 @@ impl ActiveTrick {
     }
     pub fn play(&mut self, card: Card) {
         self.cards.push(card);
+    }
+
+    pub fn suit_to_follow(&self) -> Option<Suit> {
+        self.cards.first().map(|x| x.suit)
     }
 }
 

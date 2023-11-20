@@ -17,6 +17,7 @@ pub mod player_event;
 pub mod card_manager;
 
 pub mod game_phase;
+pub mod game_state;
 
 pub struct Game {
     deal: Deal,
@@ -78,6 +79,7 @@ impl Game {
     }
 
     fn process_make_bid_event(&mut self, bid_event: MakeBidEvent) -> Result<(), BBError> {
+        self.validate_turn_order(bid_event.player)?;
         self.bid_line.bid(bid_event.bid)?;
 
         let event = GameEvent::from(PlayerEvent::MakeBid(bid_event));
@@ -109,6 +111,7 @@ impl Game {
     }
 
     fn move_to_card_play(&mut self, contract: Contract, declarer: PlayerPosition) {
+        self.set_up_card_play(contract, declarer);
         self.phase = GamePhase::CardPlay;
         let move_to_card_play_event = MoveToCardPlayEvent {
             final_contract: contract,
@@ -119,16 +122,14 @@ impl Game {
         self.add_event_to_history(event)
     }
 
-    fn set_up_card_play(&mut self, contract: Contract) -> PlayerPosition {
+    fn set_up_card_play(&mut self, contract: Contract, declarer: PlayerPosition) {
         self.contract = Some(contract);
-        let declarer = self.deal.dealer() + self.bid_line.implied_declarer_position().unwrap();
         self.declarer = Some(declarer);
         self.tricks = Some(CardManager::new_with_deal_info(
             self.declarer.unwrap() + 1,
             contract.trump_suit(),
             &self.deal,
         ));
-        declarer
     }
 
     fn move_to_ended_without_card_play(&mut self) {
@@ -140,6 +141,7 @@ impl Game {
     }
 
     fn process_play_card_event(&mut self, card_event: PlayCardEvent) -> Result<(), BBError> {
+        self.validate_turn_order(card_event.player)?;
         self.tricks.as_mut().unwrap().play(card_event.card)?;
 
         let event = GameEvent::from(PlayerEvent::PlayCard(card_event));
@@ -171,7 +173,7 @@ impl Game {
         }));
     }
 
-    fn validate_event_origin(&self, player: PlayerPosition) -> Result<(), BBError> {
+    fn validate_turn_order(&self, player: PlayerPosition) -> Result<(), BBError> {
         if let Some(current_turn) = self.current_turn() {
             if player == current_turn {
                 return Ok(());
@@ -208,9 +210,13 @@ impl Game {
 #[cfg(test)]
 mod test {
     use crate::error::BBError;
+    use crate::game::player_event::{MakeBidEvent, PlayCardEvent, PlayerEvent};
     use crate::game::{game_phase::GamePhase, Game};
-    use crate::primitives::Deal;
+    use crate::primitives::bid::Bid;
+    use crate::primitives::deal::PlayerPosition;
+    use crate::primitives::{Card, Deal};
     use rand::thread_rng;
+    use std::str::FromStr;
 
     #[test]
     fn init() {
@@ -224,8 +230,84 @@ mod test {
     fn start_game() {
         let mut rng = thread_rng();
         let deal = Deal::from_rng(&mut rng);
-        let mut game = Game::new_from_deal(deal.clone());
+        let mut game = Game::new_from_deal(deal);
         assert_eq!(game.start(), Ok(()));
         assert_eq!(game.start(), Err(BBError::GameAlreadyStarted));
+    }
+
+    #[test]
+    fn game_without_card_play() {
+        let seed = 9000u64;
+        let deal = Deal::from_u64_seed(seed);
+        let mut game = Game::new_from_deal(deal);
+
+        assert_eq!(game.start(), Ok(()));
+
+        let bids = ["p", "p", "p", "p"];
+
+        for &bid in bids.iter() {
+            let bid_event = MakeBidEvent {
+                player: game.current_turn().unwrap(),
+                bid: Bid::from_str(bid).unwrap(),
+            };
+            let player_event = PlayerEvent::MakeBid(bid_event);
+            game.process_event(player_event).unwrap();
+        }
+        // for event in game.history {
+        //     println!("{:?}", event);
+        // }
+        assert_eq!(game.phase, GamePhase::Ended);
+    }
+
+    #[test]
+    fn game_with_card_play() {
+        let seed = 9000u64;
+        let deal = Deal::from_u64_seed(seed);
+        let mut game = Game::new_from_deal(deal.clone());
+
+        // for hand in deal.hands.iter() {
+        //     println!("{}", hand);
+        // }
+
+        assert_eq!(game.start(), Ok(()));
+
+        let bids = ["p", "1NT", "p", "2C", "p", "2S", "p", "4S", "p", "p", "p"];
+
+        for &bid in bids.iter() {
+            let bid_event = MakeBidEvent {
+                player: game.current_turn().unwrap(),
+                bid: Bid::from_str(bid).unwrap(),
+            };
+            let player_event = PlayerEvent::MakeBid(bid_event);
+            game.process_event(player_event).unwrap();
+        }
+
+        assert_eq!(game.phase, GamePhase::CardPlay);
+        assert_eq!(game.current_turn(), Some(PlayerPosition::East));
+
+        let cards = [
+            "C2", "C7", "CK", "C3", "CJ", "S6", "C4", "C8", "D4", "D6", "D7", "DJ", "C6", "S9", "C5", "C9", "D5", "D8",
+            "D9", "D2", "CA", "S2", "ST", "CT", "DT", "D3", "DK", "H2", "H5", "H3", "H7", "H4", "DQ", "DA", "H6", "S3",
+            "S4", "SQ", "H8", "S8", "SK", "CQ", "SJ", "SA", "S7", "HJ", "HK", "HA", "S5", "HT", "HQ", "H9",
+        ];
+
+        for &card in cards.iter() {
+            let card_event = PlayCardEvent {
+                player: game.current_turn().unwrap(),
+                card: Card::from_str(card).unwrap(),
+            };
+            let player_event = PlayerEvent::PlayCard(card_event);
+            game.process_event(player_event).unwrap();
+        }
+        assert_eq!(game.phase, GamePhase::Ended);
+        assert_eq!(game.tricks.as_ref().unwrap().count_played_cards(), 52);
+
+        // for event in game.history.iter() {
+        //     println!("{:?}", event);
+        // }
+        assert_eq!(
+            game.tricks.as_ref().unwrap().tricks_won_by_axis(PlayerPosition::North),
+            7
+        );
     }
 }

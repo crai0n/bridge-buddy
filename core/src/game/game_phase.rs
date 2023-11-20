@@ -1,4 +1,4 @@
-#[derive(Eq, PartialEq, Debug, Copy, Clone, Ord, PartialOrd)]
+#[derive(Eq, PartialEq, Debug, Clone, Copy, Ord, PartialOrd)]
 pub enum GamePhase {
     Setup,
     Bidding,
