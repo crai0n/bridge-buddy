@@ -37,7 +37,7 @@ impl BidLine {
     }
 
     fn calculate_contract_state(&self) -> ContractState {
-        match self.bids.iter().rev().map_while(Self::access_auxiliary).max() {
+        match self.bids.iter().rev().map_while(|x| x.access_auxiliary_bid()).max() {
             Some(AuxiliaryBid::Pass) => ContractState::Passed,
             Some(AuxiliaryBid::Double) => ContractState::Doubled,
             Some(AuxiliaryBid::Redouble) => ContractState::Redoubled,
@@ -45,16 +45,17 @@ impl BidLine {
         }
     }
 
-    fn access_auxiliary(bid: &Bid) -> Option<&AuxiliaryBid> {
-        match bid {
-            Bid::Contract(_) => None,
-            Bid::Auxiliary(ab) => Some(ab),
-        }
-    }
-
     pub fn new() -> Self {
         let bids = vec![];
         BidLine { bids }
+    }
+
+    pub fn len(&self) -> usize {
+        self.bids.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.bids.len() == 0
     }
 
     pub fn bid(&mut self, bid: Bid) -> Result<(), BBError> {

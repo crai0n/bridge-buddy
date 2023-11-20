@@ -1,6 +1,6 @@
 use strum::{Display, EnumString};
 
-#[derive(Debug, Display, EnumString, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Display, EnumString, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
 pub enum AuxiliaryBid {
     #[strum(serialize = "p")]
     #[strum(serialize = "P")]

@@ -2,6 +2,7 @@ use crate::primitives::deal::player_position::PlayerPosition;
 use crate::primitives::deal::vulnerability::Vulnerability;
 use rand::prelude::*;
 
+#[derive(Clone, Copy)]
 pub struct Board {
     number: usize,
 }

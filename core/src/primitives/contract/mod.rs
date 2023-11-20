@@ -6,6 +6,7 @@ use crate::error::BBError;
 use std::fmt::Display;
 use std::str::FromStr;
 
+use crate::primitives::Suit;
 pub use contract_denomination::ContractDenomination;
 pub use contract_level::ContractLevel;
 pub use contract_state::ContractState;
@@ -66,6 +67,13 @@ impl Contract {
     pub fn expected_tricks(&self) -> usize {
         self.level.expected_tricks()
     }
+
+    pub fn trump_suit(&self) -> Option<Suit> {
+        match self.denomination {
+            ContractDenomination::NoTrump => None,
+            ContractDenomination::Trump(s) => Some(s),
+        }
+    }
 }
 #[cfg(test)]
 mod test {
@@ -73,6 +81,7 @@ mod test {
     use super::ContractLevel::*;
     use super::ContractState::*;
     use super::{Contract, ContractDenomination, ContractLevel, ContractState};
+    use crate::primitives::Suit;
     use crate::primitives::Suit::*;
     use std::cmp::Ordering::*;
     use std::{cmp::Ordering, str::FromStr};
@@ -130,5 +139,17 @@ mod test {
     fn expected_tricks(contract_string: &str, expected: usize) {
         let contract = Contract::from_str(contract_string).unwrap();
         assert_eq!(contract.expected_tricks(), expected);
+    }
+
+    #[test_case("1S", Some(Spades); "One")]
+    #[test_case("2H", Some(Hearts); "Two")]
+    #[test_case("3D", Some(Diamonds); "Three")]
+    #[test_case("4C", Some(Clubs); "Four")]
+    #[test_case("5NT", None; "Five")]
+    #[test_case("6H", Some(Hearts); "Six")]
+    #[test_case("7C", Some(Clubs); "Seven")]
+    fn trump_suit(contract_string: &str, expected: Option<Suit>) {
+        let contract = Contract::from_str(contract_string).unwrap();
+        assert_eq!(contract.trump_suit(), expected);
     }
 }
