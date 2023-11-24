@@ -17,9 +17,7 @@ pub struct GameState<Phase> {
 #[derive(Debug, Clone)]
 pub struct Bidding {
     pub bid_manager: BidManager,
-    pub tricks: Option<TrickManager>,
     pub hand_manager: HandManager,
-    pub contract: Option<Contract>,
 }
 
 #[derive(Debug, Clone)]
@@ -51,7 +49,6 @@ pub struct Ended {
     pub bids: BidLine,
     pub tricks: Vec<PlayedTrick>,
     pub hands: HandManager,
-    pub contract: Option<Contract>,
     pub result: GameResult,
 }
 
@@ -108,7 +105,6 @@ impl GameState<Bidding> {
             bids: self.inner.bid_manager.bid_line(),
             tricks: Vec::new(),
             hands: self.inner.hand_manager,
-            contract: None,
             result: GameResult::Unplayed,
         };
 
@@ -259,7 +255,6 @@ impl GameState<CardPlay> {
             bids: self.inner.bids,
             tricks,
             hands: self.inner.hand_manager,
-            contract: Some(self.inner.contract),
             result,
         };
 

@@ -59,12 +59,12 @@ impl GameManager {
     }
 
     fn react_to_new_game_state(&mut self) {
-        match &mut self.game.as_mut().unwrap().game_phase {
+        match &mut self.game.as_mut().unwrap().game_phase() {
             GamePhase::WaitingForDummy(state) => {
                 let dummy = state.inner.contract.declarer.partner();
                 self.disclose_dummy(dummy);
             }
-            GamePhase::Ended(_) => self.broadcast_result(),
+            GamePhase::Ended(_) => self.finalize_result(),
             _ => (),
         }
     }
@@ -90,7 +90,7 @@ impl GameManager {
         self.game.as_mut().unwrap().process_event(game_event).unwrap();
     }
 
-    fn broadcast_result(&mut self) {
+    fn finalize_result(&mut self) {
         let game_ended_event = GameEndedEvent {
             score: self.game.as_mut().unwrap().score().unwrap(),
         };

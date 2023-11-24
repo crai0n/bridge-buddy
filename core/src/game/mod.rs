@@ -18,7 +18,6 @@ pub mod game_phase;
 pub mod game_state;
 // mod bid_manager;
 pub mod bid_manager;
-pub mod game_manager;
 pub mod hand_manager;
 
 pub struct Game {
@@ -30,15 +29,17 @@ impl Game {
     pub fn new_from_board(board: Board) -> Self {
         let inner = Bidding {
             bid_manager: BidManager::new(board.dealer()),
-            tricks: None,
             hand_manager: HandManager::new(),
-            contract: None,
         };
         let state = GameState { inner };
         Game {
             board,
             game_phase: GamePhase::Bidding(state),
         }
+    }
+
+    pub fn game_phase(&self) -> &GamePhase {
+        &self.game_phase
     }
 
     pub fn from_new_game_event(event: NewGameEvent) -> Self {
