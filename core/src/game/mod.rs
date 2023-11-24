@@ -2,7 +2,7 @@ use crate::error::BBError;
 use crate::game::game_event::{GameEvent, NewGameEvent};
 
 use crate::game::bid_manager::BidManager;
-use crate::game::game_state::{Bidding, NewGameState};
+use crate::game::game_state::{Bidding, GameState};
 use crate::game::hand_manager::HandManager;
 use game_phase::GamePhase;
 
@@ -31,10 +31,10 @@ impl Game {
         let inner = Bidding {
             bid_manager: BidManager::new(board.dealer()),
             tricks: None,
-            hands: HandManager::new(),
+            hand_manager: HandManager::new(),
             contract: None,
         };
-        let state = NewGameState { inner };
+        let state = GameState { inner };
         Game {
             board,
             game_phase: GamePhase::Bidding(state),
@@ -173,15 +173,7 @@ mod test {
         match game.game_phase {
             GamePhase::Ended(state) => {
                 assert_eq!(state.inner.hands.count_played_cards(), 52);
-                assert_eq!(
-                    state
-                        .inner
-                        .tricks
-                        .as_ref()
-                        .unwrap()
-                        .tricks_won_by_axis(PlayerPosition::North),
-                    7
-                );
+                assert_eq!(state.tricks_won_by_axis(PlayerPosition::North), 7);
             }
             _ => panic!(),
         }

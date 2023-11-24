@@ -1,15 +1,15 @@
 use crate::error::BBError;
 use crate::game::game_event::{BidEvent, CardEvent, DiscloseHandEvent, DummyUncoveredEvent, GameEvent};
-use crate::game::game_state::{Bidding, CardPlay, Ended, NewGameState, OpeningLead, WaitingForDummy};
+use crate::game::game_state::{Bidding, CardPlay, Ended, GameState, OpeningLead, WaitingForDummy};
 use crate::primitives::deal::PlayerPosition;
 
 #[derive(Debug, Clone)]
 pub enum GamePhase {
-    Bidding(NewGameState<Bidding>),
-    OpeningLead(NewGameState<OpeningLead>),
-    WaitingForDummy(NewGameState<WaitingForDummy>),
-    CardPlay(NewGameState<CardPlay>),
-    Ended(NewGameState<Ended>),
+    Bidding(GameState<Bidding>),
+    OpeningLead(GameState<OpeningLead>),
+    WaitingForDummy(GameState<WaitingForDummy>),
+    CardPlay(GameState<CardPlay>),
+    Ended(GameState<Ended>),
 }
 
 impl GamePhase {
@@ -60,7 +60,7 @@ impl GamePhase {
         }
     }
 
-    fn move_from_bidding_to_next_phase_with_state(&mut self, state: NewGameState<Bidding>) {
+    fn move_from_bidding_to_next_phase_with_state(&mut self, state: GameState<Bidding>) {
         if let Some(contract) = state.inner.bid_manager.implied_contract() {
             let new_state = state.clone().move_to_opening_lead(contract);
 
@@ -80,13 +80,13 @@ impl GamePhase {
                 let state = state.clone();
 
                 let inner = WaitingForDummy {
-                    bid_manager: state.inner.bid_manager,
-                    tricks: state.inner.tricks,
-                    hands: state.inner.hands,
+                    bids: state.inner.bids,
+                    trick_manager: state.inner.trick_manager,
+                    hand_manager: state.inner.hand_manager,
                     contract: state.inner.contract,
                 };
 
-                let new_state = NewGameState { inner };
+                let new_state = GameState { inner };
                 *self = GamePhase::WaitingForDummy(new_state);
                 Ok(())
             }

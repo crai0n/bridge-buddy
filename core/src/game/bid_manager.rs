@@ -24,8 +24,8 @@ impl BidManager {
         self.bid_line.bids()
     }
 
-    pub fn bid_line(&self) -> &BidLine {
-        &self.bid_line
+    pub fn bid_line(&self) -> BidLine {
+        self.bid_line.clone()
     }
 
     pub fn bid(&mut self, bid: Bid) -> Result<(), BBError> {
