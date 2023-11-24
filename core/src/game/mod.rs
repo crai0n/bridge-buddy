@@ -1,12 +1,13 @@
 use crate::error::BBError;
-use crate::game::game_event::{BidEvent, CardEvent, GameEvent, NewGameEvent};
+use crate::game::game_event::{GameEvent, NewGameEvent};
 
 use crate::game::bid_manager::BidManager;
-use crate::game::game_state::GameState;
+use crate::game::game_state::{Bidding, NewGameState};
+use crate::game::hand_manager::HandManager;
 use game_phase::GamePhase;
 
 use crate::primitives::deal::{Board, PlayerPosition};
-use crate::primitives::Contract;
+
 use crate::score::{Score, ScorePoints};
 
 pub mod game_event;
@@ -27,13 +28,14 @@ pub struct Game {
 
 impl Game {
     pub fn new_from_board(board: Board) -> Self {
-        let state = GameState {
+        let inner = Bidding {
             bid_manager: BidManager::new(board.dealer()),
             tricks: None,
-            hands: None,
+            hands: HandManager::new(),
             contract: None,
             declarer: None,
         };
+        let state = NewGameState { inner };
         Game {
             board,
             game_phase: GamePhase::Bidding(state),
@@ -45,96 +47,10 @@ impl Game {
     }
 
     pub fn process_event(&mut self, event: GameEvent) -> Result<(), BBError> {
-        match (&mut self.game_phase, event) {
-            (_, GameEvent::NewGame(_)) => Err(BBError::GameAlreadyStarted),
-            (GamePhase::Bidding(state), GameEvent::DiscloseHand(disclose_hand_event)) => {
-                state.process_disclose_hand_event(disclose_hand_event)
-            }
-            (GamePhase::Bidding(_state), GameEvent::Bid(bid_event)) => {
-                self.game_phase.process_make_bid_event(bid_event)
-            }
-            (GamePhase::OpeningLead(state), GameEvent::Card(card_event)) => {
-                state.process_play_card_event(card_event)?;
-                self.game_phase = GamePhase::WaitingForDummy(state.clone());
-                Ok(())
-            }
-            (GamePhase::WaitingForDummy(state), GameEvent::DummyUncovered(dummy_uncovered_event)) => {
-                state.process_dummy_uncovered_event(dummy_uncovered_event)?;
-                self.game_phase = GamePhase::CardPlay(state.clone());
-                Ok(())
-            }
-            (GamePhase::CardPlay(_state), GameEvent::Card(card_event)) => {
-                self.game_phase.process_play_card_event(card_event)
-            }
-            (_, GameEvent::Bid(_)) => Err(BBError::InvalidEvent(event)),
-            (_, GameEvent::Card(_)) => Err(BBError::InvalidEvent(event)),
-            _ => Err(BBError::InvalidEvent(event)),
-        }
+        self.game_phase.process_event(event)
     }
 
-    fn process_make_bid_event(&mut self, bid_event: BidEvent) -> Result<(), BBError> {
-        self.game_phase.process_make_bid_event(bid_event)?;
-
-        if self.game_phase.bidding_has_ended() {
-            self.move_from_bidding_to_next_phase();
-        }
-
-        Ok(())
-    }
-
-    fn process_play_card_event(&mut self, card_event: CardEvent) -> Result<(), BBError> {
-        self.game_phase.process_play_card_event(card_event)?;
-
-        if self.game_phase.card_play_has_ended() {
-            self.move_to_ended();
-        }
-
-        Ok(())
-    }
-
-    fn move_from_bidding_to_next_phase(&mut self) {
-        match &self.game_phase {
-            GamePhase::Bidding(state) => {
-                if let Some(contract) = state.bid_manager.implied_contract() {
-                    let declarer = state.bid_manager.implied_declarer().unwrap();
-                    self.move_to_card_play(contract, declarer);
-                } else {
-                    self.move_to_ended_without_card_play();
-                }
-            }
-            _ => panic!(),
-        }
-    }
-
-    fn move_to_card_play(&mut self, contract: Contract, declarer: PlayerPosition) {
-        self.game_phase.set_up_card_play(contract, declarer);
-
-        if let GamePhase::Bidding(state) = &self.game_phase {
-            self.game_phase = GamePhase::OpeningLead(state.clone());
-        } else {
-            unreachable!()
-        }
-    }
-
-    fn move_to_ended_without_card_play(&mut self) {
-        if let GamePhase::Bidding(state) = &self.game_phase {
-            self.game_phase = GamePhase::Ended(state.clone());
-        } else {
-            unreachable!()
-        }
-    }
-
-    fn move_to_ended(&mut self) {
-        if let GamePhase::CardPlay(state) = &mut self.game_phase {
-            self.game_phase = GamePhase::Ended(state.clone());
-        }
-    }
-
-    fn validate_turn_order(&self, player: PlayerPosition) -> Result<(), BBError> {
-        self.game_phase.validate_turn_order(player)
-    }
-
-    fn next_to_play(&self) -> Option<PlayerPosition> {
+    pub fn next_to_play(&self) -> Option<PlayerPosition> {
         self.game_phase.next_to_play()
     }
 
@@ -199,6 +115,8 @@ mod test {
         let seed = 9000u64;
         let deal = Deal::from_u64_seed(seed);
         let mut game = Game::new_from_board(deal.board);
+
+        assert_eq!(game.next_to_play(), Some(PlayerPosition::West));
 
         let bids = ["p", "1NT", "p", "2C", "p", "2S", "p", "4S", "p", "p", "p"];
 

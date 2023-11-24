@@ -35,12 +35,12 @@ impl Deal {
         let board_number = rng.gen_range(1..=Board::MAX_NUMBER);
         Self::from_rng_with_board_number(board_number, rng)
     }
-    fn new_with_board_number(board_number: usize) -> Self {
+    pub fn new_with_board_number(board_number: usize) -> Self {
         let mut rng = thread_rng();
         Self::from_rng_with_board_number(board_number, &mut rng)
     }
 
-    pub fn from_rng_with_board_number(board_number: usize, rng: &mut impl Rng) -> Self {
+    fn from_rng_with_board_number(board_number: usize, rng: &mut impl Rng) -> Self {
         let board = Board::from_number(board_number);
         let hands = Self::hands_from_rng(rng);
 

@@ -34,6 +34,7 @@ impl GameManager {
                 let game_event = GameEvent::NewGame(new_game_event);
                 self.add_event_to_history(game_event);
                 self.game = Some(Game::from_new_game_event(new_game_event));
+                self.disclose_hands();
                 Ok(())
             }
         }

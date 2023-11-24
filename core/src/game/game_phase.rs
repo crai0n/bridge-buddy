@@ -1,13 +1,12 @@
 use crate::error::BBError;
-use crate::game::game_event::{BidEvent, CardEvent};
-use crate::game::game_state::GameState;
+use crate::game::game_event::{BidEvent, CardEvent, DiscloseHandEvent, DummyUncoveredEvent, GameEvent};
+use crate::game::game_state::{Bidding, GameState, NewGameState, OpeningLead};
 use crate::primitives::deal::PlayerPosition;
-use crate::primitives::Contract;
 
 #[derive(Debug, Clone)]
 pub enum GamePhase {
-    Bidding(GameState),
-    OpeningLead(GameState),
+    Bidding(NewGameState<Bidding>),
+    OpeningLead(NewGameState<OpeningLead>),
     WaitingForDummy(GameState),
     CardPlay(GameState),
     Ended(GameState),
@@ -34,33 +33,16 @@ impl GamePhase {
         }
     }
 
-    pub fn set_up_card_play(&mut self, contract: Contract, declarer: PlayerPosition) {
-        match self {
-            GamePhase::Bidding(state) => state.set_up_card_play(contract, declarer),
-            GamePhase::OpeningLead(_) => unreachable!(),
-            GamePhase::WaitingForDummy(_) => unreachable!(),
-            GamePhase::CardPlay(_) => unreachable!(),
-            GamePhase::Ended(_) => unreachable!(),
-        }
-    }
-
-    pub fn bidding_has_ended(&self) -> bool {
-        match &self {
-            GamePhase::Bidding(state) => state.bidding_has_ended(),
-            GamePhase::OpeningLead(_) => unreachable!(),
-            GamePhase::WaitingForDummy(_) => unreachable!(),
-            GamePhase::CardPlay(_) => unreachable!(),
-            GamePhase::Ended(_) => unreachable!(),
-        }
-    }
-
-    pub fn card_play_has_ended(&self) -> bool {
-        match &self {
-            GamePhase::Bidding(_) => unreachable!(),
-            GamePhase::OpeningLead(_) => unreachable!(),
-            GamePhase::WaitingForDummy(_) => unreachable!(),
-            GamePhase::CardPlay(state) => state.card_play_has_ended(),
-            GamePhase::Ended(_) => unreachable!(),
+    pub fn process_event(&mut self, event: GameEvent) -> Result<(), BBError> {
+        match event {
+            GameEvent::NewGame(_) => Err(BBError::GameAlreadyStarted),
+            GameEvent::DiscloseHand(disclose_hand_event) => self.process_disclose_hand_event(disclose_hand_event),
+            GameEvent::Bid(bid_event) => self.process_make_bid_event(bid_event),
+            GameEvent::Card(card_event) => self.process_play_card_event(card_event),
+            GameEvent::DummyUncovered(dummy_uncovered_event) => {
+                self.process_dummy_uncovered_event(dummy_uncovered_event)
+            }
+            _ => Err(BBError::InvalidEvent(event)),
         }
     }
 
@@ -69,28 +51,53 @@ impl GamePhase {
             GamePhase::Bidding(state) => {
                 state.process_make_bid_event(bid_event)?;
                 if state.bidding_has_ended() {
-                    if let Some(contract) = state.bid_manager.implied_contract() {
-                        let declarer = state.bid_manager.implied_declarer().unwrap();
-                        state.set_up_card_play(contract, declarer);
-                        *self = GamePhase::OpeningLead(state.clone());
-                    } else {
-                        *self = GamePhase::Ended(state.clone());
-                    }
+                    let new_state = state.clone();
+                    self.move_from_bidding_to_next_phase_with_state(new_state);
                 }
                 Ok(())
             }
-            GamePhase::OpeningLead(_) => unreachable!(),
-            GamePhase::WaitingForDummy(_) => unreachable!(),
-            GamePhase::CardPlay(_) => unreachable!(),
-            GamePhase::Ended(_) => unreachable!(),
+            _ => Err(BBError::InvalidEvent(GameEvent::Bid(bid_event))),
+        }
+    }
+
+    fn move_from_bidding_to_next_phase_with_state(&mut self, state: NewGameState<Bidding>) {
+        if let Some(contract) = state.inner.bid_manager.implied_contract() {
+            let declarer = state.inner.bid_manager.implied_declarer().unwrap();
+
+            let new_state = state.clone().set_up_card_play(contract, declarer);
+
+            *self = GamePhase::OpeningLead(new_state);
+        } else {
+            let new_state = GameState {
+                bid_manager: state.inner.bid_manager,
+                tricks: state.inner.tricks,
+                hands: Some(state.inner.hands),
+                contract: state.inner.contract,
+                declarer: state.inner.declarer,
+            };
+
+            *self = GamePhase::Ended(new_state);
         }
     }
 
     pub fn process_play_card_event(&mut self, card_event: CardEvent) -> Result<(), BBError> {
         match self {
-            GamePhase::Bidding(_) => unreachable!(),
-            GamePhase::OpeningLead(state) => state.process_play_card_event(card_event),
-            GamePhase::WaitingForDummy(_) => unreachable!(),
+            GamePhase::OpeningLead(state) => {
+                state.process_play_card_event(card_event)?;
+
+                let state = state.clone();
+
+                let new_state = GameState {
+                    bid_manager: state.inner.bid_manager,
+                    tricks: Some(state.inner.tricks),
+                    hands: Some(state.inner.hands),
+                    contract: Some(state.inner.contract),
+                    declarer: Some(state.inner.declarer),
+                };
+
+                *self = GamePhase::WaitingForDummy(new_state);
+                Ok(())
+            }
             GamePhase::CardPlay(state) => {
                 state.process_play_card_event(card_event)?;
                 if state.card_play_has_ended() {
@@ -98,7 +105,25 @@ impl GamePhase {
                 }
                 Ok(())
             }
-            GamePhase::Ended(_) => unreachable!(),
+            _ => Err(BBError::InvalidEvent(GameEvent::Card(card_event))),
+        }
+    }
+
+    fn process_dummy_uncovered_event(&mut self, event: DummyUncoveredEvent) -> Result<(), BBError> {
+        match self {
+            GamePhase::WaitingForDummy(state) => {
+                state.process_dummy_uncovered_event(event)?;
+                *self = GamePhase::CardPlay(state.clone());
+                Ok(())
+            }
+            _ => Err(BBError::InvalidEvent(GameEvent::DummyUncovered(event)))?,
+        }
+    }
+
+    fn process_disclose_hand_event(&mut self, event: DiscloseHandEvent) -> Result<(), BBError> {
+        match self {
+            GamePhase::Bidding(state) => state.process_disclose_hand_event(event),
+            _ => Err(BBError::InvalidEvent(GameEvent::DiscloseHand(event))),
         }
     }
 }
