@@ -1,204 +1,151 @@
 use crate::error::BBError;
-use crate::game::card_manager::CardManager;
-use crate::game::game_event::{DiscloseHandEvent, DummyUncoveredEvent, GameEndedEvent, GameEvent, MoveToCardPlayEvent};
-use crate::game::player_event::{MakeBidEvent, PlayCardEvent, PlayerEvent};
-use strum::IntoEnumIterator;
+use crate::game::game_event::{BidEvent, CardEvent, GameEvent, NewGameEvent};
 
+use crate::game::bid_manager::BidManager;
+use crate::game::game_state::GameState;
 use game_phase::GamePhase;
 
-use crate::primitives::bid_line::BidLine;
-use crate::primitives::deal::PlayerPosition;
-use crate::primitives::{Contract, Deal};
+use crate::primitives::deal::{Board, PlayerPosition};
+use crate::primitives::Contract;
 use crate::score::{Score, ScorePoints};
 
 pub mod game_event;
-pub mod player_event;
 // pub mod player_queue_map;
-pub mod card_manager;
+pub mod trick_manager;
 
 pub mod game_phase;
 pub mod game_state;
+// mod bid_manager;
+pub mod bid_manager;
+pub mod game_manager;
+pub mod hand_manager;
 
 pub struct Game {
-    deal: Deal,
-    phase: GamePhase,
-    bid_line: BidLine,
-    tricks: Option<CardManager>,
-    contract: Option<Contract>,
-    declarer: Option<PlayerPosition>,
-    history: Vec<GameEvent>,
+    board: Board,
+    game_phase: GamePhase,
 }
 
 impl Game {
-    pub fn new_from_deal(deal: Deal) -> Self {
-        Game {
-            deal,
-            phase: GamePhase::Setup,
-            bid_line: BidLine::new(),
+    pub fn new_from_board(board: Board) -> Self {
+        let state = GameState {
+            bid_manager: BidManager::new(board.dealer()),
             tricks: None,
+            hands: None,
             contract: None,
             declarer: None,
-            history: Vec::new(),
+        };
+        Game {
+            board,
+            game_phase: GamePhase::Bidding(state),
         }
     }
 
-    pub fn start(&mut self) -> Result<(), BBError> {
-        match self.phase {
-            GamePhase::Setup => {
-                self.start_game();
+    pub fn from_new_game_event(event: NewGameEvent) -> Self {
+        Self::new_from_board(event.board)
+    }
+
+    pub fn process_event(&mut self, event: GameEvent) -> Result<(), BBError> {
+        match (&mut self.game_phase, event) {
+            (_, GameEvent::NewGame(_)) => Err(BBError::GameAlreadyStarted),
+            (GamePhase::Bidding(state), GameEvent::DiscloseHand(disclose_hand_event)) => {
+                state.process_disclose_hand_event(disclose_hand_event)
+            }
+            (GamePhase::Bidding(_state), GameEvent::Bid(bid_event)) => {
+                self.game_phase.process_make_bid_event(bid_event)
+            }
+            (GamePhase::OpeningLead(state), GameEvent::Card(card_event)) => {
+                state.process_play_card_event(card_event)?;
+                self.game_phase = GamePhase::WaitingForDummy(state.clone());
                 Ok(())
             }
-            _ => Err(BBError::GameAlreadyStarted),
+            (GamePhase::WaitingForDummy(state), GameEvent::DummyUncovered(dummy_uncovered_event)) => {
+                state.process_dummy_uncovered_event(dummy_uncovered_event)?;
+                self.game_phase = GamePhase::CardPlay(state.clone());
+                Ok(())
+            }
+            (GamePhase::CardPlay(_state), GameEvent::Card(card_event)) => {
+                self.game_phase.process_play_card_event(card_event)
+            }
+            (_, GameEvent::Bid(_)) => Err(BBError::InvalidEvent(event)),
+            (_, GameEvent::Card(_)) => Err(BBError::InvalidEvent(event)),
+            _ => Err(BBError::InvalidEvent(event)),
         }
     }
 
-    fn start_game(&mut self) {
-        self.phase = GamePhase::Bidding;
-        let game_event = GameEvent::GameStarted;
-        self.add_event_to_history(game_event);
-        self.disclose_hands();
-    }
+    fn process_make_bid_event(&mut self, bid_event: BidEvent) -> Result<(), BBError> {
+        self.game_phase.process_make_bid_event(bid_event)?;
 
-    fn disclose_hands(&mut self) {
-        for player in PlayerPosition::iter() {
-            self.history.push(GameEvent::DiscloseHand(DiscloseHandEvent {
-                board: self.deal.board,
-                seat: player,
-                hand: self.deal.hand_of(player).clone(),
-            }))
-        }
-    }
-
-    pub fn process_event(&mut self, event: PlayerEvent) -> Result<(), BBError> {
-        match (self.phase, event) {
-            (GamePhase::Bidding, PlayerEvent::MakeBid(bid_event)) => self.process_make_bid_event(bid_event),
-            (GamePhase::CardPlay, PlayerEvent::PlayCard(card_event)) => self.process_play_card_event(card_event),
-            (_, PlayerEvent::MakeBid(_)) => Err(BBError::InvalidPlayerEvent(event)),
-            (_, PlayerEvent::PlayCard(_)) => Err(BBError::InvalidPlayerEvent(event)),
-        }
-    }
-
-    fn process_make_bid_event(&mut self, bid_event: MakeBidEvent) -> Result<(), BBError> {
-        self.validate_turn_order(bid_event.player)?;
-        self.bid_line.bid(bid_event.bid)?;
-
-        let event = GameEvent::from(PlayerEvent::MakeBid(bid_event));
-
-        self.add_event_to_history(event);
-
-        if self.bid_line.bidding_has_ended() {
-            self.move_to_next_phase()
+        if self.game_phase.bidding_has_ended() {
+            self.move_from_bidding_to_next_phase();
         }
 
         Ok(())
     }
 
-    fn add_event_to_history(&mut self, event: GameEvent) {
-        self.history.push(event);
-    }
+    fn process_play_card_event(&mut self, card_event: CardEvent) -> Result<(), BBError> {
+        self.game_phase.process_play_card_event(card_event)?;
 
-    fn move_to_next_phase(&mut self) {
-        if let Some(contract) = self.bid_line.implied_contract() {
-            let declarer = self.calculate_declarer_position();
-            self.move_to_card_play(contract, declarer);
-        } else {
-            self.move_to_ended_without_card_play();
-        }
-    }
-
-    fn calculate_declarer_position(&self) -> PlayerPosition {
-        self.deal.dealer() + self.bid_line.implied_declarer_position().unwrap()
-    }
-
-    fn move_to_card_play(&mut self, contract: Contract, declarer: PlayerPosition) {
-        self.set_up_card_play(contract, declarer);
-        self.phase = GamePhase::CardPlay;
-        let move_to_card_play_event = MoveToCardPlayEvent {
-            final_contract: contract,
-            declarer,
-        };
-        let event = GameEvent::MoveToCardPlay(move_to_card_play_event);
-
-        self.add_event_to_history(event)
-    }
-
-    fn set_up_card_play(&mut self, contract: Contract, declarer: PlayerPosition) {
-        self.contract = Some(contract);
-        self.declarer = Some(declarer);
-        self.tricks = Some(CardManager::new_with_deal_info(
-            self.declarer.unwrap() + 1,
-            contract.trump_suit(),
-            &self.deal,
-        ));
-    }
-
-    fn move_to_ended_without_card_play(&mut self) {
-        self.phase = GamePhase::Ended;
-
-        let game_ended_event = GameEndedEvent { score: Score::NO_SCORE };
-        let event = GameEvent::GameEnded(game_ended_event);
-        self.add_event_to_history(event);
-    }
-
-    fn process_play_card_event(&mut self, card_event: PlayCardEvent) -> Result<(), BBError> {
-        self.validate_turn_order(card_event.player)?;
-        self.tricks.as_mut().unwrap().play(card_event.card)?;
-
-        let event = GameEvent::from(PlayerEvent::PlayCard(card_event));
-        self.add_event_to_history(event);
-
-        if self.tricks.as_ref().unwrap().count_played_cards() == 1 {
-            self.uncover_dummy();
-        } else if self.tricks.as_ref().unwrap().card_play_has_ended() {
+        if self.game_phase.card_play_has_ended() {
             self.move_to_ended();
         }
 
         Ok(())
     }
 
-    fn move_to_ended(&mut self) {
-        self.phase = GamePhase::Ended;
-        let event = GameEvent::GameEnded(GameEndedEvent {
-            score: self.score().unwrap(),
-        });
-        self.add_event_to_history(event);
+    fn move_from_bidding_to_next_phase(&mut self) {
+        match &self.game_phase {
+            GamePhase::Bidding(state) => {
+                if let Some(contract) = state.bid_manager.implied_contract() {
+                    let declarer = state.bid_manager.implied_declarer().unwrap();
+                    self.move_to_card_play(contract, declarer);
+                } else {
+                    self.move_to_ended_without_card_play();
+                }
+            }
+            _ => panic!(),
+        }
     }
 
-    fn uncover_dummy(&mut self) {
-        let dummy = self.declarer.unwrap().partner();
-        let dummys_hand = self.deal.hand_of(dummy);
+    fn move_to_card_play(&mut self, contract: Contract, declarer: PlayerPosition) {
+        self.game_phase.set_up_card_play(contract, declarer);
 
-        self.history.push(GameEvent::DummyUncovered(DummyUncoveredEvent {
-            dummy: dummys_hand.clone(),
-        }));
+        if let GamePhase::Bidding(state) = &self.game_phase {
+            self.game_phase = GamePhase::OpeningLead(state.clone());
+        } else {
+            unreachable!()
+        }
+    }
+
+    fn move_to_ended_without_card_play(&mut self) {
+        if let GamePhase::Bidding(state) = &self.game_phase {
+            self.game_phase = GamePhase::Ended(state.clone());
+        } else {
+            unreachable!()
+        }
+    }
+
+    fn move_to_ended(&mut self) {
+        if let GamePhase::CardPlay(state) = &mut self.game_phase {
+            self.game_phase = GamePhase::Ended(state.clone());
+        }
     }
 
     fn validate_turn_order(&self, player: PlayerPosition) -> Result<(), BBError> {
-        if let Some(current_turn) = self.current_turn() {
-            if player == current_turn {
-                return Ok(());
-            }
-        }
-        Err(BBError::OutOfTurn(self.current_turn()))
+        self.game_phase.validate_turn_order(player)
     }
 
-    fn current_turn(&self) -> Option<PlayerPosition> {
-        match self.phase {
-            GamePhase::Bidding => Some(self.deal.dealer() + self.bid_line.len()),
-            GamePhase::CardPlay => Some(self.tricks.as_ref().unwrap().turn()),
-            GamePhase::Setup => None,
-            GamePhase::Ended => None,
-        }
+    fn next_to_play(&self) -> Option<PlayerPosition> {
+        self.game_phase.next_to_play()
     }
 
     pub fn score(&self) -> Option<ScorePoints> {
-        match self.phase {
-            GamePhase::Ended => match (self.declarer, self.contract) {
+        match &self.game_phase {
+            GamePhase::Ended(state) => match (state.declarer, state.contract) {
                 (Some(declarer), Some(contract)) => Some(Score::score(
                     contract,
-                    self.tricks.as_ref().unwrap().tricks_won_by_axis(declarer),
+                    state.tricks_won_by_axis(declarer),
                     declarer,
-                    self.deal.board.is_vulnerable(declarer),
+                    self.board.is_vulnerable(declarer),
                 )),
                 _ => Some(Score::NO_SCORE),
             },
@@ -209,8 +156,7 @@ impl Game {
 
 #[cfg(test)]
 mod test {
-    use crate::error::BBError;
-    use crate::game::player_event::{MakeBidEvent, PlayCardEvent, PlayerEvent};
+    use crate::game::game_event::{BidEvent, CardEvent, DummyUncoveredEvent, GameEvent};
     use crate::game::{game_phase::GamePhase, Game};
     use crate::primitives::bid::Bid;
     use crate::primitives::deal::PlayerPosition;
@@ -222,92 +168,100 @@ mod test {
     fn init() {
         let mut rng = thread_rng();
         let deal = Deal::from_rng(&mut rng);
-        let game = Game::new_from_deal(deal);
-        assert_eq!(game.phase, GamePhase::Setup)
-    }
-
-    #[test]
-    fn start_game() {
-        let mut rng = thread_rng();
-        let deal = Deal::from_rng(&mut rng);
-        let mut game = Game::new_from_deal(deal);
-        assert_eq!(game.start(), Ok(()));
-        assert_eq!(game.start(), Err(BBError::GameAlreadyStarted));
+        let game = Game::new_from_board(deal.board);
+        assert!(matches!(game.game_phase, GamePhase::Bidding(_)))
     }
 
     #[test]
     fn game_without_card_play() {
         let seed = 9000u64;
         let deal = Deal::from_u64_seed(seed);
-        let mut game = Game::new_from_deal(deal);
-
-        assert_eq!(game.start(), Ok(()));
+        let mut game = Game::new_from_board(deal.board);
 
         let bids = ["p", "p", "p", "p"];
 
         for &bid in bids.iter() {
-            let bid_event = MakeBidEvent {
-                player: game.current_turn().unwrap(),
+            let bid_event = BidEvent {
+                player: game.next_to_play().unwrap(),
                 bid: Bid::from_str(bid).unwrap(),
             };
-            let player_event = PlayerEvent::MakeBid(bid_event);
-            game.process_event(player_event).unwrap();
+            let game_event = GameEvent::Bid(bid_event);
+            game.process_event(game_event).unwrap();
         }
         // for event in game.history {
         //     println!("{:?}", event);
         // }
-        assert_eq!(game.phase, GamePhase::Ended);
+        assert!(matches!(game.game_phase, GamePhase::Ended(_)));
     }
 
     #[test]
     fn game_with_card_play() {
         let seed = 9000u64;
         let deal = Deal::from_u64_seed(seed);
-        let mut game = Game::new_from_deal(deal.clone());
-
-        // for hand in deal.hands.iter() {
-        //     println!("{}", hand);
-        // }
-
-        assert_eq!(game.start(), Ok(()));
+        let mut game = Game::new_from_board(deal.board);
 
         let bids = ["p", "1NT", "p", "2C", "p", "2S", "p", "4S", "p", "p", "p"];
 
         for &bid in bids.iter() {
-            let bid_event = MakeBidEvent {
-                player: game.current_turn().unwrap(),
+            let bid_event = BidEvent {
+                player: game.next_to_play().unwrap(),
                 bid: Bid::from_str(bid).unwrap(),
             };
-            let player_event = PlayerEvent::MakeBid(bid_event);
-            game.process_event(player_event).unwrap();
+            let game_event = GameEvent::Bid(bid_event);
+            game.process_event(game_event).unwrap();
         }
 
-        assert_eq!(game.phase, GamePhase::CardPlay);
-        assert_eq!(game.current_turn(), Some(PlayerPosition::East));
+        assert_eq!(game.next_to_play(), Some(PlayerPosition::East));
+
+        let lead = Card::from_str("C2").unwrap();
+
+        let card_event = CardEvent {
+            player: game.next_to_play().unwrap(),
+            card: lead,
+        };
+        let game_event = GameEvent::Card(card_event);
+        game.process_event(game_event).unwrap();
+
+        match &mut game.game_phase {
+            GamePhase::WaitingForDummy(state) => {
+                let dummy = state.declarer.unwrap().partner();
+                let dummy_event = DummyUncoveredEvent {
+                    dummy: *deal.hand_of(dummy),
+                };
+                let game_event = GameEvent::DummyUncovered(dummy_event);
+                game.process_event(game_event).unwrap();
+            }
+            _ => panic!(),
+        }
+
+        assert!(matches!(game.game_phase, GamePhase::CardPlay(_)));
+
+        assert_eq!(game.next_to_play(), Some(PlayerPosition::South));
 
         let cards = [
-            "C2", "C7", "CK", "C3", "CJ", "S6", "C4", "C8", "D4", "D6", "D7", "DJ", "C6", "S9", "C5", "C9", "D5", "D8",
-            "D9", "D2", "CA", "S2", "ST", "CT", "DT", "D3", "DK", "H2", "H5", "H3", "H7", "H4", "DQ", "DA", "H6", "S3",
-            "S4", "SQ", "H8", "S8", "SK", "CQ", "SJ", "SA", "S7", "HJ", "HK", "HA", "S5", "HT", "HQ", "H9",
+            "C7", "CK", "C3", "CJ", "S6", "C4", "C8", "D4", "D6", "D7", "DJ", "C6", "S9", "C5", "C9", "D5", "D8", "D9",
+            "D2", "CA", "S2", "ST", "CT", "DT", "D3", "DK", "H2", "H5", "H3", "H7", "H4", "DQ", "DA", "H6", "S3", "S4",
+            "SQ", "H8", "S8", "SK", "CQ", "SJ", "SA", "S7", "HJ", "HK", "HA", "S5", "HT", "HQ", "H9",
         ];
 
         for &card in cards.iter() {
-            let card_event = PlayCardEvent {
-                player: game.current_turn().unwrap(),
+            let card_event = CardEvent {
+                player: game.next_to_play().unwrap(),
                 card: Card::from_str(card).unwrap(),
             };
-            let player_event = PlayerEvent::PlayCard(card_event);
-            game.process_event(player_event).unwrap();
+            let game_event = GameEvent::Card(card_event);
+            game.process_event(game_event).unwrap();
         }
-        assert_eq!(game.phase, GamePhase::Ended);
-        assert_eq!(game.tricks.as_ref().unwrap().count_played_cards(), 52);
 
-        // for event in game.history.iter() {
-        //     println!("{:?}", event);
-        // }
-        assert_eq!(
-            game.tricks.as_ref().unwrap().tricks_won_by_axis(PlayerPosition::North),
-            7
-        );
+        match game.game_phase {
+            GamePhase::Ended(state) => {
+                assert_eq!(state.hands.as_ref().unwrap().count_played_cards(), 52);
+                assert_eq!(
+                    state.tricks.as_ref().unwrap().tricks_won_by_axis(PlayerPosition::North),
+                    7
+                );
+            }
+            _ => panic!(),
+        }
     }
 }

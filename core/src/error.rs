@@ -1,4 +1,4 @@
-use crate::game::player_event::PlayerEvent;
+use crate::game::game_event::GameEvent;
 use crate::primitives::bid::Bid;
 use crate::primitives::deal::PlayerPosition;
 use crate::primitives::Card;
@@ -34,7 +34,7 @@ pub enum BBError {
     OutOfTurn(Option<PlayerPosition>),
     PlayerUnreachable(PlayerPosition),
     SeatTaken(PlayerPosition),
-    InvalidPlayerEvent(PlayerEvent),
+    InvalidEvent(GameEvent),
     InvalidCard(Card),
     NotAuthorized(PlayerPosition),
 }
@@ -59,8 +59,8 @@ impl Display for BBError {
                 None => writeln!(f, "It's not your turn!"),
             },
             BBError::SeatTaken(seat) => writeln!(f, "There is already a player at {}", seat),
-            BBError::InvalidPlayerEvent(player_event) => {
-                writeln!(f, "This event is not valid: {:?}", player_event)
+            BBError::InvalidEvent(game_event) => {
+                writeln!(f, "This event is not valid: {:?}", game_event)
             }
 
             BBError::InvalidCard(card) => writeln!(f, "You cannot play {}!", card),

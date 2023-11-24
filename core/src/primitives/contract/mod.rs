@@ -1,3 +1,4 @@
+pub mod contract_declaration;
 pub mod contract_denomination;
 mod contract_level;
 mod contract_state;

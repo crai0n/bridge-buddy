@@ -1,11 +1,13 @@
 use crate::primitives::deal::PlayerPosition;
 use crate::primitives::{Card, Suit};
+use std::fmt::{Display, Formatter};
 
 pub trait Trick {
     fn lead(&self) -> PlayerPosition;
     fn cards(&self) -> &[Card];
 }
 
+#[derive(Debug, Clone)]
 pub struct ActiveTrick {
     lead: PlayerPosition,
     cards: Vec<Card>,
@@ -36,7 +38,17 @@ impl Trick for ActiveTrick {
     }
 }
 
-#[derive(Clone)]
+impl Display for ActiveTrick {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}: ", self.lead)?;
+        for card in self.cards.iter() {
+            write!(f, "{}", card)?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct PlayedTrick {
     lead: PlayerPosition,
     cards: Vec<Card>,

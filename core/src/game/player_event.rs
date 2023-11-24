@@ -3,17 +3,17 @@ use crate::primitives::deal::PlayerPosition;
 use crate::primitives::Card;
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum PlayerEvent {
-    MakeBid(MakeBidEvent),
-    PlayCard(PlayCardEvent),
+    MakeBid(BidEvent),
+    PlayCard(CardEvent),
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct MakeBidEvent {
+pub struct BidEvent {
     pub player: PlayerPosition,
     pub bid: Bid,
 }
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct PlayCardEvent {
+pub struct CardEvent {
     pub player: PlayerPosition,
     pub card: Card,
 }

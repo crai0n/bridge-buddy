@@ -1,14 +1,13 @@
 use crate::primitives::bid::*;
-use crate::primitives::contract::*;
 
 use itertools::Itertools;
 
 use crate::error::BBError;
-use crate::primitives::contract::Contract;
-use crate::primitives::deal::turn_rank::TurnRank;
+use crate::game::bid_manager::BidManager;
+use crate::primitives::deal::PlayerPosition;
 use std::fmt::Display;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct BidLine {
     bids: Vec<Bid>,
 }
@@ -22,27 +21,12 @@ impl Display for BidLine {
 }
 
 impl BidLine {
-    pub fn implied_contract(&self) -> Option<Contract> {
-        if let Some(last_contract_bid) = self.last_contract_bid() {
-            let state = self.calculate_contract_state();
-
-            Some(Contract {
-                level: last_contract_bid.level,
-                denomination: last_contract_bid.denomination,
-                state,
-            })
-        } else {
-            None
-        }
+    pub fn bids(&self) -> &[Bid] {
+        &self.bids
     }
 
-    fn calculate_contract_state(&self) -> ContractState {
-        match self.bids.iter().rev().map_while(|x| x.access_auxiliary_bid()).max() {
-            Some(AuxiliaryBid::Pass) => ContractState::Passed,
-            Some(AuxiliaryBid::Double) => ContractState::Doubled,
-            Some(AuxiliaryBid::Redouble) => ContractState::Redoubled,
-            _ => ContractState::Passed,
-        }
+    pub fn bid(&mut self, bid: Bid) {
+        self.bids.push(bid)
     }
 
     pub fn new() -> Self {
@@ -57,142 +41,6 @@ impl BidLine {
     pub fn is_empty(&self) -> bool {
         self.bids.len() == 0
     }
-
-    pub fn bid(&mut self, bid: Bid) -> Result<(), BBError> {
-        if self.is_valid_bid(&bid) {
-            self.bids.push(bid);
-            Ok(())
-        } else {
-            Err(BBError::InvalidBid(bid))
-        }
-    }
-
-    pub fn is_valid_bid(&self, bid: &Bid) -> bool {
-        match bid {
-            Bid::Auxiliary(AuxiliaryBid::Pass) => self.can_pass(),
-            Bid::Auxiliary(AuxiliaryBid::Double) => self.can_double(),
-            Bid::Auxiliary(AuxiliaryBid::Redouble) => self.can_redouble(),
-            Bid::Contract(c) => self.can_bid_contract(c),
-        }
-    }
-
-    pub fn bidding_has_ended(&self) -> bool {
-        self.bids.len() > 3 // every player has bid at least once
-            && self
-                .bids
-                .iter()
-                .rev()
-                .take(3)
-                .all(|x| x == &Bid::Auxiliary(AuxiliaryBid::Pass))
-    }
-
-    fn can_pass(&self) -> bool {
-        !self.bidding_has_ended()
-    }
-
-    fn can_bid_contract(&self, new: &ContractBid) -> bool {
-        !self.bidding_has_ended()
-            && match self.last_contract_bid() {
-                Some(last) => new > last,
-                None => true,
-            }
-    }
-
-    fn last_contract_bid(&self) -> Option<&ContractBid> {
-        self.bids
-            .iter()
-            .filter_map(|x| match x {
-                Bid::Contract(b) => Some(b),
-                _ => None,
-            })
-            .last()
-    }
-
-    fn can_redouble(&self) -> bool {
-        !self.bidding_has_ended()
-            && (self.last_bid_was_double_from_right_hand_opponent()
-                || self.last_bid_was_double_from_left_hand_opponent())
-    }
-
-    fn last_bid_was_double_from_right_hand_opponent(&self) -> bool {
-        self.bids.last() == Some(&Bid::Auxiliary(AuxiliaryBid::Double))
-    }
-
-    fn last_bid_was_double_from_left_hand_opponent(&self) -> bool {
-        self.check_last_three_bids(Self::is_double_pass_pass)
-    }
-
-    fn check_last_three_bids(&self, check_pattern: fn(&[Bid]) -> bool) -> bool {
-        self.bids.len() >= 3 && check_pattern(&self.bids[self.bids.len() - 3..])
-    }
-
-    fn is_double_pass_pass(line: &[Bid]) -> bool {
-        matches!(
-            line,
-            [
-                Bid::Auxiliary(AuxiliaryBid::Double),
-                Bid::Auxiliary(AuxiliaryBid::Pass),
-                Bid::Auxiliary(AuxiliaryBid::Pass)
-            ]
-        )
-    }
-
-    fn can_double(&self) -> bool {
-        !self.bidding_has_ended()
-            && (self.last_bid_was_contract_bid_from_right_hand_opponent()
-                || self.last_bid_was_contract_bid_from_left_hand_opponent())
-    }
-
-    fn last_bid_was_contract_bid_from_right_hand_opponent(&self) -> bool {
-        matches!(self.bids.last(), Some(Bid::Contract(_)))
-    }
-
-    fn last_bid_was_contract_bid_from_left_hand_opponent(&self) -> bool {
-        self.check_last_three_bids(Self::is_contract_pass_pass)
-    }
-
-    fn is_contract_pass_pass(line: &[Bid]) -> bool {
-        matches!(
-            line,
-            [
-                Bid::Contract(_),
-                Bid::Auxiliary(AuxiliaryBid::Pass),
-                Bid::Auxiliary(AuxiliaryBid::Pass)
-            ]
-        )
-    }
-
-    pub fn implied_declarer_position(&self) -> Option<TurnRank> {
-        let auction_winner = self
-            .bids
-            .iter()
-            .rposition(|x| matches!(x, Bid::Contract(_)))
-            .map(TurnRank::from);
-
-        match auction_winner {
-            None => None,
-            Some(offset) => {
-                let denomination = self.implied_contract().unwrap().denomination;
-                self.first_mention_of_contract_denomination_on_same_axis(denomination, offset)
-            }
-        }
-    }
-
-    fn first_mention_of_contract_denomination_on_same_axis(
-        &self,
-        denomination: ContractDenomination,
-        offset: TurnRank,
-    ) -> Option<TurnRank> {
-        self.bids
-            .iter()
-            .enumerate()
-            .find(|(i, x)| Self::bid_matches_denomination(x, denomination) && offset.same_axis(&TurnRank::from(*i)))
-            .map(|(i, _)| TurnRank::from(i))
-    }
-
-    fn bid_matches_denomination(bid: &&Bid, denomination: ContractDenomination) -> bool {
-        matches!(bid, Bid::Contract(y) if y.denomination == denomination)
-    }
 }
 
 impl std::str::FromStr for BidLine {
@@ -205,11 +53,11 @@ impl std::str::FromStr for BidLine {
             .split('-')
             .map(Bid::from_str)
             .collect::<Result<Vec<_>, _>>()?;
-        let mut bidline = BidLine::new();
+        let mut bid_manager = BidManager::new(PlayerPosition::North);
         for bid in bids {
-            bidline.bid(bid)?;
+            bid_manager.bid(bid)?;
         }
-        Ok(bidline)
+        Ok(bid_manager.bid_line().clone())
     }
 }
 
@@ -226,8 +74,6 @@ mod test {
 
     use crate::error::BBError;
     use crate::primitives::bid::Bid;
-    use crate::primitives::contract::Contract;
-    use crate::primitives::deal::turn_rank::TurnRank;
     use test_case::test_case;
 
     #[test_case("P-1NT", &["P", "1NT"]; "Pass then 1NT")]
@@ -259,33 +105,5 @@ mod test {
         let bid_line = BidLine::from_str(input);
         let invalid_bid = Bid::from_str(invalid).unwrap();
         assert_eq!(bid_line, Err(BBError::InvalidBid(invalid_bid)))
-    }
-
-    #[test_case("P-P", ""; "No Contract implied")]
-    #[test_case("1NT-2S-P-P", "2S"; "2 Spades")]
-    #[test_case("1NT-X-P", "1NTX"; "Doubled 1NT")]
-    #[test_case("1NT-X-XX-P", "1NTXX"; "Redoubled 1NT")]
-    #[test_case("2D", "2D"; "Two Diamonds")]
-    #[test_case("1NT-X-2H-P-P-P", "2H"; "Two Hearts")]
-    fn implied_contract(input: &str, implied: &str) {
-        let bid_line = BidLine::from_str(input).unwrap();
-        let implied_contract = Contract::from_str(implied).ok();
-        assert_eq!(bid_line.implied_contract(), implied_contract)
-    }
-
-    #[test_case("1NT-2NT-P-3NT-P-P-P", TurnRank::Second)]
-    #[test_case("1NT-2H-P-3NT-P-P-P", TurnRank::Fourth)]
-    fn implied_declarer_position(input: &str, expected: TurnRank) {
-        let bid_line = BidLine::from_str(input).unwrap();
-        assert_eq!(bid_line.implied_declarer_position().unwrap(), expected);
-    }
-
-    #[test_case("P-P-P", false; "Third player passes")]
-    #[test_case("P-P-P-P", true; "All pass")]
-    #[test_case("1NT-X-P", false; "Doubled 1NT")]
-    #[test_case("1NT-X-2H-P-P-P", true; "Two Hearts")]
-    fn contract_is_final(input: &str, expected: bool) {
-        let bid_line = BidLine::from_str(input).unwrap();
-        assert_eq!(bid_line.bidding_has_ended(), expected);
     }
 }

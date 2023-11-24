@@ -4,7 +4,7 @@ use std::cmp::Ordering;
 use std::str::FromStr;
 use strum::IntoEnumIterator;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Hand {
     cards: [Card; 13],
 }

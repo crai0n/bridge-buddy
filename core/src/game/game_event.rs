@@ -1,66 +1,54 @@
-use crate::game::player_event::PlayerEvent;
 use crate::primitives::bid::Bid;
 use crate::primitives::deal::{Board, PlayerPosition};
 use crate::primitives::{Card, Contract, Hand};
 use crate::score::ScorePoints;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GameEvent {
+    NewGame(NewGameEvent),
     DiscloseHand(DiscloseHandEvent),
-    GameStarted,
-    BidMade(BidMadeEvent),
+    Bid(BidEvent),
     MoveToCardPlay(MoveToCardPlayEvent),
+    Card(CardEvent),
     DummyUncovered(DummyUncoveredEvent),
-    CardPlayed(CardPlayedEvent),
     GameEnded(GameEndedEvent),
 }
 
-#[derive(Debug)]
-pub struct DiscloseHandEvent {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct NewGameEvent {
     pub board: Board,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DiscloseHandEvent {
     pub seat: PlayerPosition,
     pub hand: Hand,
 }
 
-#[derive(Debug)]
-pub struct BidMadeEvent {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BidEvent {
     pub player: PlayerPosition,
     pub bid: Bid,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MoveToCardPlayEvent {
     pub final_contract: Contract,
     pub declarer: PlayerPosition,
 }
 
-#[derive(Debug)]
-pub struct CardPlayedEvent {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CardEvent {
     pub player: PlayerPosition,
     pub card: Card,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DummyUncoveredEvent {
     pub dummy: Hand,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct GameEndedEvent {
     pub score: ScorePoints,
-}
-
-impl From<PlayerEvent> for GameEvent {
-    fn from(player_event: PlayerEvent) -> Self {
-        match player_event {
-            PlayerEvent::MakeBid(event) => GameEvent::BidMade(BidMadeEvent {
-                player: event.player,
-                bid: event.bid,
-            }),
-            PlayerEvent::PlayCard(event) => GameEvent::CardPlayed(CardPlayedEvent {
-                player: event.player,
-                card: event.card,
-            }),
-        }
-    }
 }
