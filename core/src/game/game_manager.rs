@@ -61,7 +61,7 @@ impl GameManager {
     fn react_to_new_game_state(&mut self) {
         match &mut self.game.as_mut().unwrap().game_phase {
             GamePhase::WaitingForDummy(state) => {
-                let dummy = state.declarer.unwrap().partner();
+                let dummy = state.inner.contract.declarer.partner();
                 self.disclose_dummy(dummy);
             }
             GamePhase::Ended(_) => self.broadcast_result(),

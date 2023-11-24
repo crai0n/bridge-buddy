@@ -33,7 +33,6 @@ impl Game {
             tricks: None,
             hands: HandManager::new(),
             contract: None,
-            declarer: None,
         };
         let state = NewGameState { inner };
         Game {
@@ -56,12 +55,12 @@ impl Game {
 
     pub fn score(&self) -> Option<ScorePoints> {
         match &self.game_phase {
-            GamePhase::Ended(state) => match (state.declarer, state.contract) {
-                (Some(declarer), Some(contract)) => Some(Score::score(
+            GamePhase::Ended(state) => match state.inner.contract {
+                Some(contract) => Some(Score::score(
                     contract,
-                    state.tricks_won_by_axis(declarer),
-                    declarer,
-                    self.board.is_vulnerable(declarer),
+                    state.tricks_won_by_axis(contract.declarer),
+                    contract.declarer,
+                    self.board.is_vulnerable(contract.declarer),
                 )),
                 _ => Some(Score::NO_SCORE),
             },
@@ -142,7 +141,7 @@ mod test {
 
         match &mut game.game_phase {
             GamePhase::WaitingForDummy(state) => {
-                let dummy = state.declarer.unwrap().partner();
+                let dummy = state.inner.contract.declarer.partner();
                 let dummy_event = DummyUncoveredEvent {
                     dummy: *deal.hand_of(dummy),
                 };
@@ -173,9 +172,14 @@ mod test {
 
         match game.game_phase {
             GamePhase::Ended(state) => {
-                assert_eq!(state.hands.as_ref().unwrap().count_played_cards(), 52);
+                assert_eq!(state.inner.hands.count_played_cards(), 52);
                 assert_eq!(
-                    state.tricks.as_ref().unwrap().tricks_won_by_axis(PlayerPosition::North),
+                    state
+                        .inner
+                        .tricks
+                        .as_ref()
+                        .unwrap()
+                        .tricks_won_by_axis(PlayerPosition::North),
                     7
                 );
             }

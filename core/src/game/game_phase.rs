@@ -1,15 +1,15 @@
 use crate::error::BBError;
 use crate::game::game_event::{BidEvent, CardEvent, DiscloseHandEvent, DummyUncoveredEvent, GameEvent};
-use crate::game::game_state::{Bidding, GameState, NewGameState, OpeningLead};
+use crate::game::game_state::{Bidding, CardPlay, Ended, NewGameState, OpeningLead, WaitingForDummy};
 use crate::primitives::deal::PlayerPosition;
 
 #[derive(Debug, Clone)]
 pub enum GamePhase {
     Bidding(NewGameState<Bidding>),
     OpeningLead(NewGameState<OpeningLead>),
-    WaitingForDummy(GameState),
-    CardPlay(GameState),
-    Ended(GameState),
+    WaitingForDummy(NewGameState<WaitingForDummy>),
+    CardPlay(NewGameState<CardPlay>),
+    Ended(NewGameState<Ended>),
 }
 
 impl GamePhase {
@@ -62,19 +62,11 @@ impl GamePhase {
 
     fn move_from_bidding_to_next_phase_with_state(&mut self, state: NewGameState<Bidding>) {
         if let Some(contract) = state.inner.bid_manager.implied_contract() {
-            let declarer = state.inner.bid_manager.implied_declarer().unwrap();
-
-            let new_state = state.clone().set_up_card_play(contract, declarer);
+            let new_state = state.clone().move_to_opening_lead(contract);
 
             *self = GamePhase::OpeningLead(new_state);
         } else {
-            let new_state = GameState {
-                bid_manager: state.inner.bid_manager,
-                tricks: state.inner.tricks,
-                hands: Some(state.inner.hands),
-                contract: state.inner.contract,
-                declarer: state.inner.declarer,
-            };
+            let new_state = state.clone().move_to_ended_without_card_play();
 
             *self = GamePhase::Ended(new_state);
         }
@@ -87,21 +79,22 @@ impl GamePhase {
 
                 let state = state.clone();
 
-                let new_state = GameState {
+                let inner = WaitingForDummy {
                     bid_manager: state.inner.bid_manager,
-                    tricks: Some(state.inner.tricks),
-                    hands: Some(state.inner.hands),
-                    contract: Some(state.inner.contract),
-                    declarer: Some(state.inner.declarer),
+                    tricks: state.inner.tricks,
+                    hands: state.inner.hands,
+                    contract: state.inner.contract,
                 };
 
+                let new_state = NewGameState { inner };
                 *self = GamePhase::WaitingForDummy(new_state);
                 Ok(())
             }
             GamePhase::CardPlay(state) => {
                 state.process_play_card_event(card_event)?;
                 if state.card_play_has_ended() {
-                    *self = GamePhase::Ended(state.clone());
+                    let new_state = state.clone().move_from_card_play_to_ended();
+                    *self = GamePhase::Ended(new_state);
                 }
                 Ok(())
             }
@@ -113,7 +106,13 @@ impl GamePhase {
         match self {
             GamePhase::WaitingForDummy(state) => {
                 state.process_dummy_uncovered_event(event)?;
-                *self = GamePhase::CardPlay(state.clone());
+
+                let state = state.clone();
+
+                let new_state = state.move_to_card_play();
+
+                *self = GamePhase::CardPlay(new_state);
+
                 Ok(())
             }
             _ => Err(BBError::InvalidEvent(GameEvent::DummyUncovered(event)))?,

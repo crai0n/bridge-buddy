@@ -193,22 +193,22 @@ mod test {
     use std::str::FromStr;
     use test_case::test_case;
 
-    #[test_case("1H", 9, PlayerPosition::East, false, -140; "Board 1")]
-    #[test_case("4Sx", 8, PlayerPosition::North, true, -500; "Board 2")]
-    #[test_case("2D", 10, PlayerPosition::North, false, 130; "Board 3")]
-    #[test_case("1NT", 9, PlayerPosition::West, true, -150; "Board 4")]
-    #[test_case("3NT", 8, PlayerPosition::South, true, -100; "Board 5")]
-    #[test_case("3H", 10, PlayerPosition::South, false, 170; "Board 6")]
-    #[test_case("3C", 9, PlayerPosition::West, true, -110; "Board 7")]
-    #[test_case("7H", 13, PlayerPosition::East, false, -1510; "Board 8")]
-    #[test_case("4Sx", 10, PlayerPosition::North, false, 590; "Board 9")]
-    #[test_case("2NT", 8, PlayerPosition::East, true, -120; "Board 10")]
-    #[test_case("6C", 12, PlayerPosition::North, false, 920; "Board 11")]
-    #[test_case("2D", 9, PlayerPosition::East, false, -110; "Board 12")]
-    #[test_case("4HXX", 10, PlayerPosition::West, true, -1080; "Board 13")]
-    #[test_case("5S", 10, PlayerPosition::South, false, -50; "Board 14")]
-    #[test_case("4H", 11, PlayerPosition::East, false, -450; "Board 15")]
-    #[test_case("3NT", 9, PlayerPosition::North, false, 400; "Board 16")]
+    #[test_case("E1H", 9, PlayerPosition::East, false, -140; "Board 1")]
+    #[test_case("N4Sx", 8, PlayerPosition::North, true, -500; "Board 2")]
+    #[test_case("N2D", 10, PlayerPosition::North, false, 130; "Board 3")]
+    #[test_case("W1NT", 9, PlayerPosition::West, true, -150; "Board 4")]
+    #[test_case("S3NT", 8, PlayerPosition::South, true, -100; "Board 5")]
+    #[test_case("S3H", 10, PlayerPosition::South, false, 170; "Board 6")]
+    #[test_case("W3C", 9, PlayerPosition::West, true, -110; "Board 7")]
+    #[test_case("E7H", 13, PlayerPosition::East, false, -1510; "Board 8")]
+    #[test_case("N4Sx", 10, PlayerPosition::North, false, 590; "Board 9")]
+    #[test_case("E2NT", 8, PlayerPosition::East, true, -120; "Board 10")]
+    #[test_case("N6C", 12, PlayerPosition::North, false, 920; "Board 11")]
+    #[test_case("E2D", 9, PlayerPosition::East, false, -110; "Board 12")]
+    #[test_case("W4HXX", 10, PlayerPosition::West, true, -1080; "Board 13")]
+    #[test_case("S5S", 10, PlayerPosition::South, false, -50; "Board 14")]
+    #[test_case("E4H", 11, PlayerPosition::East, false, -450; "Board 15")]
+    #[test_case("N3NT", 9, PlayerPosition::North, false, 400; "Board 16")]
     fn score(
         contract_string: &str,
         actual_tricks: usize,

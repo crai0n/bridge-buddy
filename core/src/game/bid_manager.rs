@@ -141,34 +141,6 @@ impl BidManager {
         )
     }
 
-    pub fn implied_declarer(&self) -> Option<PlayerPosition> {
-        let winning_axis = self
-            .bids()
-            .iter()
-            .rposition(|x| matches!(x, Bid::Contract(_)))
-            .map(|x| (self.dealer + x).axis());
-
-        match winning_axis {
-            None => None,
-            Some(axis) => {
-                let denomination = self.implied_contract().unwrap().denomination;
-                self.first_to_name_denomination_on_axis(denomination, axis)
-            }
-        }
-    }
-
-    fn first_to_name_denomination_on_axis(
-        &self,
-        denomination: ContractDenomination,
-        axis: Axis,
-    ) -> Option<PlayerPosition> {
-        self.bids()
-            .iter()
-            .enumerate()
-            .position(|(i, x)| Self::bid_matches_denomination(x, denomination) && axis.has_player(self.dealer + i))
-            .map(|x| self.dealer + x)
-    }
-
     fn bid_matches_denomination(bid: &Bid, denomination: ContractDenomination) -> bool {
         matches!(bid, Bid::Contract(y) if y.denomination == denomination)
     }
@@ -176,15 +148,35 @@ impl BidManager {
     pub fn implied_contract(&self) -> Option<Contract> {
         if let Some(last_contract_bid) = self.last_contract_bid() {
             let state = self.calculate_contract_state();
-
+            let denomination = last_contract_bid.denomination;
             Some(Contract {
+                declarer: self.implied_declarer(denomination),
                 level: last_contract_bid.level,
-                denomination: last_contract_bid.denomination,
+                denomination,
                 state,
             })
         } else {
             None
         }
+    }
+    fn implied_declarer(&self, denomination: ContractDenomination) -> PlayerPosition {
+        let axis = self
+            .bids()
+            .iter()
+            .rposition(|x| matches!(x, Bid::Contract(_)))
+            .map(|x| (self.dealer + x).axis())
+            .unwrap();
+
+        self.first_to_name_denomination_on_axis(denomination, axis)
+    }
+
+    fn first_to_name_denomination_on_axis(&self, denomination: ContractDenomination, axis: Axis) -> PlayerPosition {
+        self.bids()
+            .iter()
+            .enumerate()
+            .position(|(i, x)| Self::bid_matches_denomination(x, denomination) && axis.has_player(self.dealer + i))
+            .map(|x| self.dealer + x)
+            .unwrap()
     }
 
     fn calculate_contract_state(&self) -> ContractState {
@@ -249,31 +241,22 @@ mod test {
         assert_eq!(bid_manager.next_to_play(), PlayerPosition::East);
     }
 
-    #[test_case("P-P", ""; "No Contract implied")]
-    #[test_case("1NT-2S-P-P", "2S"; "2 Spades")]
-    #[test_case("1NT-X-P", "1NTX"; "Doubled 1NT")]
-    #[test_case("1NT-X-XX-P", "1NTXX"; "Redoubled 1NT")]
-    #[test_case("2D", "2D"; "Two Diamonds")]
-    #[test_case("1NT-X-2H-P-P-P", "2H"; "Two Hearts")]
-    fn implied_contract(input: &str, implied: &str) {
-        let bid_line = BidLine::from_str(input).unwrap();
-        let mut manager = BidManager::new(PlayerPosition::North);
-        for &bid in bid_line.bids() {
-            manager.bid(bid).unwrap();
-        }
-        let implied_contract = Contract::from_str(implied).ok();
-        assert_eq!(manager.implied_contract(), implied_contract)
-    }
-
-    #[test_case("1NT-2NT-P-3NT-P-P-P", North, East)]
-    #[test_case("1NT-2H-P-3NT-P-P-P", West, South)]
-    fn implied_declarer_position(input: &str, dealer: PlayerPosition, expected: PlayerPosition) {
+    #[test_case("P-P", North, ""; "No Contract implied")]
+    #[test_case("1NT-2S-P-P", East, "S2S"; "2 Spades")]
+    #[test_case("1NT-X-P", South, "S1NTX"; "Doubled 1NT")]
+    #[test_case("1NT-X-XX-P", West, "W1NTXX"; "Redoubled 1NT")]
+    #[test_case("2D", North, "N2D"; "Two Diamonds")]
+    #[test_case("1NT-X-2H-P-P-P", East, "W2H"; "Two Hearts")]
+    #[test_case("1NT-2NT-P-3NT-P-P-P", North, "E3NT")]
+    #[test_case("1NT-2H-P-3NT-P-P-P", West, "S3NT")]
+    fn implied_contract(input: &str, dealer: PlayerPosition, implied: &str) {
         let bid_line = BidLine::from_str(input).unwrap();
         let mut manager = BidManager::new(dealer);
         for &bid in bid_line.bids() {
             manager.bid(bid).unwrap();
         }
-        assert_eq!(manager.implied_declarer().unwrap(), expected);
+        let implied_contract = Contract::from_str(implied).ok();
+        assert_eq!(manager.implied_contract(), implied_contract)
     }
 
     #[test_case("P-P-P", false; "Third player passes")]
