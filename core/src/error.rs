@@ -1,6 +1,6 @@
-use crate::game::game_event::GameEvent;
 use crate::primitives::bid::Bid;
 use crate::primitives::deal::PlayerPosition;
+use crate::primitives::game_event::GameEvent;
 use crate::primitives::Card;
 use std::fmt::{Debug, Display, Formatter};
 

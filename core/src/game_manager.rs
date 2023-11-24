@@ -1,8 +1,8 @@
 use crate::error::BBError;
-use crate::game::game_event::{DiscloseHandEvent, DummyUncoveredEvent, GameEndedEvent, GameEvent, NewGameEvent};
 use crate::game::game_phase::GamePhase;
 use crate::game::Game;
 use crate::primitives::deal::PlayerPosition;
+use crate::primitives::game_event::{DiscloseHandEvent, DummyUncoveredEvent, GameEndedEvent, GameEvent, NewGameEvent};
 use crate::primitives::Deal;
 use strum::IntoEnumIterator;
 

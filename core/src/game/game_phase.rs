@@ -1,7 +1,7 @@
 use crate::error::BBError;
-use crate::game::game_event::{BidEvent, CardEvent, DiscloseHandEvent, DummyUncoveredEvent, GameEvent};
 use crate::game::game_state::{Bidding, CardPlay, Ended, GameState, OpeningLead, WaitingForDummy};
 use crate::primitives::deal::PlayerPosition;
+use crate::primitives::game_event::{BidEvent, CardEvent, DiscloseHandEvent, DummyUncoveredEvent, GameEvent};
 
 #[derive(Debug, Clone)]
 pub enum GamePhase {

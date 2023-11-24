@@ -1,5 +1,5 @@
 use crate::error::BBError;
-use crate::game::game_event::{GameEvent, NewGameEvent};
+use crate::primitives::game_event::{GameEvent, NewGameEvent};
 
 use crate::game::bid_manager::BidManager;
 use crate::game::game_state::{Bidding, GameState};
@@ -10,7 +10,6 @@ use crate::primitives::deal::{Board, PlayerPosition};
 
 use crate::score::ScorePoints;
 
-pub mod game_event;
 // pub mod player_queue_map;
 pub mod trick_manager;
 
@@ -64,10 +63,10 @@ impl Game {
 
 #[cfg(test)]
 mod test {
-    use crate::game::game_event::{BidEvent, CardEvent, DummyUncoveredEvent, GameEvent};
     use crate::game::{game_phase::GamePhase, Game};
     use crate::primitives::bid::Bid;
     use crate::primitives::deal::PlayerPosition;
+    use crate::primitives::game_event::{BidEvent, CardEvent, DummyUncoveredEvent, GameEvent};
     use crate::primitives::{Card, Deal};
     use rand::thread_rng;
     use std::str::FromStr;

@@ -11,4 +11,5 @@ pub mod deal;
 pub mod trick;
 // pub mod player;
 pub mod bid_line;
+pub mod game_event;
 pub mod game_result;
