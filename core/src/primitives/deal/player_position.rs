@@ -1,6 +1,6 @@
 use super::turn_rank::TurnRank;
 use crate::primitives::deal::axis::Axis;
-use crate::primitives::deal::Board;
+use crate::primitives::deal::{Board, Vulnerability};
 use crate::primitives::Deal;
 use std::ops;
 use strum::{Display, EnumIter, EnumString};
@@ -92,6 +92,10 @@ impl PlayerPosition {
             (Axis::EastWest, PlayerPosition::East) => true,
             (Axis::EastWest, PlayerPosition::West) => true,
         }
+    }
+
+    pub const fn is_vulnerable(&self, vulnerability: Vulnerability) -> bool {
+        vulnerability.player_is_vulnerable(self)
     }
 }
 

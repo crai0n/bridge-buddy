@@ -2,7 +2,7 @@ use crate::error::BBError;
 use crate::primitives::contract::ContractDenomination;
 use crate::primitives::contract::*;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
 pub struct ContractBid {
     pub level: ContractLevel,
     pub denomination: ContractDenomination,
@@ -85,8 +85,8 @@ mod test {
     #[test_case("7NT", "7C", Greater; "7NT is more than 7C")]
     #[test_case("2D", "2D", Equal; "2D is equal to itself")]
     fn ordering(one: &str, other: &str, expected: Ordering) {
-        let c1 = Contract::from_str(one).unwrap();
-        let c2 = Contract::from_str(other).unwrap();
+        let c1 = ContractBid::from_str(one).unwrap();
+        let c2 = ContractBid::from_str(other).unwrap();
         assert_eq!(c1.cmp(&c2), expected)
     }
 }

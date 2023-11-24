@@ -8,7 +8,7 @@ use crate::error::BBError;
 use std::fmt::Display;
 use std::str::FromStr;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum Bid {
     Contract(ContractBid),
     Auxiliary(AuxiliaryBid),
@@ -38,6 +38,21 @@ impl FromStr for Bid {
     }
 }
 
+impl Bid {
+    pub fn access_auxiliary_bid(&self) -> Option<AuxiliaryBid> {
+        match self {
+            Bid::Auxiliary(auxiliary_bid) => Some(*auxiliary_bid),
+            _ => None,
+        }
+    }
+
+    pub fn access_contract_bid(&self) -> Option<ContractBid> {
+        match self {
+            Bid::Contract(contract_bid) => Some(*contract_bid),
+            _ => None,
+        }
+    }
+}
 #[cfg(test)]
 mod test {
     use super::AuxiliaryBid::*;

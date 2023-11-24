@@ -3,6 +3,7 @@ pub use deck::Deck;
 pub use hand::Hand;
 pub use player_position::PlayerPosition;
 use rand::prelude::*;
+use rand_chacha::ChaCha8Rng;
 pub use vulnerability::Vulnerability;
 
 pub mod axis;
@@ -13,12 +14,18 @@ pub mod player_position;
 pub mod turn_rank;
 pub mod vulnerability;
 
+#[derive(Clone)]
 pub struct Deal {
     pub board: Board,
     pub hands: [Hand; 4],
 }
 
 impl Deal {
+    pub fn from_u64_seed(seed: u64) -> Self {
+        let mut rng = ChaCha8Rng::seed_from_u64(seed);
+        Self::from_rng(&mut rng)
+    }
+
     pub fn new() -> Deal {
         let mut rng = thread_rng();
         Self::from_rng(&mut rng)
@@ -28,12 +35,12 @@ impl Deal {
         let board_number = rng.gen_range(1..=Board::MAX_NUMBER);
         Self::from_rng_with_board_number(board_number, rng)
     }
-    fn new_with_board_number(board_number: usize) -> Self {
+    pub fn new_with_board_number(board_number: usize) -> Self {
         let mut rng = thread_rng();
         Self::from_rng_with_board_number(board_number, &mut rng)
     }
 
-    pub fn from_rng_with_board_number(board_number: usize, rng: &mut impl Rng) -> Self {
+    fn from_rng_with_board_number(board_number: usize, rng: &mut impl Rng) -> Self {
         let board = Board::from_number(board_number);
         let hands = Self::hands_from_rng(rng);
 
@@ -67,8 +74,6 @@ impl Default for Deal {
 #[cfg(test)]
 mod tests {
     use crate::primitives::{Card, Deal};
-    use rand::prelude::*;
-    use rand_chacha::ChaCha8Rng;
     use std::str::FromStr;
     use test_case::test_case;
 
@@ -78,8 +83,8 @@ mod tests {
     #[test_case( 4u64,  24, "C4", "ST"; "Test D")]
     #[test_case( 5u64,   7, "C5", "SA"; "Test E")]
     fn determinism(seed: u64, board_number: usize, lowest_card: &str, highest_card: &str) {
-        let mut rng = ChaCha8Rng::seed_from_u64(seed);
-        let deal = Deal::from_rng(&mut rng);
+        // let mut rng = ChaCha8Rng::seed_from_u64(seed);
+        let deal = Deal::from_u64_seed(seed);
         assert_eq!(deal.board.number(), board_number);
         assert_eq!(
             deal.hands.first().unwrap().cards().next().unwrap(),

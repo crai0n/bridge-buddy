@@ -1,5 +1,6 @@
 use crate::primitives::contract::{ContractDenomination, ContractLevel, ContractState};
-use crate::primitives::deal::PlayerPosition;
+use crate::primitives::deal::{PlayerPosition, Vulnerability};
+use crate::primitives::game_result::GameResult;
 use crate::primitives::Contract;
 use std::ops::{Add, AddAssign, Mul, MulAssign};
 
@@ -58,32 +59,26 @@ impl Score {
     const GRAND_SLAM_BONUS_NOT_VULNERABLE: ScorePoints = ScorePoints(1000);
     const FOR_INSULT: ScorePoints = ScorePoints(50);
 
-    pub fn score(
-        contract: Contract,
-        actual_tricks: usize,
-        declarer: PlayerPosition,
-        declarer_is_vulnerable: bool,
-    ) -> ScorePoints {
-        let mut score = if actual_tricks >= contract.expected_tricks() {
-            Self::score_win(contract, actual_tricks, declarer_is_vulnerable)
-        } else {
-            Self::score_lose(contract, actual_tricks, declarer_is_vulnerable)
-        };
-
-        if declarer == PlayerPosition::East || declarer == PlayerPosition::West {
-            score *= -1_isize;
+    pub fn score_result(result: GameResult, vulnerability: Vulnerability) -> ScorePoints {
+        match result {
+            GameResult::Failed { contract, undertricks } => Self::score_lose(contract, undertricks, vulnerability),
+            GameResult::Made { contract, overtricks } => Self::score_win(contract, overtricks, vulnerability),
+            GameResult::Unplayed => Self::NO_SCORE,
         }
-
-        score
     }
 
-    fn score_lose(contract: Contract, actual_tricks: usize, declarer_is_vulnerable: bool) -> ScorePoints {
-        let undertricks = contract.expected_tricks() - actual_tricks;
-        match contract.state {
+    fn score_lose(contract: Contract, undertricks: usize, vulnerability: Vulnerability) -> ScorePoints {
+        let declarer_is_vulnerable = contract.declarer.is_vulnerable(vulnerability);
+
+        let mut score = match contract.state {
             ContractState::Passed => Self::score_lose_passed(undertricks, declarer_is_vulnerable),
             ContractState::Doubled => Self::score_lose_doubled(undertricks, declarer_is_vulnerable),
             ContractState::Redoubled => Self::score_lose_doubled(undertricks, declarer_is_vulnerable) * 2_usize,
+        };
+        if contract.declarer == PlayerPosition::East || contract.declarer == PlayerPosition::West {
+            score *= -1_isize;
         }
+        score
     }
 
     fn score_lose_passed(undertricks: usize, declarer_is_vulnerable: bool) -> ScorePoints {
@@ -94,11 +89,11 @@ impl Score {
         }
     }
 
-    fn score_lose_doubled(downs: usize, declarer_is_vulnerable: bool) -> ScorePoints {
+    fn score_lose_doubled(undertricks: usize, declarer_is_vulnerable: bool) -> ScorePoints {
         if declarer_is_vulnerable {
-            ScorePoints(-300) * (downs - 1) + ScorePoints(-200)
+            ScorePoints(-300) * (undertricks - 1) + ScorePoints(-200)
         } else {
-            match downs {
+            match undertricks {
                 1 => ScorePoints(-100),
                 2 => ScorePoints(-300),
                 3 => ScorePoints(-500),
@@ -107,17 +102,22 @@ impl Score {
         }
     }
 
-    fn score_win(contract: Contract, actual_tricks: usize, declarer_is_vulnerable: bool) -> ScorePoints {
+    fn score_win(contract: Contract, overtricks: usize, vulnerability: Vulnerability) -> ScorePoints {
+        let declarer_is_vulnerable = contract.declarer.is_vulnerable(vulnerability);
+
         let mut score = Self::score_bid_tricks(contract);
 
         score += Self::score_game_bonus(score, declarer_is_vulnerable);
 
         score += Self::score_slam_bonus(contract, declarer_is_vulnerable);
 
-        score += Self::score_overtricks(contract, actual_tricks);
+        score += Self::score_overtricks(contract, overtricks);
 
         score += Self::score_insult(contract);
 
+        if contract.declarer == PlayerPosition::East || contract.declarer == PlayerPosition::West {
+            score *= -1_isize;
+        }
         score
     }
 
@@ -174,12 +174,10 @@ impl Score {
         }
     }
 
-    fn score_overtricks(contract: Contract, actual_tricks: usize) -> ScorePoints {
+    fn score_overtricks(contract: Contract, overtricks: usize) -> ScorePoints {
         match contract.denomination {
-            ContractDenomination::Trump(suit) if suit.is_minor() => {
-                Self::MINOR_TRICK_POINTS * (actual_tricks - contract.expected_tricks())
-            }
-            _ => Self::MAJOR_TRICK_POINTS * (actual_tricks - contract.expected_tricks()),
+            ContractDenomination::Trump(suit) if suit.is_minor() => Self::MINOR_TRICK_POINTS * overtricks,
+            _ => Self::MAJOR_TRICK_POINTS * overtricks,
         }
     }
 }
@@ -188,36 +186,35 @@ impl Score {
 mod test {
     use super::Score;
     use super::ScorePoints;
-    use crate::primitives::deal::PlayerPosition;
+    use crate::primitives::deal::Vulnerability;
+    use crate::primitives::deal::Vulnerability::*;
+    use crate::primitives::game_result::GameResult;
     use crate::primitives::Contract;
     use std::str::FromStr;
     use test_case::test_case;
 
-    #[test_case("1H", 9, PlayerPosition::East, false, -140; "Board 1")]
-    #[test_case("4Sx", 8, PlayerPosition::North, true, -500; "Board 2")]
-    #[test_case("2D", 10, PlayerPosition::North, false, 130; "Board 3")]
-    #[test_case("1NT", 9, PlayerPosition::West, true, -150; "Board 4")]
-    #[test_case("3NT", 8, PlayerPosition::South, true, -100; "Board 5")]
-    #[test_case("3H", 10, PlayerPosition::South, false, 170; "Board 6")]
-    #[test_case("3C", 9, PlayerPosition::West, true, -110; "Board 7")]
-    #[test_case("7H", 13, PlayerPosition::East, false, -1510; "Board 8")]
-    #[test_case("4Sx", 10, PlayerPosition::North, false, 590; "Board 9")]
-    #[test_case("2NT", 8, PlayerPosition::East, true, -120; "Board 10")]
-    #[test_case("6C", 12, PlayerPosition::North, false, 920; "Board 11")]
-    #[test_case("2D", 9, PlayerPosition::East, false, -110; "Board 12")]
-    #[test_case("4HXX", 10, PlayerPosition::West, true, -1080; "Board 13")]
-    #[test_case("5S", 10, PlayerPosition::South, false, -50; "Board 14")]
-    #[test_case("4H", 11, PlayerPosition::East, false, -450; "Board 15")]
-    #[test_case("3NT", 9, PlayerPosition::North, false, 400; "Board 16")]
-    fn score(
-        contract_string: &str,
-        actual_tricks: usize,
-        declarer: PlayerPosition,
-        declarer_is_vulnerable: bool,
-        expected: isize,
-    ) {
+    #[test_case("E1H", 9,  None, -140; "Board 1")]
+    #[test_case("N4Sx", 8,  NorthSouth, -500; "Board 2")]
+    #[test_case("N2D", 10,  EastWest, 130; "Board 3")]
+    #[test_case("W1NT", 9,  All, -150; "Board 4")]
+    #[test_case("S3NT", 8,  NorthSouth, -100; "Board 5")]
+    #[test_case("S3H", 10,  EastWest, 170; "Board 6")]
+    #[test_case("W3C", 9,  All, -110; "Board 7")]
+    #[test_case("E7H", 13,  None, -1510; "Board 8")]
+    #[test_case("N4Sx", 10,  EastWest, 590; "Board 9")]
+    #[test_case("E2NT", 8,  All, -120; "Board 10")]
+    #[test_case("N6C", 12,  None, 920; "Board 11")]
+    #[test_case("E2D", 9,  NorthSouth, -110; "Board 12")]
+    #[test_case("W4HXX", 10,  All, -1080; "Board 13")]
+    #[test_case("S5S", 10,  None, -50; "Board 14")]
+    #[test_case("E4H", 11,  NorthSouth, -450; "Board 15")]
+    #[test_case("N3NT", 9, EastWest, 400; "Board 16")]
+    fn score(contract_string: &str, actual_tricks: usize, vulnerability: Vulnerability, expected: isize) {
         let contract = Contract::from_str(contract_string).unwrap();
-        let score = Score::score(contract, actual_tricks, declarer, declarer_is_vulnerable);
+
+        let result = GameResult::calculate_game_result(contract, actual_tricks);
+
+        let score = Score::score_result(result, vulnerability);
         assert_eq!(score, ScorePoints(expected));
     }
 }
