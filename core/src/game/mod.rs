@@ -8,7 +8,7 @@ use game_phase::GamePhase;
 
 use crate::primitives::deal::{Board, PlayerPosition};
 
-use crate::score::{Score, ScorePoints};
+use crate::score::ScorePoints;
 
 pub mod game_event;
 // pub mod player_queue_map;
@@ -55,15 +55,7 @@ impl Game {
 
     pub fn score(&self) -> Option<ScorePoints> {
         match &self.game_phase {
-            GamePhase::Ended(state) => match state.inner.contract {
-                Some(contract) => Some(Score::score(
-                    contract,
-                    state.tricks_won_by_axis(contract.declarer),
-                    contract.declarer,
-                    self.board.is_vulnerable(contract.declarer),
-                )),
-                _ => Some(Score::NO_SCORE),
-            },
+            GamePhase::Ended(state) => Some(state.calculate_score(self.board.vulnerable())),
             _ => None,
         }
     }

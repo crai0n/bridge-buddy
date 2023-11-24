@@ -4,9 +4,11 @@ use crate::game::game_event::{BidEvent, CardEvent, DiscloseHandEvent, DummyUncov
 use crate::game::hand_manager::HandManager;
 use crate::game::trick_manager::TrickManager;
 use crate::primitives::bid_line::BidLine;
-use crate::primitives::deal::PlayerPosition;
+use crate::primitives::deal::{PlayerPosition, Vulnerability};
+use crate::primitives::game_result::GameResult;
 use crate::primitives::trick::PlayedTrick;
 use crate::primitives::Contract;
+use crate::score::{Score, ScorePoints};
 
 #[derive(Debug, Clone)]
 pub struct GameState<Phase> {
@@ -50,6 +52,7 @@ pub struct Ended {
     pub tricks: Vec<PlayedTrick>,
     pub hands: HandManager,
     pub contract: Option<Contract>,
+    pub result: GameResult,
 }
 
 impl GameState<Bidding> {
@@ -106,6 +109,7 @@ impl GameState<Bidding> {
             tricks: Vec::new(),
             hands: self.inner.hand_manager,
             contract: None,
+            result: GameResult::Unplayed,
         };
 
         GameState { inner }
@@ -247,14 +251,28 @@ impl GameState<CardPlay> {
     }
 
     pub fn move_from_card_play_to_ended(self) -> GameState<Ended> {
+        let tricks = self.inner.trick_manager.played_tricks().into();
+
+        let result = self.calculate_game_result();
+
         let inner = Ended {
             bids: self.inner.bids,
-            tricks: self.inner.trick_manager.played_tricks().into(),
+            tricks,
             hands: self.inner.hand_manager,
             contract: Some(self.inner.contract),
+            result,
         };
 
         GameState { inner }
+    }
+
+    fn calculate_game_result(&self) -> GameResult {
+        GameResult::calculate_game_result(
+            self.inner.contract,
+            self.inner
+                .trick_manager
+                .tricks_won_by_axis(self.inner.contract.declarer),
+        )
     }
 }
 
@@ -265,5 +283,9 @@ impl GameState<Ended> {
             .iter()
             .filter(|x| x.winner() == player || x.winner() == player.partner())
             .count()
+    }
+
+    pub fn calculate_score(&self, vulnerability: Vulnerability) -> ScorePoints {
+        Score::score_result(self.inner.result, vulnerability)
     }
 }
