@@ -3,6 +3,7 @@ use crate::game::game_phase::GamePhase;
 use crate::game::Game;
 use crate::primitives::deal::PlayerPosition;
 use crate::primitives::game_event::{DiscloseHandEvent, DummyUncoveredEvent, GameEndedEvent, GameEvent, NewGameEvent};
+use crate::primitives::player_event::PlayerEvent;
 use crate::primitives::Deal;
 use strum::IntoEnumIterator;
 
@@ -40,18 +41,12 @@ impl GameManager {
         }
     }
 
-    pub fn process_event(&mut self, event: GameEvent) -> Result<(), BBError> {
+    pub fn process_player_event(&mut self, event: PlayerEvent) -> Result<(), BBError> {
         match &mut self.game {
             None => Err(BBError::GameHasNotStarted)?,
-            Some(game) => match event {
-                GameEvent::Bid(_) => {
-                    game.process_event(event)?;
-                }
-                GameEvent::Card(_) => {
-                    game.process_event(event)?;
-                }
-                _ => return Err(BBError::InvalidEvent(event)),
-            },
+            Some(game) => {
+                game.process_game_event(GameEvent::from(event))?;
+            }
         }
 
         self.react_to_new_game_state();
@@ -76,7 +71,7 @@ impl GameManager {
                 hand: *self.deal.hand_of(player),
             });
             self.add_event_to_history(game_event);
-            self.game.as_mut().unwrap().process_event(game_event).unwrap();
+            self.game.as_mut().unwrap().process_game_event(game_event).unwrap();
         }
     }
 
@@ -87,7 +82,7 @@ impl GameManager {
         let game_event = GameEvent::DummyUncovered(dummy_uncovered_event);
 
         self.add_event_to_history(game_event);
-        self.game.as_mut().unwrap().process_event(game_event).unwrap();
+        self.game.as_mut().unwrap().process_game_event(game_event).unwrap();
     }
 
     fn finalize_result(&mut self) {

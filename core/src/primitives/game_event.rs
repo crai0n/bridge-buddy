@@ -1,5 +1,6 @@
 use crate::primitives::bid::Bid;
 use crate::primitives::deal::{Board, PlayerPosition};
+use crate::primitives::player_event::PlayerEvent;
 use crate::primitives::{Card, Contract, Hand};
 use crate::score::ScorePoints;
 
@@ -51,4 +52,19 @@ pub struct DummyUncoveredEvent {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct GameEndedEvent {
     pub score: ScorePoints,
+}
+
+impl From<PlayerEvent> for GameEvent {
+    fn from(player_event: PlayerEvent) -> Self {
+        match player_event {
+            PlayerEvent::Bid(event) => GameEvent::Bid(BidEvent {
+                player: event.player,
+                bid: event.bid,
+            }),
+            PlayerEvent::Card(event) => GameEvent::Card(CardEvent {
+                player: event.player,
+                card: event.card,
+            }),
+        }
+    }
 }

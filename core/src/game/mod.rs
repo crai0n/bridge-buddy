@@ -45,7 +45,7 @@ impl Game {
         Self::new_from_board(event.board)
     }
 
-    pub fn process_event(&mut self, event: GameEvent) -> Result<(), BBError> {
+    pub fn process_game_event(&mut self, event: GameEvent) -> Result<(), BBError> {
         self.game_phase.process_event(event)
     }
 
@@ -93,7 +93,7 @@ mod test {
                 bid: Bid::from_str(bid).unwrap(),
             };
             let game_event = GameEvent::Bid(bid_event);
-            game.process_event(game_event).unwrap();
+            game.process_game_event(game_event).unwrap();
         }
         // for event in game.history {
         //     println!("{:?}", event);
@@ -117,7 +117,7 @@ mod test {
                 bid: Bid::from_str(bid).unwrap(),
             };
             let game_event = GameEvent::Bid(bid_event);
-            game.process_event(game_event).unwrap();
+            game.process_game_event(game_event).unwrap();
         }
 
         assert_eq!(game.next_to_play(), Some(PlayerPosition::East));
@@ -129,7 +129,7 @@ mod test {
             card: lead,
         };
         let game_event = GameEvent::Card(card_event);
-        game.process_event(game_event).unwrap();
+        game.process_game_event(game_event).unwrap();
 
         match &mut game.game_phase {
             GamePhase::WaitingForDummy(state) => {
@@ -138,7 +138,7 @@ mod test {
                     dummy: *deal.hand_of(dummy),
                 };
                 let game_event = GameEvent::DummyUncovered(dummy_event);
-                game.process_event(game_event).unwrap();
+                game.process_game_event(game_event).unwrap();
             }
             _ => panic!(),
         }
@@ -159,7 +159,7 @@ mod test {
                 card: Card::from_str(card).unwrap(),
             };
             let game_event = GameEvent::Card(card_event);
-            game.process_event(game_event).unwrap();
+            game.process_game_event(game_event).unwrap();
         }
 
         match game.game_phase {

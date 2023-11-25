@@ -60,13 +60,22 @@ impl BidManager {
     }
 
     pub fn bidding_has_ended(&self) -> bool {
-        self.bids().len() > 3 // every player has bid at least once
-            && self
-            .bids()
-            .iter()
-            .rev()
-            .take(3)
-            .all(|x| x == &Bid::Auxiliary(AuxiliaryBid::Pass))
+        self.every_player_has_bid_at_least_once() && self.check_last_three_bids(Self::is_three_passes)
+    }
+
+    fn every_player_has_bid_at_least_once(&self) -> bool {
+        self.bids().len() > 3
+    }
+
+    fn is_three_passes(line: &[Bid]) -> bool {
+        matches!(
+            line,
+            [
+                Bid::Auxiliary(AuxiliaryBid::Pass),
+                Bid::Auxiliary(AuxiliaryBid::Pass),
+                Bid::Auxiliary(AuxiliaryBid::Pass)
+            ]
+        )
     }
 
     fn can_bid_contract(&self, new: &ContractBid) -> bool {
