@@ -1,8 +1,9 @@
-use crate::primitives::bid::Bid;
 use crate::primitives::deal::{Board, PlayerPosition};
 use crate::primitives::player_event::PlayerEvent;
-use crate::primitives::{Card, Contract, Hand};
+use crate::primitives::{Contract, Deal, Hand};
 use crate::score::ScorePoints;
+
+pub use crate::primitives::player_event::{BidEvent, CardEvent};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GameEvent {
@@ -27,21 +28,9 @@ pub struct DiscloseHandEvent {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct BidEvent {
-    pub player: PlayerPosition,
-    pub bid: Bid,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MoveToCardPlayEvent {
     pub final_contract: Contract,
     pub declarer: PlayerPosition,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct CardEvent {
-    pub player: PlayerPosition,
-    pub card: Card,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -51,6 +40,7 @@ pub struct DummyUncoveredEvent {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct GameEndedEvent {
+    pub deal: Deal,
     pub score: ScorePoints,
 }
 

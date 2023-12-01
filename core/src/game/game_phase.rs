@@ -2,6 +2,7 @@ use crate::error::BBError;
 use crate::game::game_state::{Bidding, CardPlay, Ended, GameState, OpeningLead, WaitingForDummy};
 use crate::primitives::deal::PlayerPosition;
 use crate::primitives::game_event::{BidEvent, CardEvent, DiscloseHandEvent, DummyUncoveredEvent, GameEvent};
+use crate::primitives::Hand;
 
 #[derive(Debug, Clone)]
 pub enum GamePhase {
@@ -15,11 +16,21 @@ pub enum GamePhase {
 impl GamePhase {
     pub fn next_to_play(&self) -> Option<PlayerPosition> {
         match &self {
-            GamePhase::Bidding(state) => state.next_to_play(),
-            GamePhase::OpeningLead(state) => state.next_to_play(),
-            GamePhase::WaitingForDummy(state) => state.next_to_play(),
-            GamePhase::CardPlay(state) => state.next_to_play(),
+            GamePhase::Bidding(state) => Some(state.next_to_play()),
+            GamePhase::OpeningLead(state) => Some(state.next_to_play()),
+            GamePhase::WaitingForDummy(state) => Some(state.next_to_play()),
+            GamePhase::CardPlay(state) => Some(state.next_to_play()),
             GamePhase::Ended(_) => None,
+        }
+    }
+
+    pub fn hand_of(&self, player: PlayerPosition) -> Result<Hand, BBError> {
+        match &self {
+            GamePhase::Bidding(state) => state.hand_of(player),
+            GamePhase::OpeningLead(state) => state.hand_of(player),
+            GamePhase::WaitingForDummy(state) => state.hand_of(player),
+            GamePhase::CardPlay(state) => state.hand_of(player),
+            GamePhase::Ended(state) => state.hand_of(player),
         }
     }
 

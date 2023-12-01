@@ -1,9 +1,11 @@
+use crate::error::BBError;
 use crate::game::game_state::GameState;
 use crate::game::hand_manager::HandManager;
 use crate::primitives::bid_line::BidLine;
 use crate::primitives::deal::{PlayerPosition, Vulnerability};
 use crate::primitives::game_result::GameResult;
 use crate::primitives::trick::PlayedTrick;
+use crate::primitives::Hand;
 use crate::score::{Score, ScorePoints};
 
 #[derive(Debug, Clone)]
@@ -21,6 +23,10 @@ impl GameState<Ended> {
             .iter()
             .filter(|x| x.winner() == player || x.winner() == player.partner())
             .count()
+    }
+
+    pub fn hand_of(&self, player: PlayerPosition) -> Result<Hand, BBError> {
+        self.inner.hands.hand_of(player)
     }
 
     pub fn calculate_score(&self, vulnerability: Vulnerability) -> ScorePoints {

@@ -86,7 +86,7 @@ impl BidManager {
             }
     }
 
-    fn last_contract_bid(&self) -> Option<&ContractBid> {
+    pub fn last_contract_bid(&self) -> Option<&ContractBid> {
         self.bids()
             .iter()
             .filter_map(|x| match x {

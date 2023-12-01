@@ -25,6 +25,10 @@ impl HandManager {
     }
 
     pub fn register_known_card(&mut self, card: Card, player: PlayerPosition) -> Result<(), BBError> {
+        if self.known_cards_of(player).len() >= 13 && !self.known_cards_of(player).contains(&card) {
+            return Err(BBError::InvalidHandInfo);
+        }
+
         match self.known_cards.insert(card, player) {
             None => Ok(()),
             Some(known_player) if known_player == player => Ok(()),
@@ -38,14 +42,15 @@ impl HandManager {
 
     fn card_could_belong_to_player(&self, card: &Card, player: PlayerPosition) -> bool {
         if let Some(owner) = self.known_cards.get(card) {
-            if *owner != player {
-                return false;
-            }
+            *owner == player
+        } else if self.count_known_cards_of(player) == 13 {
+            self.full_hand_known_for(player) // we haven't seen card, but player's hand is full
+        } else {
+            true
         }
-        true
     }
 
-    fn card_has_already_been_played(&self, card: &Card) -> bool {
+    pub fn card_has_already_been_played(&self, card: &Card) -> bool {
         self.played_cards.contains(card)
     }
 
@@ -77,6 +82,30 @@ impl HandManager {
             .collect();
         let remaining_cards_in_suit: Vec<_> = known_cards_in_suit.difference(&self.played_cards).collect();
         !remaining_cards_in_suit.is_empty()
+    }
+
+    pub fn known_cards_of(&self, player: PlayerPosition) -> Vec<Card> {
+        self.known_cards
+            .iter()
+            .filter_map(|(card, owner)| if *owner == player { Some(*card) } else { None })
+            .collect()
+    }
+
+    pub fn count_known_cards_of(&self, player: PlayerPosition) -> usize {
+        self.known_cards_of(player).len()
+    }
+
+    pub fn full_hand_known_for(&self, player: PlayerPosition) -> bool {
+        self.count_known_cards_of(player) == 13
+    }
+
+    pub fn hand_of(&self, player: PlayerPosition) -> Result<Hand, BBError> {
+        let cards = self.known_cards_of(player);
+        if cards.len() == 13 {
+            Hand::from_cards(&cards)
+        } else {
+            Err(BBError::InsufficientInfo)
+        }
     }
 }
 

@@ -39,7 +39,7 @@ impl BidLine {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.bids.len() == 0
+        self.len() == 0
     }
 }
 

@@ -6,7 +6,7 @@ use crate::game::trick_manager::TrickManager;
 use crate::primitives::bid_line::BidLine;
 use crate::primitives::deal::PlayerPosition;
 use crate::primitives::game_event::CardEvent;
-use crate::primitives::Contract;
+use crate::primitives::{Contract, Hand};
 
 #[derive(Debug, Clone)]
 pub struct OpeningLead {
@@ -17,17 +17,19 @@ pub struct OpeningLead {
 }
 
 impl GameState<OpeningLead> {
-    pub fn next_to_play(&self) -> Option<PlayerPosition> {
-        Some(self.inner.trick_manager.next_to_play())
+    pub fn next_to_play(&self) -> PlayerPosition {
+        self.inner.trick_manager.next_to_play()
     }
 
     pub fn validate_turn_order(&self, player: PlayerPosition) -> Result<(), BBError> {
-        if let Some(next_to_play) = self.next_to_play() {
-            if player == next_to_play {
-                return Ok(());
-            }
+        let turn = self.next_to_play();
+        if player != turn {
+            return Err(BBError::OutOfTurn(Some(turn)));
         }
-        Err(BBError::OutOfTurn(self.next_to_play()))
+        Ok(())
+    }
+    pub fn hand_of(&self, player: PlayerPosition) -> Result<Hand, BBError> {
+        self.inner.hand_manager.hand_of(player)
     }
 
     pub fn process_play_card_event(&mut self, card_event: CardEvent) -> Result<(), BBError> {

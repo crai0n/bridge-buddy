@@ -29,10 +29,6 @@ impl TrickManager {
         }
     }
 
-    pub fn set_trump_suit(&mut self, suit: Suit) {
-        self.trump_suit = Some(suit);
-    }
-
     pub fn set_lead(&mut self, lead: PlayerPosition) {
         self.next_to_play = lead;
     }

@@ -87,6 +87,7 @@ impl GameManager {
 
     fn finalize_result(&mut self) {
         let game_ended_event = GameEndedEvent {
+            deal: self.deal,
             score: self.game.as_mut().unwrap().score().unwrap(),
         };
         let event = GameEvent::GameEnded(game_ended_event);

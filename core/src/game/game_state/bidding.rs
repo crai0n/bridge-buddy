@@ -8,7 +8,7 @@ use crate::game::trick_manager::TrickManager;
 use crate::primitives::deal::PlayerPosition;
 use crate::primitives::game_event::{BidEvent, DiscloseHandEvent};
 use crate::primitives::game_result::GameResult;
-use crate::primitives::Contract;
+use crate::primitives::{Contract, Hand};
 
 #[derive(Debug, Clone)]
 pub struct Bidding {
@@ -17,8 +17,12 @@ pub struct Bidding {
 }
 
 impl GameState<Bidding> {
-    pub fn next_to_play(&self) -> Option<PlayerPosition> {
-        Some(self.inner.bid_manager.next_to_play())
+    pub fn next_to_play(&self) -> PlayerPosition {
+        self.inner.bid_manager.next_to_play()
+    }
+
+    pub fn hand_of(&self, player: PlayerPosition) -> Result<Hand, BBError> {
+        self.inner.hand_manager.hand_of(player)
     }
 
     pub fn bidding_has_ended(&self) -> bool {
@@ -34,12 +38,11 @@ impl GameState<Bidding> {
     }
 
     pub fn validate_turn_order(&self, player: PlayerPosition) -> Result<(), BBError> {
-        if let Some(next_to_play) = self.next_to_play() {
-            if player == next_to_play {
-                return Ok(());
-            }
+        let turn = self.next_to_play();
+        if player != turn {
+            return Err(BBError::OutOfTurn(Some(turn)));
         }
-        Err(BBError::OutOfTurn(self.next_to_play()))
+        Ok(())
     }
 
     pub fn process_disclose_hand_event(&mut self, event: DiscloseHandEvent) -> Result<(), BBError> {

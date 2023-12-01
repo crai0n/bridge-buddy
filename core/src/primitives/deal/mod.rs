@@ -14,7 +14,7 @@ pub mod player_position;
 pub mod turn_rank;
 pub mod vulnerability;
 
-#[derive(Clone)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Deal {
     pub board: Board,
     pub hands: [Hand; 4],
