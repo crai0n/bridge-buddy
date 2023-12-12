@@ -29,10 +29,6 @@ impl TrickManager {
         }
     }
 
-    pub fn set_lead(&mut self, lead: PlayerPosition) {
-        self.next_to_play = lead;
-    }
-
     pub fn next_to_play(&self) -> PlayerPosition {
         self.next_to_play
     }
