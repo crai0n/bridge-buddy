@@ -4,7 +4,7 @@ use crate::game::game_state::GameState;
 use crate::game::hand_manager::HandManager;
 use crate::game::trick_manager::TrickManager;
 use crate::primitives::bid_line::BidLine;
-use crate::primitives::deal::PlayerPosition;
+use crate::primitives::deal::{Board, PlayerPosition};
 use crate::primitives::game_event::CardEvent;
 use crate::primitives::{Contract, Hand};
 
@@ -14,6 +14,7 @@ pub struct OpeningLead {
     pub trick_manager: TrickManager,
     pub hand_manager: HandManager,
     pub contract: Contract,
+    pub board: Board,
 }
 
 impl GameState<OpeningLead> {
@@ -66,8 +67,13 @@ impl GameState<OpeningLead> {
             trick_manager: self.inner.trick_manager,
             hand_manager: self.inner.hand_manager,
             contract: self.inner.contract,
+            board: self.inner.board,
         };
 
         GameState { inner }
+    }
+
+    pub fn board(&self) -> Board {
+        self.inner.board
     }
 }

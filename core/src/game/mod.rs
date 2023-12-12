@@ -1,9 +1,6 @@
 use crate::error::BBError;
 use crate::primitives::game_event::{GameEvent, NewGameEvent};
 
-use crate::game::bid_manager::BidManager;
-use crate::game::game_state::{Bidding, GameState};
-use crate::game::hand_manager::HandManager;
 use game_phase::GamePhase;
 
 use crate::primitives::deal::{Board, PlayerPosition};
@@ -20,20 +17,13 @@ pub mod bid_manager;
 pub mod hand_manager;
 
 pub struct Game {
-    board: Board,
     game_phase: GamePhase,
 }
 
 impl Game {
     pub fn new_from_board(board: Board) -> Self {
-        let inner = Bidding {
-            bid_manager: BidManager::new(board.dealer()),
-            hand_manager: HandManager::new(),
-        };
-        let state = GameState { inner };
         Game {
-            board,
-            game_phase: GamePhase::Bidding(state),
+            game_phase: GamePhase::new_from_board(board),
         }
     }
 
@@ -42,11 +32,13 @@ impl Game {
     }
 
     pub fn from_new_game_event(event: NewGameEvent) -> Self {
-        Self::new_from_board(event.board)
+        Game {
+            game_phase: GamePhase::from_new_game_event(event),
+        }
     }
 
     pub fn process_game_event(&mut self, event: GameEvent) -> Result<(), BBError> {
-        self.game_phase.process_event(event)
+        self.game_phase.process_game_event(event)
     }
 
     pub fn next_to_play(&self) -> Option<PlayerPosition> {
@@ -54,10 +46,7 @@ impl Game {
     }
 
     pub fn score(&self) -> Option<ScorePoints> {
-        match &self.game_phase {
-            GamePhase::Ended(state) => Some(state.calculate_score(self.board.vulnerable())),
-            _ => None,
-        }
+        self.game_phase.score()
     }
 }
 

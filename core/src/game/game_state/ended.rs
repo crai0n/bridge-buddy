@@ -2,7 +2,7 @@ use crate::error::BBError;
 use crate::game::game_state::GameState;
 use crate::game::hand_manager::HandManager;
 use crate::primitives::bid_line::BidLine;
-use crate::primitives::deal::{PlayerPosition, Vulnerability};
+use crate::primitives::deal::{Board, PlayerPosition, Vulnerability};
 use crate::primitives::game_result::GameResult;
 use crate::primitives::trick::PlayedTrick;
 use crate::primitives::Hand;
@@ -14,6 +14,7 @@ pub struct Ended {
     pub tricks: Vec<PlayedTrick>,
     pub hands: HandManager,
     pub result: GameResult,
+    pub board: Board,
 }
 
 impl GameState<Ended> {
@@ -31,5 +32,9 @@ impl GameState<Ended> {
 
     pub fn calculate_score(&self, vulnerability: Vulnerability) -> ScorePoints {
         Score::score_result(self.inner.result, vulnerability)
+    }
+
+    pub fn board(&self) -> Board {
+        self.inner.board
     }
 }

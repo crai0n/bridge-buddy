@@ -5,7 +5,7 @@ use crate::game::game_state::opening_lead::OpeningLead;
 use crate::game::game_state::GameState;
 use crate::game::hand_manager::HandManager;
 use crate::game::trick_manager::TrickManager;
-use crate::primitives::deal::PlayerPosition;
+use crate::primitives::deal::{Board, PlayerPosition};
 use crate::primitives::game_event::{BidEvent, DiscloseHandEvent};
 use crate::primitives::game_result::GameResult;
 use crate::primitives::{Contract, Hand};
@@ -14,9 +14,25 @@ use crate::primitives::{Contract, Hand};
 pub struct Bidding {
     pub bid_manager: BidManager,
     pub hand_manager: HandManager,
+    pub board: Board,
+}
+
+impl Bidding {
+    pub fn new(board: Board) -> Self {
+        Bidding {
+            bid_manager: BidManager::new(board.dealer()),
+            hand_manager: HandManager::new(),
+            board,
+        }
+    }
 }
 
 impl GameState<Bidding> {
+    pub fn new(board: Board) -> Self {
+        let inner = Bidding::new(board);
+        GameState { inner }
+    }
+
     pub fn next_to_play(&self) -> PlayerPosition {
         self.inner.bid_manager.next_to_play()
     }
@@ -27,6 +43,10 @@ impl GameState<Bidding> {
 
     pub fn bidding_has_ended(&self) -> bool {
         self.inner.bid_manager.bidding_has_ended()
+    }
+
+    pub fn board(&self) -> Board {
+        self.inner.board
     }
 
     pub fn validate_make_bid_event(&self, bid_event: BidEvent) -> Result<(), BBError> {
@@ -62,6 +82,7 @@ impl GameState<Bidding> {
             trick_manager: TrickManager::new(contract.declarer + 1, contract.trump_suit()),
             hand_manager: self.inner.hand_manager,
             contract,
+            board: self.inner.board,
         };
 
         GameState { inner }
@@ -73,6 +94,7 @@ impl GameState<Bidding> {
             tricks: Vec::new(),
             hands: self.inner.hand_manager,
             result: GameResult::Unplayed,
+            board: self.inner.board,
         };
 
         GameState { inner }

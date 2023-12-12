@@ -3,7 +3,7 @@ use crate::game::game_state::{CardPlay, GameState};
 use crate::game::hand_manager::HandManager;
 use crate::game::trick_manager::TrickManager;
 use crate::primitives::bid_line::BidLine;
-use crate::primitives::deal::PlayerPosition;
+use crate::primitives::deal::{Board, PlayerPosition};
 use crate::primitives::game_event::DummyUncoveredEvent;
 use crate::primitives::{Contract, Hand};
 
@@ -13,11 +13,16 @@ pub struct WaitingForDummy {
     pub trick_manager: TrickManager,
     pub hand_manager: HandManager,
     pub contract: Contract,
+    pub board: Board,
 }
 
 impl GameState<WaitingForDummy> {
     pub fn next_to_play(&self) -> PlayerPosition {
         self.inner.trick_manager.next_to_play()
+    }
+
+    pub fn board(&self) -> Board {
+        self.inner.board
     }
 
     pub fn validate_turn_order(&self, player: PlayerPosition) -> Result<(), BBError> {
@@ -46,6 +51,7 @@ impl GameState<WaitingForDummy> {
             trick_manager: self.inner.trick_manager,
             hand_manager: self.inner.hand_manager,
             contract: self.inner.contract,
+            board: self.inner.board,
         };
 
         GameState { inner }
