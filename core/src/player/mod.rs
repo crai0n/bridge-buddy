@@ -85,9 +85,9 @@ impl CliPlayer {
         *card
     }
 
-    fn pick_lead(&self, _state: &GameState<CardPlay>) -> Card {
-        let hand = self.my_hand().unwrap();
-        let card = hand.cards().nth(4).unwrap();
+    fn pick_lead(&self, state: &GameState<CardPlay>) -> Card {
+        let remaining_cards = state.inner.hand_manager.known_remaining_cards_of(self.seat);
+        let card = remaining_cards.first().unwrap();
         *card
     }
 

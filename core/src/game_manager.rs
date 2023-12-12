@@ -4,6 +4,7 @@ use crate::primitives::deal::PlayerPosition;
 use crate::primitives::game_event::{DiscloseHandEvent, DummyUncoveredEvent, GameEndedEvent, GameEvent, NewGameEvent};
 use crate::primitives::player_event::PlayerEvent;
 use crate::primitives::Deal;
+use itertools::Itertools;
 use strum::IntoEnumIterator;
 
 pub struct GameManager {
@@ -18,6 +19,17 @@ impl GameManager {
             deal,
             game: None,
             history: Vec::new(),
+        }
+    }
+
+    pub fn history(&self) -> Vec<GameEvent> {
+        self.history.iter().copied().collect_vec()
+    }
+
+    pub fn next_to_play(&self) -> Option<PlayerPosition> {
+        match &self.game {
+            None => None,
+            Some(game) => game.next_to_play(),
         }
     }
 
@@ -44,7 +56,9 @@ impl GameManager {
         match &mut self.game {
             None => Err(BBError::GameHasNotStarted)?,
             Some(game) => {
-                game.process_game_event(GameEvent::from(event))?;
+                let game_event = GameEvent::from(event);
+                game.process_game_event(game_event)?;
+                self.add_event_to_history(game_event);
             }
         }
 

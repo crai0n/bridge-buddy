@@ -5,7 +5,7 @@ use crate::primitives::Deal;
 use std::ops;
 use strum::{Display, EnumIter, EnumString};
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Display, EnumIter, EnumString)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Display, EnumIter, EnumString, Ord, PartialOrd)]
 pub enum PlayerPosition {
     #[strum(serialize = "n")]
     #[strum(to_string = "N")]

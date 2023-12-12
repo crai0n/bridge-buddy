@@ -40,6 +40,8 @@ pub enum BBError {
     InsufficientInfo,
     InvalidHandInfo,
     InvalidContract,
+    NoGame,
+    GameStuck,
 }
 
 impl Display for BBError {
@@ -75,6 +77,8 @@ impl Display for BBError {
             BBError::InsufficientInfo => writeln!(f, "Not enough information to calculate this."),
             BBError::InvalidHandInfo => writeln!(f, "Hands are not valid for a bridge game."),
             BBError::InvalidContract => writeln!(f, "This is an impossible Contract"),
+            BBError::NoGame => writeln!(f, "There is no game to start"),
+            BBError::GameStuck => writeln!(f, "It seems the game is stuck"),
         }
     }
 }

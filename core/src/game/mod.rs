@@ -75,6 +75,11 @@ impl Game {
             GameEvent::DummyUncovered(dummy_uncovered_event) => {
                 self.process_dummy_uncovered_event(dummy_uncovered_event)
             }
+            GameEvent::GameEnded(game_ended_event) => {
+                let my_score = self.score().unwrap();
+                assert_eq!(game_ended_event.score, my_score);
+                Ok(())
+            }
             _ => Err(BBError::InvalidEvent(event)),
         }
     }
