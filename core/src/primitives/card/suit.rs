@@ -45,6 +45,24 @@ impl Suit {
     pub fn is_minor(&self) -> bool {
         !self.is_major()
     }
+
+    pub const fn next(&self) -> Self {
+        match self {
+            Suit::Clubs => Suit::Diamonds,
+            Suit::Diamonds => Suit::Hearts,
+            Suit::Hearts => Suit::Spades,
+            Suit::Spades => Suit::Clubs,
+        }
+    }
+
+    pub const fn previous(&self) -> Self {
+        match self {
+            Suit::Clubs => Suit::Spades,
+            Suit::Diamonds => Suit::Clubs,
+            Suit::Hearts => Suit::Diamonds,
+            Suit::Spades => Suit::Hearts,
+        }
+    }
 }
 
 impl std::str::FromStr for Suit {

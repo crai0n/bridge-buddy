@@ -39,6 +39,28 @@ impl std::str::FromStr for ContractDenomination {
     }
 }
 
+impl ContractDenomination {
+    pub const fn next(&self) -> Self {
+        match self {
+            ContractDenomination::Trump(suit) => match suit {
+                Suit::Spades => ContractDenomination::NoTrump,
+                s => ContractDenomination::Trump(s.next()),
+            },
+            ContractDenomination::NoTrump => ContractDenomination::Trump(Suit::Clubs),
+        }
+    }
+
+    pub const fn previous(&self) -> Self {
+        match self {
+            ContractDenomination::Trump(suit) => match suit {
+                Suit::Clubs => ContractDenomination::NoTrump,
+                s => ContractDenomination::Trump(s.previous()),
+            },
+            ContractDenomination::NoTrump => ContractDenomination::Trump(Suit::Spades),
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::ContractDenomination;

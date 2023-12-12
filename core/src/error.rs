@@ -39,6 +39,7 @@ pub enum BBError {
     NotAuthorized(PlayerPosition),
     InsufficientInfo,
     InvalidHandInfo,
+    InvalidContract,
 }
 
 impl Display for BBError {
@@ -73,6 +74,7 @@ impl Display for BBError {
             BBError::GameHasNotStarted => writeln!(f, "The game has not started!"),
             BBError::InsufficientInfo => writeln!(f, "Not enough information to calculate this."),
             BBError::InvalidHandInfo => writeln!(f, "Hands are not valid for a bridge game."),
+            BBError::InvalidContract => writeln!(f, "This is an impossible Contract"),
         }
     }
 }

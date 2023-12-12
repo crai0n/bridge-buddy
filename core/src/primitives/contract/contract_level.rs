@@ -1,3 +1,4 @@
+use crate::error::BBError;
 use strum::{Display, EnumString};
 
 #[derive(Debug, Display, EnumString, PartialOrd, Ord, PartialEq, Eq, Clone, Copy)]
@@ -21,6 +22,32 @@ pub enum ContractLevel {
 impl ContractLevel {
     pub fn expected_tricks(&self) -> usize {
         *self as usize + 6
+    }
+}
+
+impl ContractLevel {
+    pub const fn next(&self) -> Result<Self, BBError> {
+        match self {
+            ContractLevel::One => Ok(ContractLevel::Two),
+            ContractLevel::Two => Ok(ContractLevel::Three),
+            ContractLevel::Three => Ok(ContractLevel::Four),
+            ContractLevel::Four => Ok(ContractLevel::Five),
+            ContractLevel::Five => Ok(ContractLevel::Six),
+            ContractLevel::Six => Ok(ContractLevel::Seven),
+            ContractLevel::Seven => Err(BBError::InvalidContract),
+        }
+    }
+
+    pub const fn previous(&self) -> Result<Self, BBError> {
+        match self {
+            ContractLevel::One => Err(BBError::InvalidContract),
+            ContractLevel::Two => Ok(ContractLevel::One),
+            ContractLevel::Three => Ok(ContractLevel::Two),
+            ContractLevel::Four => Ok(ContractLevel::Three),
+            ContractLevel::Five => Ok(ContractLevel::Four),
+            ContractLevel::Six => Ok(ContractLevel::Five),
+            ContractLevel::Seven => Ok(ContractLevel::Six),
+        }
     }
 }
 

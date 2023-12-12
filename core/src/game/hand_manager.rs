@@ -91,6 +91,15 @@ impl HandManager {
             .collect()
     }
 
+    pub fn known_remaining_cards_of(&self, player: PlayerPosition) -> Vec<Card> {
+        self.known_cards_of(player)
+            .into_iter()
+            .collect::<BTreeSet<Card>>()
+            .difference(&self.played_cards)
+            .copied()
+            .collect()
+    }
+
     pub fn count_known_cards_of(&self, player: PlayerPosition) -> usize {
         self.known_cards_of(player).len()
     }

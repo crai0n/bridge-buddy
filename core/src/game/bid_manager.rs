@@ -1,10 +1,10 @@
 use crate::error::BBError;
 use crate::primitives::bid::{AuxiliaryBid, Bid, ContractBid};
 use crate::primitives::bid_line::BidLine;
-use crate::primitives::contract::{ContractDenomination, ContractState};
+use crate::primitives::contract::{ContractDenomination, ContractLevel, ContractState};
 use crate::primitives::deal::axis::Axis;
 use crate::primitives::deal::PlayerPosition;
-use crate::primitives::Contract;
+use crate::primitives::{Contract, Suit};
 
 #[derive(Debug, Clone)]
 pub struct BidManager {
@@ -94,6 +94,16 @@ impl BidManager {
                 _ => None,
             })
             .last()
+    }
+
+    pub fn lowest_available_contract_bid(&self) -> Option<ContractBid> {
+        match self.last_contract_bid() {
+            None => Some(ContractBid {
+                level: ContractLevel::One,
+                denomination: ContractDenomination::Trump(Suit::Clubs),
+            }),
+            Some(bid) => bid.next().ok(),
+        }
     }
 
     fn can_redouble(&self) -> bool {
