@@ -1,5 +1,4 @@
 use crate::error::BBError;
-use crate::game::game_phase::GamePhase;
 use crate::game::Game;
 use crate::primitives::deal::PlayerPosition;
 use crate::primitives::game_event::{DiscloseHandEvent, DummyUncoveredEvent, GameEndedEvent, GameEvent, NewGameEvent};
@@ -54,12 +53,12 @@ impl GameManager {
     }
 
     fn react_to_new_game_state(&mut self) {
-        match &mut self.game.as_mut().unwrap().game_phase() {
-            GamePhase::WaitingForDummy(state) => {
+        match &mut self.game.as_mut().unwrap() {
+            Game::WaitingForDummy(state) => {
                 let dummy = state.inner.contract.declarer.partner();
                 self.disclose_dummy(dummy);
             }
-            GamePhase::Ended(_) => self.finalize_result(),
+            Game::Ended(_) => self.finalize_result(),
             _ => (),
         }
     }
