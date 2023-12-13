@@ -6,7 +6,7 @@ use crate::primitives::deal::{Board, Seat, Vulnerability};
 use crate::primitives::game_result::GameResult;
 use crate::primitives::trick::PlayedTrick;
 use crate::primitives::Hand;
-use crate::score::{Score, ScorePoints};
+use crate::scoring::{ScoreCalculator, ScorePoints};
 
 #[derive(Debug, Clone)]
 pub struct Ended {
@@ -31,7 +31,7 @@ impl GameState<Ended> {
     }
 
     pub fn calculate_score(&self, vulnerability: Vulnerability) -> ScorePoints {
-        Score::score_result(self.inner.result, vulnerability)
+        ScoreCalculator::score_result(self.inner.result, vulnerability)
     }
 
     pub fn board(&self) -> Board {

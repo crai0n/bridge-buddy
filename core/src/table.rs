@@ -4,7 +4,7 @@ use crate::player::{AutoPlayer, Player};
 use crate::primitives::deal::Seat;
 use crate::primitives::game_event::GameEvent;
 use crate::primitives::Deal;
-use crate::score::ScorePoints;
+use crate::scoring::ScorePoints;
 use std::collections::btree_map::Entry;
 use std::collections::BTreeMap;
 

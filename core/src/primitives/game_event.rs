@@ -1,7 +1,7 @@
 use crate::primitives::deal::{Board, Seat};
 use crate::primitives::player_event::PlayerEvent;
 use crate::primitives::{Contract, Deal, Hand};
-use crate::score::ScorePoints;
+use crate::scoring::ScorePoints;
 
 pub use crate::primitives::player_event::{BidEvent, CardEvent};
 

@@ -43,8 +43,8 @@ impl MulAssign<isize> for ScorePoints {
     }
 }
 
-pub struct Score;
-impl Score {
+pub struct ScoreCalculator;
+impl ScoreCalculator {
     pub const NO_SCORE: ScorePoints = ScorePoints(0);
     const MINOR_TRICK_POINTS: ScorePoints = ScorePoints(20);
     const MAJOR_TRICK_POINTS: ScorePoints = ScorePoints(30);
@@ -184,7 +184,7 @@ impl Score {
 
 #[cfg(test)]
 mod test {
-    use super::Score;
+    use super::ScoreCalculator;
     use super::ScorePoints;
     use crate::primitives::deal::Vulnerability;
     use crate::primitives::deal::Vulnerability::*;
@@ -214,7 +214,7 @@ mod test {
 
         let result = GameResult::calculate_game_result(contract, actual_tricks);
 
-        let score = Score::score_result(result, vulnerability);
+        let score = ScoreCalculator::score_result(result, vulnerability);
         assert_eq!(score, ScorePoints(expected));
     }
 }

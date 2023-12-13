@@ -14,7 +14,7 @@ use crate::primitives::game_event::{
     BidEvent, CardEvent, DiscloseHandEvent, DummyUncoveredEvent, GameEvent, NewGameEvent,
 };
 use crate::primitives::Hand;
-use crate::score::ScorePoints;
+use crate::scoring::ScorePoints;
 
 #[derive(Debug, Clone)]
 pub enum Game {
