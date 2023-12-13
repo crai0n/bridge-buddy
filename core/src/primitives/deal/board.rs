@@ -29,7 +29,7 @@ impl Board {
         Board { number }
     }
 
-    pub fn vulnerable(&self) -> Vulnerability {
+    pub fn vulnerability(&self) -> Vulnerability {
         let v = self.number - 1;
         let vul = v + v / 4;
         match vul % 4 {
@@ -41,7 +41,7 @@ impl Board {
     }
 
     pub fn is_vulnerable(&self, player: Seat) -> bool {
-        match self.vulnerable() {
+        match self.vulnerability() {
             Vulnerability::None => false,
             Vulnerability::All => true,
             Vulnerability::EastWest => matches!(player, Seat::East | Seat::West),
@@ -102,7 +102,7 @@ mod test {
     fn dealer_and_vulnerability(number: usize, vulnerable: Vulnerability, dealer: Seat) {
         let deal = Board::from_number(number);
         assert_eq!(deal.dealer(), dealer);
-        assert_eq!(deal.vulnerable(), vulnerable);
+        assert_eq!(deal.vulnerability(), vulnerable);
     }
 
     #[test_case(0, West, true)]

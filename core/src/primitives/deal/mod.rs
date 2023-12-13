@@ -53,7 +53,7 @@ impl Deal {
     }
 
     pub fn vulnerable(&self) -> Vulnerability {
-        self.board.vulnerable()
+        self.board.vulnerability()
     }
 
     pub fn dealer(&self) -> Seat {
