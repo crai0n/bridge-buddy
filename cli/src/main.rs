@@ -1,6 +1,10 @@
 use bridge_buddy_core::evaluator::ForumDPlus2015Evaluator;
+use bridge_buddy_core::player::auto_player::AutoPlayer;
+use bridge_buddy_core::player::cli_player::CliPlayer;
 use bridge_buddy_core::primitives::card::Suit;
 use bridge_buddy_core::primitives::deal::Hand;
+use bridge_buddy_core::primitives::deal::Seat::{East, North, South, West};
+use bridge_buddy_core::table::Table;
 use bridge_buddy_core::IntoEnumIterator;
 use clap::{Parser, Subcommand};
 use std::io::stdin;
@@ -23,12 +27,29 @@ enum Command {
         /// Hand to evaluate (if not given, it will be queried interactively)
         hand: Option<String>,
     },
+    Play,
 }
 
 fn main() {
     let args = Args::parse();
 
     match args.command {
+        Command::Play => {
+            let mut table = Table::empty();
+
+            let mut north_player = AutoPlayer::new(North);
+            let mut south_player = CliPlayer::new(South);
+            let mut east_player = AutoPlayer::new(East);
+            let mut west_player = AutoPlayer::new(West);
+
+            table.seat_player(&mut north_player, North).unwrap();
+            table.seat_player(&mut south_player, South).unwrap();
+            table.seat_player(&mut east_player, East).unwrap();
+            table.seat_player(&mut west_player, West).unwrap();
+
+            table.new_game().unwrap();
+            table.run_game().unwrap();
+        }
         Command::Evaluate { hand } => {
             let hand_result = match hand {
                 None => {

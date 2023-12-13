@@ -29,6 +29,10 @@ impl TrickManager {
         }
     }
 
+    pub fn current_trick(&self) -> Option<ActiveTrick> {
+        self.current_trick.clone()
+    }
+
     pub fn next_to_play(&self) -> Seat {
         self.next_to_play
     }

@@ -5,6 +5,7 @@ use crate::primitives::contract::{ContractDenomination, ContractLevel, ContractS
 use crate::primitives::deal::axis::Axis;
 use crate::primitives::deal::Seat;
 use crate::primitives::{Contract, Suit};
+use std::fmt::Display;
 
 #[derive(Debug, Clone)]
 pub struct BidManager {
@@ -220,6 +221,37 @@ impl TryFrom<BidLine> for BidManager {
     }
 }
 
+impl Display for BidManager {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "North East  South West  ",)?;
+        writeln!(f, "------------------------")?;
+
+        let mut x = match self.dealer {
+            Seat::North => 0,
+            Seat::East => 1,
+            Seat::South => 2,
+            Seat::West => 3,
+        };
+
+        let pad = "      ";
+
+        for _i in 0..x {
+            write!(f, "{}", pad)?;
+        }
+
+        for bid in self.bids() {
+            let str = format!("{}", bid);
+            write!(f, "{:<6}", str)?;
+            x += 1;
+            if x % 4 == 0 {
+                writeln!(f)?;
+            }
+        }
+        writeln!(f)?;
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::error::BBError;
@@ -276,6 +308,16 @@ mod test {
         }
         let implied_contract = Contract::from_str(implied).ok();
         assert_eq!(manager.implied_contract(), implied_contract)
+    }
+
+    #[test_case("1NT-2H-P-3NT-P-P-P", West, "North East  South West  \n------------------------\n                  1NT   \n2♥    Pass  3NT   Pass  \nPass  Pass  ")]
+    fn display(input: &str, dealer: Seat, expected: &str) {
+        let bid_line = BidLine::from_str(input).unwrap();
+        let mut manager = BidManager::new(dealer);
+        for &bid in bid_line.bids() {
+            manager.bid(bid).unwrap();
+        }
+        assert_eq!(format!("{}", manager), expected)
     }
 
     #[test_case("P-P-P", false; "Third player passes")]

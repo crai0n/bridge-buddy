@@ -6,7 +6,7 @@ use crate::game::trick_manager::TrickManager;
 use crate::primitives::bid_line::BidLine;
 use crate::primitives::deal::{Board, Seat};
 use crate::primitives::game_event::CardEvent;
-use crate::primitives::{Contract, Hand};
+use crate::primitives::{Card, Contract, Hand};
 
 #[derive(Debug, Clone)]
 pub struct OpeningLead {
@@ -48,17 +48,22 @@ impl GameState<OpeningLead> {
             .hand_manager
             .validate_play_card_event(card_event.card, card_event.player)?;
 
+        if self.player_violates_suit_rule(card_event.player, card_event.card) {
+            return Err(BBError::InvalidCard(card_event.card));
+        }
+        Ok(())
+    }
+
+    pub fn player_violates_suit_rule(&self, player: Seat, card: Card) -> bool {
         if let Some(suit) = &self.inner.trick_manager.suit_to_follow() {
-            if card_event.card.suit != *suit
+            card.suit != *suit
                 && self
                     .inner
                     .hand_manager
-                    .player_is_known_to_have_cards_left_in_suit(card_event.player, *suit)
-            {
-                return Err(BBError::InvalidCard(card_event.card));
-            }
+                    .player_is_known_to_have_cards_left_in_suit(player, *suit)
+        } else {
+            false
         }
-        Ok(())
     }
 
     pub fn move_to_waiting_for_dummy(self) -> GameState<WaitingForDummy> {

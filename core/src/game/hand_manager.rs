@@ -40,7 +40,7 @@ impl HandManager {
         self.played_cards.len()
     }
 
-    fn card_could_belong_to_player(&self, card: &Card, player: Seat) -> bool {
+    pub fn card_could_belong_to_player(&self, card: &Card, player: Seat) -> bool {
         if let Some(owner) = self.known_cards.get(card) {
             *owner == player
         } else if self.count_known_cards_of(player) == 13 {
