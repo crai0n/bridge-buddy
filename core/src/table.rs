@@ -65,26 +65,29 @@ impl<'a> Table<'a> {
             loop {
                 let history = self.game_manager.as_ref().unwrap().history();
 
-                for event in history {
-                    if !published_events.contains(&event) {
-                        // println!("Found new event: {:?}", event);
-                        self.broadcast_event(event);
-                        published_events.push(event);
-                    }
+                for &event in &history[published_events.len()..] {
+                    // println!("Found new event: {:?}", event);
+                    self.broadcast_event(event);
+                    published_events.push(event);
+
                     if let GameEvent::GameEnded(ge_event) = event {
                         return Ok(ge_event.score);
                     }
                 }
 
                 let next_player = self.game_manager.as_ref().unwrap().next_to_play().unwrap();
+                // println!("Next Player: {:?}", next_player);
 
                 let player_event = self.seats.get(&next_player).unwrap().make_move().unwrap();
+
+                // println!("Player made move: {:?}", player_event);
 
                 self.game_manager
                     .as_mut()
                     .unwrap()
                     .process_player_event(player_event)
                     .unwrap();
+
                 i += 1;
 
                 if i > 1000 {
