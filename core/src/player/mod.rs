@@ -1,12 +1,11 @@
 use crate::error::BBError;
-use crate::game::game_state::{Bidding, CardPlay, GameState, OpeningLead};
 use crate::game::Game;
 use crate::player::engine::{MockBiddingEngine, MockCardPlayEngine};
 use crate::primitives::bid::Bid;
 use crate::primitives::deal::PlayerPosition;
 use crate::primitives::game_event::GameEvent;
 use crate::primitives::player_event::{BidEvent, CardEvent, PlayerEvent};
-use crate::primitives::{Card, Hand};
+use crate::primitives::Card;
 
 pub mod engine;
 
@@ -39,15 +38,15 @@ impl Player for AutoPlayer {
     fn make_move(&self) -> Result<PlayerEvent, BBError> {
         match &self.game.as_ref().unwrap() {
             Game::Bidding(state) => {
-                let bid = self.find_bid(state);
+                let bid = self.bidding_engine.find_bid(state);
                 Ok(self.make_bid(bid))
             }
             Game::CardPlay(state) => {
-                let card = self.pick_card(state);
+                let card = self.card_play_engine.pick_card(state);
                 Ok(self.play_card(card))
             }
             Game::OpeningLead(state) => {
-                let card = self.pick_opening_lead(state);
+                let card = self.card_play_engine.pick_opening_lead(state);
                 Ok(self.play_card(card))
             }
             Game::WaitingForDummy(_) => Err(BBError::OutOfTurn(None)),
@@ -57,10 +56,6 @@ impl Player for AutoPlayer {
 }
 
 impl AutoPlayer {
-    fn find_bid(&self, state: &GameState<Bidding>) -> Bid {
-        self.bidding_engine.find_bid(state)
-    }
-
     fn make_bid(&self, bid: Bid) -> PlayerEvent {
         let bid_event = BidEvent { player: self.seat, bid };
         PlayerEvent::Bid(bid_event)
@@ -74,21 +69,6 @@ impl AutoPlayer {
         PlayerEvent::Card(card_event)
     }
 
-    pub fn my_hand(&self) -> Result<Hand, BBError> {
-        match &self.game {
-            None => Err(BBError::GameHasNotStarted),
-            Some(game) => game.hand_of(self.seat),
-        }
-    }
-
-    fn pick_opening_lead(&self, state: &GameState<OpeningLead>) -> Card {
-        self.card_play_engine.pick_opening_lead(state)
-    }
-
-    fn pick_card(&self, state: &GameState<CardPlay>) -> Card {
-        self.card_play_engine.pick_card(state)
-    }
-
     pub fn new(seat: PlayerPosition) -> Self {
         AutoPlayer {
             seat,
@@ -96,10 +76,6 @@ impl AutoPlayer {
             bidding_engine: MockBiddingEngine::new(),
             card_play_engine: MockCardPlayEngine::new(seat),
         }
-    }
-
-    pub fn get_seat(&self) -> PlayerPosition {
-        self.seat
     }
 }
 
