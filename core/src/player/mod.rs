@@ -12,12 +12,12 @@ pub trait Player {
     fn make_move(&self) -> Result<PlayerEvent, BBError>;
 }
 
-pub struct CliPlayer {
+pub struct AutoPlayer {
     seat: PlayerPosition,
     game: Option<Game>,
 }
 
-impl Player for CliPlayer {
+impl Player for AutoPlayer {
     fn process_game_event(&mut self, event: GameEvent) -> Result<(), BBError> {
         match event {
             GameEvent::NewGame(new_game_event) => {
@@ -51,7 +51,7 @@ impl Player for CliPlayer {
     }
 }
 
-impl CliPlayer {
+impl AutoPlayer {
     fn find_bid(&self, state: &GameState<Bidding>) -> Bid {
         match state.inner.bid_manager.lowest_available_contract_bid() {
             Some(bid) => Bid::Contract(bid),
@@ -108,7 +108,7 @@ impl CliPlayer {
     }
 
     pub fn new(seat: PlayerPosition) -> Self {
-        CliPlayer { seat, game: None }
+        AutoPlayer { seat, game: None }
     }
 
     pub fn get_seat(&self) -> PlayerPosition {
@@ -118,7 +118,7 @@ impl CliPlayer {
 
 #[cfg(test)]
 mod test {
-    use crate::player::{CliPlayer, Player};
+    use crate::player::{AutoPlayer, Player};
     use crate::primitives::bid::{Bid, ContractBid};
     use crate::primitives::deal::Board;
     use crate::primitives::game_event::GameEvent::DiscloseHand;
@@ -137,7 +137,7 @@ mod test {
 
         let seat = board.dealer();
 
-        let mut player = CliPlayer::new(seat);
+        let mut player = AutoPlayer::new(seat);
 
         let ng_event = NewGameEvent { board };
         let event = GameEvent::NewGame(ng_event);
@@ -179,7 +179,7 @@ mod test {
 
         let seat = board.dealer();
 
-        let mut player = CliPlayer::new(seat);
+        let mut player = AutoPlayer::new(seat);
 
         let ng_event = NewGameEvent { board };
         let event = GameEvent::NewGame(ng_event);

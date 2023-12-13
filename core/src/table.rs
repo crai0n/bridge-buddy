@@ -1,6 +1,6 @@
 use crate::error::BBError;
 use crate::game_manager::GameManager;
-use crate::player::{CliPlayer, Player};
+use crate::player::{AutoPlayer, Player};
 use crate::primitives::deal::PlayerPosition;
 use crate::primitives::game_event::GameEvent;
 use crate::primitives::Deal;
@@ -10,7 +10,7 @@ use std::collections::BTreeMap;
 
 pub struct Table<'a> {
     game_manager: Option<GameManager>,
-    seats: BTreeMap<PlayerPosition, &'a mut CliPlayer>,
+    seats: BTreeMap<PlayerPosition, &'a mut AutoPlayer>,
 }
 
 impl<'a> Table<'a> {
@@ -21,7 +21,7 @@ impl<'a> Table<'a> {
         }
     }
 
-    pub fn seat_player(&mut self, player: &'a mut CliPlayer, seat: PlayerPosition) -> Result<(), BBError> {
+    pub fn seat_player(&mut self, player: &'a mut AutoPlayer, seat: PlayerPosition) -> Result<(), BBError> {
         if let Entry::Vacant(e) = self.seats.entry(seat) {
             e.insert(player);
             Ok(())
@@ -99,7 +99,7 @@ impl<'a> Table<'a> {
 
 #[cfg(test)]
 mod test {
-    use crate::player::CliPlayer;
+    use crate::player::AutoPlayer;
     use crate::primitives::deal::PlayerPosition::*;
     use crate::table::Table;
 
@@ -107,10 +107,10 @@ mod test {
     fn run_game() {
         let mut table = Table::empty();
 
-        let mut north_player = CliPlayer::new(North);
-        let mut south_player = CliPlayer::new(South);
-        let mut east_player = CliPlayer::new(East);
-        let mut west_player = CliPlayer::new(West);
+        let mut north_player = AutoPlayer::new(North);
+        let mut south_player = AutoPlayer::new(South);
+        let mut east_player = AutoPlayer::new(East);
+        let mut west_player = AutoPlayer::new(West);
 
         table.seat_player(&mut north_player, North).unwrap();
         table.seat_player(&mut south_player, South).unwrap();
