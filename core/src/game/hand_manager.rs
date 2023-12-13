@@ -1,11 +1,11 @@
 use crate::error::BBError;
-use crate::primitives::deal::PlayerPosition;
+use crate::primitives::deal::Seat;
 use crate::primitives::{Card, Hand, Suit};
 use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Debug, Clone)]
 pub struct HandManager {
-    pub known_cards: BTreeMap<Card, PlayerPosition>,
+    pub known_cards: BTreeMap<Card, Seat>,
     pub played_cards: BTreeSet<Card>,
 }
 
@@ -17,14 +17,14 @@ impl HandManager {
         }
     }
 
-    pub fn register_known_hand(&mut self, hand: Hand, player: PlayerPosition) -> Result<(), BBError> {
+    pub fn register_known_hand(&mut self, hand: Hand, player: Seat) -> Result<(), BBError> {
         for &card in hand.cards() {
             self.register_known_card(card, player)?;
         }
         Ok(())
     }
 
-    pub fn register_known_card(&mut self, card: Card, player: PlayerPosition) -> Result<(), BBError> {
+    pub fn register_known_card(&mut self, card: Card, player: Seat) -> Result<(), BBError> {
         if self.known_cards_of(player).len() >= 13 && !self.known_cards_of(player).contains(&card) {
             return Err(BBError::InvalidHandInfo);
         }
@@ -40,7 +40,7 @@ impl HandManager {
         self.played_cards.len()
     }
 
-    fn card_could_belong_to_player(&self, card: &Card, player: PlayerPosition) -> bool {
+    fn card_could_belong_to_player(&self, card: &Card, player: Seat) -> bool {
         if let Some(owner) = self.known_cards.get(card) {
             *owner == player
         } else if self.count_known_cards_of(player) == 13 {
@@ -54,12 +54,12 @@ impl HandManager {
         self.played_cards.contains(card)
     }
 
-    pub fn process_play_card_event(&mut self, card: Card, player: PlayerPosition) -> Result<(), BBError> {
+    pub fn process_play_card_event(&mut self, card: Card, player: Seat) -> Result<(), BBError> {
         self.validate_play_card_event(card, player)?;
         self.apply_play_card_event(card, player)
     }
 
-    pub fn validate_play_card_event(&self, card: Card, player: PlayerPosition) -> Result<(), BBError> {
+    pub fn validate_play_card_event(&self, card: Card, player: Seat) -> Result<(), BBError> {
         if self.card_could_belong_to_player(&card, player) && !self.card_has_already_been_played(&card) {
             Ok(())
         } else {
@@ -67,13 +67,13 @@ impl HandManager {
         }
     }
 
-    fn apply_play_card_event(&mut self, card: Card, player: PlayerPosition) -> Result<(), BBError> {
+    fn apply_play_card_event(&mut self, card: Card, player: Seat) -> Result<(), BBError> {
         self.register_known_card(card, player)?;
         self.played_cards.insert(card);
         Ok(())
     }
 
-    pub fn player_is_known_to_have_cards_left_in_suit(&self, player: PlayerPosition, suit: Suit) -> bool {
+    pub fn player_is_known_to_have_cards_left_in_suit(&self, player: Seat, suit: Suit) -> bool {
         let known_cards_in_suit: BTreeSet<_> = self
             .known_cards
             .iter()
@@ -84,14 +84,14 @@ impl HandManager {
         !remaining_cards_in_suit.is_empty()
     }
 
-    pub fn known_cards_of(&self, player: PlayerPosition) -> Vec<Card> {
+    pub fn known_cards_of(&self, player: Seat) -> Vec<Card> {
         self.known_cards
             .iter()
             .filter_map(|(card, owner)| if *owner == player { Some(*card) } else { None })
             .collect()
     }
 
-    pub fn known_remaining_cards_of(&self, player: PlayerPosition) -> Vec<Card> {
+    pub fn known_remaining_cards_of(&self, player: Seat) -> Vec<Card> {
         self.known_cards_of(player)
             .into_iter()
             .collect::<BTreeSet<Card>>()
@@ -100,15 +100,15 @@ impl HandManager {
             .collect()
     }
 
-    pub fn count_known_cards_of(&self, player: PlayerPosition) -> usize {
+    pub fn count_known_cards_of(&self, player: Seat) -> usize {
         self.known_cards_of(player).len()
     }
 
-    pub fn full_hand_known_for(&self, player: PlayerPosition) -> bool {
+    pub fn full_hand_known_for(&self, player: Seat) -> bool {
         self.count_known_cards_of(player) == 13
     }
 
-    pub fn hand_of(&self, player: PlayerPosition) -> Result<Hand, BBError> {
+    pub fn hand_of(&self, player: Seat) -> Result<Hand, BBError> {
         let cards = self.known_cards_of(player);
         if cards.len() == 13 {
             Hand::from_cards(&cards)

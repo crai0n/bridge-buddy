@@ -2,7 +2,7 @@ use crate::error::BBError;
 use crate::game::Game;
 use crate::player::engine::{MockBiddingEngine, MockCardPlayEngine};
 use crate::primitives::bid::Bid;
-use crate::primitives::deal::PlayerPosition;
+use crate::primitives::deal::Seat;
 use crate::primitives::game_event::GameEvent;
 use crate::primitives::player_event::{BidEvent, CardEvent, PlayerEvent};
 use crate::primitives::Card;
@@ -15,7 +15,7 @@ pub trait Player {
 }
 
 pub struct AutoPlayer {
-    seat: PlayerPosition,
+    seat: Seat,
     game: Option<Game>,
     bidding_engine: MockBiddingEngine,
     card_play_engine: MockCardPlayEngine,
@@ -69,7 +69,7 @@ impl AutoPlayer {
         PlayerEvent::Card(card_event)
     }
 
-    pub fn new(seat: PlayerPosition) -> Self {
+    pub fn new(seat: Seat) -> Self {
         AutoPlayer {
             seat,
             game: None,

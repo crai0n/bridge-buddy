@@ -3,17 +3,17 @@ use crate::primitives::bid::{AuxiliaryBid, Bid, ContractBid};
 use crate::primitives::bid_line::BidLine;
 use crate::primitives::contract::{ContractDenomination, ContractLevel, ContractState};
 use crate::primitives::deal::axis::Axis;
-use crate::primitives::deal::PlayerPosition;
+use crate::primitives::deal::Seat;
 use crate::primitives::{Contract, Suit};
 
 #[derive(Debug, Clone)]
 pub struct BidManager {
-    dealer: PlayerPosition,
+    dealer: Seat,
     bid_line: BidLine,
 }
 
 impl BidManager {
-    pub fn new(dealer: PlayerPosition) -> Self {
+    pub fn new(dealer: Seat) -> Self {
         BidManager {
             dealer,
             bid_line: BidLine::new(),
@@ -178,7 +178,7 @@ impl BidManager {
             None
         }
     }
-    fn implied_declarer(&self, denomination: ContractDenomination) -> PlayerPosition {
+    fn implied_declarer(&self, denomination: ContractDenomination) -> Seat {
         let axis = self
             .bids()
             .iter()
@@ -189,7 +189,7 @@ impl BidManager {
         self.first_to_name_denomination_on_axis(denomination, axis)
     }
 
-    fn first_to_name_denomination_on_axis(&self, denomination: ContractDenomination, axis: Axis) -> PlayerPosition {
+    fn first_to_name_denomination_on_axis(&self, denomination: ContractDenomination, axis: Axis) -> Seat {
         self.bids()
             .iter()
             .enumerate()
@@ -207,7 +207,7 @@ impl BidManager {
         }
     }
 
-    pub fn next_to_play(&self) -> PlayerPosition {
+    pub fn next_to_play(&self) -> Seat {
         self.dealer + self.bid_line.len()
     }
 }
@@ -226,15 +226,15 @@ mod test {
     use crate::game::bid_manager::BidManager;
     use crate::primitives::bid::Bid;
     use crate::primitives::bid_line::BidLine;
-    use crate::primitives::deal::PlayerPosition;
-    use crate::primitives::deal::PlayerPosition::*;
+    use crate::primitives::deal::Seat;
+    use crate::primitives::deal::Seat::*;
     use crate::primitives::Contract;
     use std::str::FromStr;
     use test_case::test_case;
 
     #[test]
     fn bidding() {
-        let mut bid_manager = BidManager::new(PlayerPosition::North);
+        let mut bid_manager = BidManager::new(Seat::North);
         let bid = Bid::from_str("1NT").unwrap();
         bid_manager.bid(bid).unwrap();
         let bid = Bid::from_str("2NT").unwrap();
@@ -243,7 +243,7 @@ mod test {
     }
     #[test]
     fn invalid_bidding() {
-        let mut bid_manager = BidManager::new(PlayerPosition::West);
+        let mut bid_manager = BidManager::new(Seat::West);
         let bid = Bid::from_str("2NT").unwrap();
         bid_manager.bid(bid).unwrap();
         let bid = Bid::from_str("1NT").unwrap();
@@ -252,12 +252,12 @@ mod test {
 
     #[test]
     fn next_to_play() {
-        let mut bid_manager = BidManager::new(PlayerPosition::West);
+        let mut bid_manager = BidManager::new(Seat::West);
         let bid = Bid::from_str("1NT").unwrap();
         bid_manager.bid(bid).unwrap();
         let bid = Bid::from_str("2NT").unwrap();
         bid_manager.bid(bid).unwrap();
-        assert_eq!(bid_manager.next_to_play(), PlayerPosition::East);
+        assert_eq!(bid_manager.next_to_play(), Seat::East);
     }
 
     #[test_case("P-P", North, ""; "No Contract implied")]
@@ -268,7 +268,7 @@ mod test {
     #[test_case("1NT-X-2H-P-P-P", East, "W2H"; "Two Hearts")]
     #[test_case("1NT-2NT-P-3NT-P-P-P", North, "E3NT")]
     #[test_case("1NT-2H-P-3NT-P-P-P", West, "S3NT")]
-    fn implied_contract(input: &str, dealer: PlayerPosition, implied: &str) {
+    fn implied_contract(input: &str, dealer: Seat, implied: &str) {
         let bid_line = BidLine::from_str(input).unwrap();
         let mut manager = BidManager::new(dealer);
         for &bid in bid_line.bids() {
@@ -284,7 +284,7 @@ mod test {
     #[test_case("1NT-X-2H-P-P-P", true; "Two Hearts")]
     fn bidding_has_ended(input: &str, expected: bool) {
         let bid_line = BidLine::from_str(input).unwrap();
-        let mut manager = BidManager::new(PlayerPosition::South);
+        let mut manager = BidManager::new(Seat::South);
         for &bid in bid_line.bids() {
             manager.bid(bid).unwrap();
         }

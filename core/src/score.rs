@@ -1,5 +1,5 @@
 use crate::primitives::contract::{ContractDenomination, ContractLevel, ContractState};
-use crate::primitives::deal::{PlayerPosition, Vulnerability};
+use crate::primitives::deal::{Seat, Vulnerability};
 use crate::primitives::game_result::GameResult;
 use crate::primitives::Contract;
 use std::ops::{Add, AddAssign, Mul, MulAssign};
@@ -75,7 +75,7 @@ impl Score {
             ContractState::Doubled => Self::score_lose_doubled(undertricks, declarer_is_vulnerable),
             ContractState::Redoubled => Self::score_lose_doubled(undertricks, declarer_is_vulnerable) * 2_usize,
         };
-        if contract.declarer == PlayerPosition::East || contract.declarer == PlayerPosition::West {
+        if contract.declarer == Seat::East || contract.declarer == Seat::West {
             score *= -1_isize;
         }
         score
@@ -115,7 +115,7 @@ impl Score {
 
         score += Self::score_insult(contract);
 
-        if contract.declarer == PlayerPosition::East || contract.declarer == PlayerPosition::West {
+        if contract.declarer == Seat::East || contract.declarer == Seat::West {
             score *= -1_isize;
         }
         score

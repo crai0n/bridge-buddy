@@ -1,4 +1,4 @@
-use crate::primitives::deal::{Board, PlayerPosition};
+use crate::primitives::deal::{Board, Seat};
 use crate::primitives::player_event::PlayerEvent;
 use crate::primitives::{Contract, Deal, Hand};
 use crate::score::ScorePoints;
@@ -23,14 +23,14 @@ pub struct NewGameEvent {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DiscloseHandEvent {
-    pub seat: PlayerPosition,
+    pub seat: Seat,
     pub hand: Hand,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MoveToCardPlayEvent {
     pub final_contract: Contract,
-    pub declarer: PlayerPosition,
+    pub declarer: Seat,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

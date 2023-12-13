@@ -1,5 +1,5 @@
 use crate::error::BBError;
-use crate::primitives::deal::PlayerPosition;
+use crate::primitives::deal::Seat;
 use crate::primitives::trick::Trick;
 use crate::primitives::trick::{ActiveTrick, PlayedTrick};
 use crate::primitives::{Card, Suit};
@@ -8,12 +8,12 @@ use crate::primitives::{Card, Suit};
 pub struct TrickManager {
     trump_suit: Option<Suit>,
     current_trick: Option<ActiveTrick>,
-    next_to_play: PlayerPosition,
+    next_to_play: Seat,
     played_tricks: Vec<PlayedTrick>,
 }
 
 impl TrickManager {
-    pub fn new(lead: PlayerPosition, trump_suit: Option<Suit>) -> Self {
+    pub fn new(lead: Seat, trump_suit: Option<Suit>) -> Self {
         TrickManager {
             current_trick: None,
             next_to_play: lead,
@@ -29,7 +29,7 @@ impl TrickManager {
         }
     }
 
-    pub fn next_to_play(&self) -> PlayerPosition {
+    pub fn next_to_play(&self) -> Seat {
         self.next_to_play
     }
 
@@ -41,7 +41,7 @@ impl TrickManager {
         self.count_played_tricks() == 13
     }
 
-    fn trick_winner(&self) -> PlayerPosition {
+    fn trick_winner(&self) -> Seat {
         let winning_card = self.winning_card();
         let winner = self.current_trick.as_ref().unwrap().lead()
             + self
@@ -84,11 +84,11 @@ impl TrickManager {
         &self.played_tricks
     }
 
-    pub fn tricks_won_by_player(&self, player: PlayerPosition) -> usize {
+    pub fn tricks_won_by_player(&self, player: Seat) -> usize {
         self.played_tricks.iter().filter(|x| x.winner() == player).count()
     }
 
-    pub fn tricks_won_by_axis(&self, player: PlayerPosition) -> usize {
+    pub fn tricks_won_by_axis(&self, player: Seat) -> usize {
         self.tricks_won_by_player(player) + self.tricks_won_by_player(player.partner())
     }
 
@@ -112,7 +112,7 @@ impl TrickManager {
 mod test {
     use crate::game::trick_manager::TrickManager;
     use crate::primitives::card::Suit::*;
-    use crate::primitives::deal::PlayerPosition::*;
+    use crate::primitives::deal::Seat::*;
     use crate::primitives::Card;
     use std::str::FromStr;
 

@@ -4,7 +4,7 @@ use crate::game::game_state::GameState;
 use crate::game::hand_manager::HandManager;
 use crate::game::trick_manager::TrickManager;
 use crate::primitives::bid_line::BidLine;
-use crate::primitives::deal::{Board, PlayerPosition};
+use crate::primitives::deal::{Board, Seat};
 use crate::primitives::game_event::CardEvent;
 use crate::primitives::game_result::GameResult;
 use crate::primitives::{Contract, Hand};
@@ -19,15 +19,15 @@ pub struct CardPlay {
 }
 
 impl GameState<CardPlay> {
-    pub fn next_to_play(&self) -> PlayerPosition {
+    pub fn next_to_play(&self) -> Seat {
         self.inner.trick_manager.next_to_play()
     }
 
-    pub fn hand_of(&self, player: PlayerPosition) -> Result<Hand, BBError> {
+    pub fn hand_of(&self, player: Seat) -> Result<Hand, BBError> {
         self.inner.hand_manager.hand_of(player)
     }
 
-    pub fn validate_turn_order(&self, player: PlayerPosition) -> Result<(), BBError> {
+    pub fn validate_turn_order(&self, player: Seat) -> Result<(), BBError> {
         let turn = self.next_to_play();
         if player != turn {
             return Err(BBError::OutOfTurn(Some(turn)));

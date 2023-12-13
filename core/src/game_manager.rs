@@ -1,6 +1,6 @@
 use crate::error::BBError;
 use crate::game::Game;
-use crate::primitives::deal::PlayerPosition;
+use crate::primitives::deal::Seat;
 use crate::primitives::game_event::{DiscloseHandEvent, DummyUncoveredEvent, GameEndedEvent, GameEvent, NewGameEvent};
 use crate::primitives::player_event::PlayerEvent;
 use crate::primitives::Deal;
@@ -26,7 +26,7 @@ impl GameManager {
         self.history.iter().copied().collect_vec()
     }
 
-    pub fn next_to_play(&self) -> Option<PlayerPosition> {
+    pub fn next_to_play(&self) -> Option<Seat> {
         match &self.game {
             None => None,
             Some(game) => game.next_to_play(),
@@ -78,7 +78,7 @@ impl GameManager {
     }
 
     fn disclose_hands(&mut self) {
-        for player in PlayerPosition::iter() {
+        for player in Seat::iter() {
             let game_event = GameEvent::DiscloseHand(DiscloseHandEvent {
                 seat: player,
                 hand: *self.deal.hand_of(player),
@@ -88,7 +88,7 @@ impl GameManager {
         }
     }
 
-    fn disclose_dummy(&mut self, dummy: PlayerPosition) {
+    fn disclose_dummy(&mut self, dummy: Seat) {
         let dummy_uncovered_event = DummyUncoveredEvent {
             dummy: *self.deal.hand_of(dummy),
         };

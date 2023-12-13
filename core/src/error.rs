@@ -1,5 +1,5 @@
 use crate::primitives::bid::Bid;
-use crate::primitives::deal::PlayerPosition;
+use crate::primitives::deal::Seat;
 use crate::primitives::game_event::GameEvent;
 use crate::primitives::Card;
 use std::fmt::{Debug, Display, Formatter};
@@ -31,12 +31,12 @@ pub enum BBError {
     GameAlreadyStarted,
     GameHasNotStarted,
     GameHasEnded,
-    OutOfTurn(Option<PlayerPosition>),
-    PlayerUnreachable(PlayerPosition),
-    SeatTaken(PlayerPosition),
+    OutOfTurn(Option<Seat>),
+    PlayerUnreachable(Seat),
+    SeatTaken(Seat),
     InvalidEvent(GameEvent),
     InvalidCard(Card),
-    NotAuthorized(PlayerPosition),
+    NotAuthorized(Seat),
     InsufficientInfo,
     InvalidHandInfo,
     InvalidContract,

@@ -2,7 +2,7 @@ use crate::error::BBError;
 use crate::game::game_state::GameState;
 use crate::game::hand_manager::HandManager;
 use crate::primitives::bid_line::BidLine;
-use crate::primitives::deal::{Board, PlayerPosition, Vulnerability};
+use crate::primitives::deal::{Board, Seat, Vulnerability};
 use crate::primitives::game_result::GameResult;
 use crate::primitives::trick::PlayedTrick;
 use crate::primitives::Hand;
@@ -18,7 +18,7 @@ pub struct Ended {
 }
 
 impl GameState<Ended> {
-    pub fn tricks_won_by_axis(&self, player: PlayerPosition) -> usize {
+    pub fn tricks_won_by_axis(&self, player: Seat) -> usize {
         self.inner
             .tricks
             .iter()
@@ -26,7 +26,7 @@ impl GameState<Ended> {
             .count()
     }
 
-    pub fn hand_of(&self, player: PlayerPosition) -> Result<Hand, BBError> {
+    pub fn hand_of(&self, player: Seat) -> Result<Hand, BBError> {
         self.inner.hands.hand_of(player)
     }
 

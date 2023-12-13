@@ -1,6 +1,6 @@
 use crate::game::game_state::{Bidding, CardPlay, GameState, OpeningLead};
 use crate::primitives::bid::{AuxiliaryBid, Bid};
-use crate::primitives::deal::PlayerPosition;
+use crate::primitives::deal::Seat;
 use crate::primitives::{Card, Suit};
 
 pub enum SubjectiveVulnerability {
@@ -13,7 +13,7 @@ pub enum SubjectiveVulnerability {
 pub struct MockBiddingEngine {}
 
 pub struct MockCardPlayEngine {
-    seat: PlayerPosition,
+    seat: Seat,
 }
 
 impl MockBiddingEngine {
@@ -36,7 +36,7 @@ impl Default for MockBiddingEngine {
 }
 
 impl MockCardPlayEngine {
-    pub fn new(seat: PlayerPosition) -> Self {
+    pub fn new(seat: Seat) -> Self {
         Self { seat }
     }
 
@@ -71,6 +71,6 @@ impl MockCardPlayEngine {
 
 impl Default for MockCardPlayEngine {
     fn default() -> Self {
-        Self::new(PlayerPosition::South)
+        Self::new(Seat::South)
     }
 }

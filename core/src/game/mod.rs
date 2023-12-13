@@ -9,7 +9,7 @@ pub mod hand_manager;
 use crate::error::BBError;
 use crate::game::game_state::{Bidding, CardPlay, Ended, GameState, OpeningLead, WaitingForDummy};
 
-use crate::primitives::deal::{Board, PlayerPosition};
+use crate::primitives::deal::{Board, Seat};
 use crate::primitives::game_event::{
     BidEvent, CardEvent, DiscloseHandEvent, DummyUncoveredEvent, GameEvent, NewGameEvent,
 };
@@ -26,7 +26,7 @@ pub enum Game {
 }
 
 impl Game {
-    pub fn next_to_play(&self) -> Option<PlayerPosition> {
+    pub fn next_to_play(&self) -> Option<Seat> {
         match &self {
             Game::Bidding(state) => Some(state.next_to_play()),
             Game::OpeningLead(state) => Some(state.next_to_play()),
@@ -46,7 +46,7 @@ impl Game {
         }
     }
 
-    pub fn hand_of(&self, player: PlayerPosition) -> Result<Hand, BBError> {
+    pub fn hand_of(&self, player: Seat) -> Result<Hand, BBError> {
         match &self {
             Game::Bidding(state) => state.hand_of(player),
             Game::OpeningLead(state) => state.hand_of(player),
@@ -56,7 +56,7 @@ impl Game {
         }
     }
 
-    pub fn validate_turn_order(&self, player: PlayerPosition) -> Result<(), BBError> {
+    pub fn validate_turn_order(&self, player: Seat) -> Result<(), BBError> {
         match &self {
             Game::Bidding(state) => state.validate_turn_order(player),
             Game::OpeningLead(state) => state.validate_turn_order(player),
@@ -186,7 +186,7 @@ impl Game {
 mod test {
     use crate::game::Game;
     use crate::primitives::bid::Bid;
-    use crate::primitives::deal::PlayerPosition;
+    use crate::primitives::deal::Seat;
     use crate::primitives::game_event::{BidEvent, CardEvent, DummyUncoveredEvent, GameEvent};
     use crate::primitives::{Card, Deal};
     use rand::thread_rng;
@@ -228,7 +228,7 @@ mod test {
         let deal = Deal::from_u64_seed(seed);
         let mut game = Game::new_from_board(deal.board);
 
-        assert_eq!(game.next_to_play(), Some(PlayerPosition::West));
+        assert_eq!(game.next_to_play(), Some(Seat::West));
 
         let bids = ["p", "1NT", "p", "2C", "p", "2S", "p", "4S", "p", "p", "p"];
 
@@ -241,7 +241,7 @@ mod test {
             game.process_game_event(game_event).unwrap();
         }
 
-        assert_eq!(game.next_to_play(), Some(PlayerPosition::East));
+        assert_eq!(game.next_to_play(), Some(Seat::East));
 
         let lead = Card::from_str("C2").unwrap();
 
@@ -266,7 +266,7 @@ mod test {
 
         assert!(matches!(game, Game::CardPlay(_)));
 
-        assert_eq!(game.next_to_play(), Some(PlayerPosition::South));
+        assert_eq!(game.next_to_play(), Some(Seat::South));
 
         let cards = [
             "C7", "CK", "C3", "CJ", "S6", "C4", "C8", "D4", "D6", "D7", "DJ", "C6", "S9", "C5", "C9", "D5", "D8", "D9",
@@ -286,7 +286,7 @@ mod test {
         match game {
             Game::Ended(state) => {
                 assert_eq!(state.inner.hands.count_played_cards(), 52);
-                assert_eq!(state.tricks_won_by_axis(PlayerPosition::North), 7);
+                assert_eq!(state.tricks_won_by_axis(Seat::North), 7);
             }
             _ => panic!(),
         }
