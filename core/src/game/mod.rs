@@ -176,7 +176,7 @@ impl Game {
 
     pub fn score(&self) -> Option<ScorePoints> {
         match &self {
-            Game::Ended(state) => Some(state.calculate_score(self.board().vulnerable())),
+            Game::Ended(state) => Some(state.calculate_score()),
             _ => None,
         }
     }
