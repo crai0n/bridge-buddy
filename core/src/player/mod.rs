@@ -1,11 +1,14 @@
 use crate::error::BBError;
 use crate::game::game_state::{Bidding, CardPlay, GameState, OpeningLead};
 use crate::game::Game;
-use crate::primitives::bid::{AuxiliaryBid, Bid};
+use crate::player::engine::{MockBiddingEngine, MockCardPlayEngine};
+use crate::primitives::bid::Bid;
 use crate::primitives::deal::PlayerPosition;
 use crate::primitives::game_event::GameEvent;
 use crate::primitives::player_event::{BidEvent, CardEvent, PlayerEvent};
-use crate::primitives::{Card, Hand, Suit};
+use crate::primitives::{Card, Hand};
+
+pub mod engine;
 
 pub trait Player {
     fn process_game_event(&mut self, event: GameEvent) -> Result<(), BBError>;
@@ -15,6 +18,8 @@ pub trait Player {
 pub struct AutoPlayer {
     seat: PlayerPosition,
     game: Option<Game>,
+    bidding_engine: MockBiddingEngine,
+    card_play_engine: MockCardPlayEngine,
 }
 
 impl Player for AutoPlayer {
@@ -53,10 +58,7 @@ impl Player for AutoPlayer {
 
 impl AutoPlayer {
     fn find_bid(&self, state: &GameState<Bidding>) -> Bid {
-        match state.inner.bid_manager.lowest_available_contract_bid() {
-            Some(bid) => Bid::Contract(bid),
-            None => Bid::Auxiliary(AuxiliaryBid::Pass),
-        }
+        self.bidding_engine.find_bid(state)
     }
 
     fn make_bid(&self, bid: Bid) -> PlayerEvent {
@@ -79,36 +81,21 @@ impl AutoPlayer {
         }
     }
 
-    fn pick_opening_lead(&self, _state: &GameState<OpeningLead>) -> Card {
-        let hand = self.my_hand().unwrap();
-        let card = hand.cards().nth(4).unwrap();
-        *card
-    }
-
-    fn pick_lead(&self, state: &GameState<CardPlay>) -> Card {
-        let remaining_cards = state.inner.hand_manager.known_remaining_cards_of(self.seat);
-        let card = remaining_cards.first().unwrap();
-        *card
+    fn pick_opening_lead(&self, state: &GameState<OpeningLead>) -> Card {
+        self.card_play_engine.pick_opening_lead(state)
     }
 
     fn pick_card(&self, state: &GameState<CardPlay>) -> Card {
-        match state.inner.trick_manager.suit_to_follow() {
-            None => self.pick_lead(state),
-            Some(suit) => self.pick_discard(suit, state),
-        }
-    }
-
-    fn pick_discard(&self, suit: Suit, state: &GameState<CardPlay>) -> Card {
-        let remaining_cards = state.inner.hand_manager.known_remaining_cards_of(self.seat);
-        if let Some(card) = remaining_cards.iter().find(|x| x.suit == suit) {
-            *card
-        } else {
-            *remaining_cards.first().unwrap()
-        }
+        self.card_play_engine.pick_card(state)
     }
 
     pub fn new(seat: PlayerPosition) -> Self {
-        AutoPlayer { seat, game: None }
+        AutoPlayer {
+            seat,
+            game: None,
+            bidding_engine: MockBiddingEngine::new(),
+            card_play_engine: MockCardPlayEngine::new(seat),
+        }
     }
 
     pub fn get_seat(&self) -> PlayerPosition {
@@ -208,7 +195,7 @@ mod test {
 
         let expected_event = PlayerEvent::Card(CardEvent {
             player: seat,
-            card: Card::from_str("DQ").unwrap(),
+            card: Card::from_str("CJ").unwrap(),
         });
 
         assert_eq!(player_event, expected_event);
