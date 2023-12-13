@@ -47,14 +47,8 @@ pub struct GameEndedEvent {
 impl From<PlayerEvent> for GameEvent {
     fn from(player_event: PlayerEvent) -> Self {
         match player_event {
-            PlayerEvent::Bid(event) => GameEvent::Bid(BidEvent {
-                player: event.player,
-                bid: event.bid,
-            }),
-            PlayerEvent::Card(event) => GameEvent::Card(CardEvent {
-                player: event.player,
-                card: event.card,
-            }),
+            PlayerEvent::Bid(event) => GameEvent::Bid(event),
+            PlayerEvent::Card(event) => GameEvent::Card(event),
         }
     }
 }
