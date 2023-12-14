@@ -127,7 +127,7 @@ impl CliPlayer {
 
     fn display_game_ended_event_for_user(&self, event: GameEndedEvent) {
         println!("The game ended");
-        println!("");
+        println!("Result is {:?}", event.result);
         println!("Final Score is: {:?}", event.score)
     }
 

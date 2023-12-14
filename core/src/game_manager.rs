@@ -4,6 +4,7 @@ use crate::primitives::deal::Seat;
 use crate::primitives::game_event::{
     BiddingEndedEvent, DiscloseHandEvent, DummyUncoveredEvent, GameEndedEvent, GameEvent, NewGameEvent,
 };
+use crate::primitives::game_result::GameResult;
 use crate::primitives::player_event::PlayerEvent;
 use crate::primitives::Deal;
 use itertools::Itertools;
@@ -82,7 +83,10 @@ impl GameManager {
                 let dummy = state.inner.contract.declarer.partner();
                 self.disclose_dummy(dummy);
             }
-            Game::Ended(_) => self.finalize_result(),
+            Game::Ended(state) => {
+                let result = state.inner.result;
+                self.finalize_result(result)
+            }
             _ => (),
         }
     }
@@ -108,9 +112,10 @@ impl GameManager {
         self.game.as_mut().unwrap().process_game_event(game_event).unwrap();
     }
 
-    fn finalize_result(&mut self) {
+    fn finalize_result(&mut self, result: GameResult) {
         let game_ended_event = GameEndedEvent {
             deal: self.deal,
+            result,
             score: self.game.as_mut().unwrap().score().unwrap(),
         };
         let event = GameEvent::GameEnded(game_ended_event);

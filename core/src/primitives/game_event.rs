@@ -1,4 +1,5 @@
 use crate::primitives::deal::{Board, Seat};
+use crate::primitives::game_result::GameResult;
 use crate::primitives::player_event::PlayerEvent;
 use crate::primitives::{Contract, Deal, Hand};
 use crate::scoring::ScorePoints;
@@ -40,6 +41,7 @@ pub struct DummyUncoveredEvent {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct GameEndedEvent {
     pub deal: Deal,
+    pub result: GameResult,
     pub score: ScorePoints,
 }
 
