@@ -78,21 +78,21 @@ impl MockCardPlayEngine {
         *card
     }
 
-    pub fn pick_card(&self, state: &GameState<CardPlay>) -> Card {
+    pub fn pick_card_for(&self, state: &GameState<CardPlay>, seat: Seat) -> Card {
         match state.inner.trick_manager.suit_to_follow() {
-            None => self.pick_lead(state),
-            Some(suit) => self.pick_discard(suit, state),
+            None => self.pick_lead_for(state, seat),
+            Some(suit) => self.pick_discard_for(suit, state, seat),
         }
     }
 
-    fn pick_lead(&self, state: &GameState<CardPlay>) -> Card {
-        let remaining_cards = state.inner.hand_manager.known_remaining_cards_of(self.seat);
+    fn pick_lead_for(&self, state: &GameState<CardPlay>, seat: Seat) -> Card {
+        let remaining_cards = state.inner.hand_manager.known_remaining_cards_of(seat);
         let card = remaining_cards.first().unwrap();
         *card
     }
 
-    fn pick_discard(&self, suit: Suit, state: &GameState<CardPlay>) -> Card {
-        let remaining_cards = state.inner.hand_manager.known_remaining_cards_of(self.seat);
+    fn pick_discard_for(&self, suit: Suit, state: &GameState<CardPlay>, seat: Seat) -> Card {
+        let remaining_cards = state.inner.hand_manager.known_remaining_cards_of(seat);
         if let Some(card) = remaining_cards.iter().find(|x| x.suit == suit) {
             *card
         } else {

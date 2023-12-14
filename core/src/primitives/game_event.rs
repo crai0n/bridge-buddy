@@ -10,7 +10,7 @@ pub enum GameEvent {
     NewGame(NewGameEvent),
     DiscloseHand(DiscloseHandEvent),
     Bid(BidEvent),
-    MoveToCardPlay(MoveToCardPlayEvent),
+    BiddingEnded(BiddingEndedEvent),
     Card(CardEvent),
     DummyUncovered(DummyUncoveredEvent),
     GameEnded(GameEndedEvent),
@@ -28,9 +28,8 @@ pub struct DiscloseHandEvent {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct MoveToCardPlayEvent {
+pub struct BiddingEndedEvent {
     pub final_contract: Contract,
-    pub declarer: Seat,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -10,7 +10,8 @@ pub mod engine;
 
 pub trait Player {
     fn process_game_event(&mut self, event: GameEvent) -> Result<(), BBError>;
-    fn make_move(&self) -> Result<PlayerEvent, BBError>;
+    fn get_move(&self) -> Result<PlayerEvent, BBError>;
+    fn get_dummy_move(&self) -> Result<PlayerEvent, BBError>;
 }
 
 #[cfg(test)]
@@ -46,7 +47,7 @@ mod test {
 
         player.process_game_event(hand_event).unwrap();
 
-        let player_event = player.make_move().unwrap();
+        let player_event = player.get_move().unwrap();
 
         let expected_event = PlayerEvent::Bid(BidEvent {
             player: seat,
@@ -89,7 +90,7 @@ mod test {
             player_pos = player_pos + 1;
         }
 
-        let player_event = player.make_move().unwrap();
+        let player_event = player.get_move().unwrap();
 
         let expected_event = PlayerEvent::Card(CardEvent {
             player: seat,

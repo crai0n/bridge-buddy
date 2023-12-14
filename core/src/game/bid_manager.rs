@@ -310,7 +310,7 @@ mod test {
         assert_eq!(manager.implied_contract(), implied_contract)
     }
 
-    #[test_case("1NT-2H-P-3NT-P-P-P", West, "North East  South West  \n------------------------\n                  1NT   \n2♥    Pass  3NT   Pass  \nPass  Pass  ")]
+    #[test_case("1NT-2H-P-3NT-P-P-P", West, "North East  South West  \n------------------------\n                  1NT   \n2♥    Pass  3NT   Pass  \nPass  Pass  \n")]
     fn display(input: &str, dealer: Seat, expected: &str) {
         let bid_line = BidLine::from_str(input).unwrap();
         let mut manager = BidManager::new(dealer);

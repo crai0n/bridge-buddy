@@ -62,6 +62,8 @@ impl<'a> Table<'a> {
 
             let mut i = 0;
 
+            let mut dummy = None;
+
             loop {
                 let history = self.game_manager.as_ref().unwrap().history();
 
@@ -73,12 +75,24 @@ impl<'a> Table<'a> {
                     if let GameEvent::GameEnded(ge_event) = event {
                         return Ok(ge_event.score);
                     }
+
+                    if let GameEvent::BiddingEnded(be_event) = event {
+                        dummy = Some(be_event.final_contract.declarer.partner());
+                    }
                 }
 
                 let next_player = self.game_manager.as_ref().unwrap().next_to_play().unwrap();
                 // println!("Next Player: {:?}", next_player);
 
-                let player_event = self.seats.get(&next_player).unwrap().make_move().unwrap();
+                let player_event = if Some(next_player) == dummy {
+                    self.seats
+                        .get(&dummy.unwrap().partner())
+                        .unwrap()
+                        .get_dummy_move()
+                        .unwrap()
+                } else {
+                    self.seats.get(&next_player).unwrap().get_move().unwrap()
+                };
 
                 // println!("Player made move: {:?}", player_event);
 

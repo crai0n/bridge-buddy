@@ -42,6 +42,7 @@ pub enum BBError {
     InvalidContract,
     NoGame,
     GameStuck,
+    CannotPlayFor(Seat),
 }
 
 impl Display for BBError {
@@ -79,6 +80,7 @@ impl Display for BBError {
             BBError::InvalidContract => writeln!(f, "This is an impossible Contract"),
             BBError::NoGame => writeln!(f, "There is no game to start"),
             BBError::GameStuck => writeln!(f, "It seems the game is stuck"),
+            BBError::CannotPlayFor(seat) => writeln!(f, "You cannot play for {}.", seat),
         }
     }
 }

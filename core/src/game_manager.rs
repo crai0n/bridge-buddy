@@ -1,7 +1,9 @@
 use crate::error::BBError;
 use crate::game::Game;
 use crate::primitives::deal::Seat;
-use crate::primitives::game_event::{DiscloseHandEvent, DummyUncoveredEvent, GameEndedEvent, GameEvent, NewGameEvent};
+use crate::primitives::game_event::{
+    BiddingEndedEvent, DiscloseHandEvent, DummyUncoveredEvent, GameEndedEvent, GameEvent, NewGameEvent,
+};
 use crate::primitives::player_event::PlayerEvent;
 use crate::primitives::Deal;
 use itertools::Itertools;
@@ -68,6 +70,14 @@ impl GameManager {
 
     fn react_to_new_game_state(&mut self) {
         match &mut self.game.as_mut().unwrap() {
+            Game::OpeningLead(state) => {
+                let bidding_ended_event = BiddingEndedEvent {
+                    final_contract: state.inner.contract,
+                };
+                let game_event = GameEvent::BiddingEnded(bidding_ended_event);
+                self.add_event_to_history(game_event);
+                self.game.as_mut().unwrap().process_game_event(game_event).unwrap();
+            }
             Game::WaitingForDummy(state) => {
                 let dummy = state.inner.contract.declarer.partner();
                 self.disclose_dummy(dummy);

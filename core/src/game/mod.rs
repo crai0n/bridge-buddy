@@ -11,7 +11,7 @@ use crate::game::game_state::{Bidding, CardPlay, Ended, GameState, OpeningLead, 
 
 use crate::primitives::deal::{Board, Seat};
 use crate::primitives::game_event::{
-    BidEvent, CardEvent, DiscloseHandEvent, DummyUncoveredEvent, GameEvent, NewGameEvent,
+    BidEvent, BiddingEndedEvent, CardEvent, DiscloseHandEvent, DummyUncoveredEvent, GameEvent, NewGameEvent,
 };
 use crate::primitives::Hand;
 use crate::scoring::ScorePoints;
@@ -80,7 +80,20 @@ impl Game {
                 assert_eq!(game_ended_event.score, my_score);
                 Ok(())
             }
-            _ => Err(BBError::InvalidEvent(event)),
+            GameEvent::BiddingEnded(bidding_ended_event) => self.process_bidding_ended_event(bidding_ended_event),
+        }
+    }
+
+    pub fn process_bidding_ended_event(&mut self, bidding_ended_event: BiddingEndedEvent) -> Result<(), BBError> {
+        match self {
+            Game::OpeningLead(state) => {
+                if state.inner.contract != bidding_ended_event.final_contract {
+                    Err(BBError::InvalidEvent(GameEvent::BiddingEnded(bidding_ended_event)))
+                } else {
+                    Ok(())
+                }
+            }
+            _ => Err(BBError::InvalidEvent(GameEvent::BiddingEnded(bidding_ended_event))),
         }
     }
 

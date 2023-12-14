@@ -29,37 +29,51 @@ impl Player for AutoPlayer {
         }
     }
 
-    fn make_move(&self) -> Result<PlayerEvent, BBError> {
+    fn get_move(&self) -> Result<PlayerEvent, BBError> {
+        self.get_move_for(self.seat)
+    }
+
+    fn get_dummy_move(&self) -> Result<PlayerEvent, BBError> {
+        self.get_move_for(self.seat.partner())
+    }
+}
+
+impl AutoPlayer {
+    fn get_move_for(&self, seat: Seat) -> Result<PlayerEvent, BBError> {
         match &self.game.as_ref().unwrap() {
             Game::Bidding(state) => {
+                if seat != self.seat {
+                    return Err(BBError::CannotPlayFor(seat));
+                }
                 let bid = self.bidding_engine.find_bid(state);
                 Ok(self.make_bid(bid))
             }
-            Game::CardPlay(state) => {
-                let card = self.card_play_engine.pick_card(state);
-                Ok(self.play_card(card))
-            }
             Game::OpeningLead(state) => {
+                if seat != self.seat {
+                    return Err(BBError::CannotPlayFor(seat));
+                }
                 let card = self.card_play_engine.pick_opening_lead(state);
-                Ok(self.play_card(card))
+                Ok(self.play_card_as(card, seat))
+            }
+            Game::CardPlay(state) => {
+                if seat != state.inner.contract.declarer.partner() && seat != self.seat {
+                    return Err(BBError::CannotPlayFor(seat));
+                }
+                let card = self.card_play_engine.pick_card_for(state, seat);
+                Ok(self.play_card_as(card, seat))
             }
             Game::WaitingForDummy(_) => Err(BBError::OutOfTurn(None)),
             Game::Ended(_) => Err(BBError::GameHasEnded),
         }
     }
-}
 
-impl AutoPlayer {
     fn make_bid(&self, bid: Bid) -> PlayerEvent {
         let bid_event = BidEvent { player: self.seat, bid };
         PlayerEvent::Bid(bid_event)
     }
 
-    fn play_card(&self, card: Card) -> PlayerEvent {
-        let card_event = CardEvent {
-            player: self.seat,
-            card,
-        };
+    fn play_card_as(&self, card: Card, seat: Seat) -> PlayerEvent {
+        let card_event = CardEvent { player: seat, card };
         PlayerEvent::Card(card_event)
     }
 
