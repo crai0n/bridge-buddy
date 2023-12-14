@@ -1,20 +1,20 @@
 pub use board::Board;
 pub use deck::Deck;
 pub use hand::Hand;
-pub use player_position::PlayerPosition;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
+pub use seat::Seat;
 pub use vulnerability::Vulnerability;
 
 pub mod axis;
 pub mod board;
 pub mod deck;
 pub mod hand;
-pub mod player_position;
+pub mod seat;
 pub mod turn_rank;
 pub mod vulnerability;
 
-#[derive(Clone)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Deal {
     pub board: Board,
     pub hands: [Hand; 4],
@@ -53,14 +53,14 @@ impl Deal {
     }
 
     pub fn vulnerable(&self) -> Vulnerability {
-        self.board.vulnerable()
+        self.board.vulnerability()
     }
 
-    pub fn dealer(&self) -> PlayerPosition {
+    pub fn dealer(&self) -> Seat {
         self.board.dealer()
     }
 
-    pub fn hand_of(&self, position: PlayerPosition) -> &Hand {
+    pub fn hand_of(&self, position: Seat) -> &Hand {
         &self.hands[position as usize]
     }
 }

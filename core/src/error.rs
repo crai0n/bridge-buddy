@@ -1,5 +1,5 @@
 use crate::primitives::bid::Bid;
-use crate::primitives::deal::PlayerPosition;
+use crate::primitives::deal::Seat;
 use crate::primitives::game_event::GameEvent;
 use crate::primitives::Card;
 use std::fmt::{Debug, Display, Formatter};
@@ -31,12 +31,18 @@ pub enum BBError {
     GameAlreadyStarted,
     GameHasNotStarted,
     GameHasEnded,
-    OutOfTurn(Option<PlayerPosition>),
-    PlayerUnreachable(PlayerPosition),
-    SeatTaken(PlayerPosition),
-    InvalidEvent(GameEvent),
+    OutOfTurn(Option<Seat>),
+    PlayerUnreachable(Seat),
+    SeatTaken(Seat),
+    InvalidEvent(Box<GameEvent>),
     InvalidCard(Card),
-    NotAuthorized(PlayerPosition),
+    NotAuthorized(Seat),
+    InsufficientInfo,
+    InvalidHandInfo,
+    InvalidContract,
+    NoGame,
+    GameStuck,
+    CannotPlayFor(Seat),
 }
 
 impl Display for BBError {
@@ -69,6 +75,12 @@ impl Display for BBError {
             }
             BBError::GameHasEnded => writeln!(f, "The game has ended!"),
             BBError::GameHasNotStarted => writeln!(f, "The game has not started!"),
+            BBError::InsufficientInfo => writeln!(f, "Not enough information to calculate this."),
+            BBError::InvalidHandInfo => writeln!(f, "Hands are not valid for a bridge game."),
+            BBError::InvalidContract => writeln!(f, "This is an impossible Contract"),
+            BBError::NoGame => writeln!(f, "There is no game to start"),
+            BBError::GameStuck => writeln!(f, "It seems the game is stuck"),
+            BBError::CannotPlayFor(seat) => writeln!(f, "You cannot play for {}.", seat),
         }
     }
 }

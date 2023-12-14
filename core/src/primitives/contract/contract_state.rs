@@ -10,6 +10,8 @@ pub enum ContractState {
     #[strum(to_string = "X")]
     Doubled,
     #[strum(serialize = "xx")]
+    #[strum(serialize = "xX")]
+    #[strum(serialize = "Xx")]
     #[strum(to_string = "XX")]
     Redoubled,
 }
@@ -24,11 +26,21 @@ mod test {
     use test_case::test_case;
 
     #[test_case("p", Passed; "Passed_p")]
+    #[test_case("P", Passed; "Passed_capital_p")]
+    #[test_case("", Passed; "Passed_nothing")]
+    #[test_case("X", Doubled; "Doubled_capital_X")]
+    #[test_case("x", Doubled; "Doubled x")]
+    #[test_case("xx", Redoubled; "Redoubled")]
+    #[test_case("xX", Redoubled; "Redoubled1")]
+    #[test_case("Xx", Redoubled; "Redoubled2")]
+    #[test_case("XX", Redoubled; "Redoubled3")]
     fn from_string(input: &str, expected: ContractState) {
         let contract = ContractState::from_str(input).unwrap();
         assert_eq!(contract, expected);
     }
+    #[test_case(Passed, ""; "Passed_nothing")]
     #[test_case(Doubled, "X"; "Doubled_X")]
+    #[test_case(Redoubled, "XX"; "Redoubled XX")]
     fn serialize(contract_state: ContractState, expected: &str) {
         let contract_str = format!("{}", contract_state);
         assert_eq!(&contract_str, expected);

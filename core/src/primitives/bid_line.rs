@@ -4,7 +4,7 @@ use itertools::Itertools;
 
 use crate::error::BBError;
 use crate::game::bid_manager::BidManager;
-use crate::primitives::deal::PlayerPosition;
+use crate::primitives::deal::Seat;
 use std::fmt::Display;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -39,7 +39,7 @@ impl BidLine {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.bids.len() == 0
+        self.len() == 0
     }
 }
 
@@ -53,7 +53,7 @@ impl std::str::FromStr for BidLine {
             .split('-')
             .map(Bid::from_str)
             .collect::<Result<Vec<_>, _>>()?;
-        let mut bid_manager = BidManager::new(PlayerPosition::North);
+        let mut bid_manager = BidManager::new(Seat::North);
         for bid in bids {
             bid_manager.bid(bid)?;
         }

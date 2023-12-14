@@ -5,8 +5,8 @@ use crate::primitives::Deal;
 use std::ops;
 use strum::{Display, EnumIter, EnumString};
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Display, EnumIter, EnumString)]
-pub enum PlayerPosition {
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Display, EnumIter, EnumString, Ord, PartialOrd)]
+pub enum Seat {
     #[strum(serialize = "n")]
     #[strum(to_string = "N")]
     North = 0,
@@ -21,32 +21,32 @@ pub enum PlayerPosition {
     West = 3,
 }
 
-impl ops::Add<TurnRank> for PlayerPosition {
-    type Output = PlayerPosition;
+impl ops::Add<TurnRank> for Seat {
+    type Output = Seat;
 
-    fn add(self, rhs: TurnRank) -> PlayerPosition {
+    fn add(self, rhs: TurnRank) -> Seat {
         match (self as usize + rhs as usize) % 4 {
-            0 => PlayerPosition::North,
-            1 => PlayerPosition::East,
-            2 => PlayerPosition::South,
-            _ => PlayerPosition::West,
+            0 => Seat::North,
+            1 => Seat::East,
+            2 => Seat::South,
+            _ => Seat::West,
         }
     }
 }
 
-impl ops::Add<usize> for PlayerPosition {
-    type Output = PlayerPosition;
+impl ops::Add<usize> for Seat {
+    type Output = Seat;
 
-    fn add(self, rhs: usize) -> PlayerPosition {
+    fn add(self, rhs: usize) -> Seat {
         match (self as usize + rhs) % 4 {
-            0 => PlayerPosition::North,
-            1 => PlayerPosition::East,
-            2 => PlayerPosition::South,
-            _ => PlayerPosition::West,
+            0 => Seat::North,
+            1 => Seat::East,
+            2 => Seat::South,
+            _ => Seat::West,
         }
     }
 }
-impl PlayerPosition {
+impl Seat {
     pub fn turn_rank_on_deal(&self, deal: &Deal) -> TurnRank {
         self.turn_rank_on_board(&deal.board)
     }
@@ -55,42 +55,42 @@ impl PlayerPosition {
         self.turn_rank_relative_to(&board.dealer())
     }
 
-    pub fn turn_rank_relative_to(&self, other: &PlayerPosition) -> TurnRank {
+    pub fn turn_rank_relative_to(&self, other: &Seat) -> TurnRank {
         TurnRank::from(4 - *other as usize + *self as usize)
     }
 
     pub const fn partner(&self) -> Self {
         match self {
-            PlayerPosition::North => PlayerPosition::South,
-            PlayerPosition::East => PlayerPosition::West,
-            PlayerPosition::South => PlayerPosition::North,
-            PlayerPosition::West => PlayerPosition::East,
+            Seat::North => Seat::South,
+            Seat::East => Seat::West,
+            Seat::South => Seat::North,
+            Seat::West => Seat::East,
         }
     }
 
-    pub const fn same_axis(&self, other: &PlayerPosition) -> bool {
+    pub const fn same_axis(&self, other: &Seat) -> bool {
         (*self as usize + *other as usize) % 2 == 0
     }
 
     pub const fn axis(&self) -> Axis {
         match self {
-            PlayerPosition::North => Axis::NorthSouth,
-            PlayerPosition::South => Axis::NorthSouth,
-            PlayerPosition::East => Axis::EastWest,
-            PlayerPosition::West => Axis::EastWest,
+            Seat::North => Axis::NorthSouth,
+            Seat::South => Axis::NorthSouth,
+            Seat::East => Axis::EastWest,
+            Seat::West => Axis::EastWest,
         }
     }
 
     pub const fn is_on_axis(&self, axis: &Axis) -> bool {
         match (axis, self) {
-            (Axis::NorthSouth, PlayerPosition::North) => true,
-            (Axis::NorthSouth, PlayerPosition::South) => true,
-            (Axis::NorthSouth, PlayerPosition::East) => false,
-            (Axis::NorthSouth, PlayerPosition::West) => false,
-            (Axis::EastWest, PlayerPosition::North) => false,
-            (Axis::EastWest, PlayerPosition::South) => false,
-            (Axis::EastWest, PlayerPosition::East) => true,
-            (Axis::EastWest, PlayerPosition::West) => true,
+            (Axis::NorthSouth, Seat::North) => true,
+            (Axis::NorthSouth, Seat::South) => true,
+            (Axis::NorthSouth, Seat::East) => false,
+            (Axis::NorthSouth, Seat::West) => false,
+            (Axis::EastWest, Seat::North) => false,
+            (Axis::EastWest, Seat::South) => false,
+            (Axis::EastWest, Seat::East) => true,
+            (Axis::EastWest, Seat::West) => true,
         }
     }
 
@@ -101,8 +101,8 @@ impl PlayerPosition {
 
 #[cfg(test)]
 mod test {
-    use super::PlayerPosition;
-    use super::PlayerPosition::*;
+    use super::Seat;
+    use super::Seat::*;
 
     use crate::primitives::deal::turn_rank::TurnRank;
     use std::str::FromStr;
@@ -116,8 +116,8 @@ mod test {
     #[test_case("E", East; "East2")]
     #[test_case("w", West; "West")]
     #[test_case("W", West; "West2")]
-    fn from_str(input: &str, expected: PlayerPosition) {
-        let player_pos = PlayerPosition::from_str(input).unwrap();
+    fn from_str(input: &str, expected: Seat) {
+        let player_pos = Seat::from_str(input).unwrap();
         assert_eq!(player_pos, expected);
     }
 
@@ -125,7 +125,7 @@ mod test {
     #[test_case(South, "S"; "South")]
     #[test_case(East, "E"; "East")]
     #[test_case(West, "W"; "West")]
-    fn display(input: PlayerPosition, expected: &str) {
+    fn display(input: Seat, expected: &str) {
         let str = format!("{}", input);
         assert_eq!(str, expected);
     }
@@ -136,7 +136,7 @@ mod test {
     #[test_case(West, 5, North; "West5")]
     #[test_case(East, 2, West; "East2")]
     #[test_case(West, 2, East; "West2")]
-    fn add(start: PlayerPosition, add: usize, expected: PlayerPosition) {
+    fn add(start: Seat, add: usize, expected: Seat) {
         assert_eq!(start + add, expected)
     }
 
@@ -147,7 +147,7 @@ mod test {
     #[test_case(West, South, TurnRank::Second)]
     #[test_case(North, West, TurnRank::Second)]
     #[test_case(East, West, TurnRank::Third)]
-    fn turn_rank_relative_to(player: PlayerPosition, other: PlayerPosition, expected: TurnRank) {
+    fn turn_rank_relative_to(player: Seat, other: Seat, expected: TurnRank) {
         assert_eq!(player.turn_rank_relative_to(&other), expected);
     }
 
@@ -155,7 +155,7 @@ mod test {
     #[test_case(South, South, true; "South")]
     #[test_case(East, North, false; "East")]
     #[test_case(West, North, false; "West")]
-    fn equality(one: PlayerPosition, other: PlayerPosition, expected: bool) {
+    fn equality(one: Seat, other: Seat, expected: bool) {
         assert_eq!(one.eq(&other), expected)
     }
 
@@ -163,7 +163,7 @@ mod test {
     #[test_case(South, North; "South's partner is North")]
     #[test_case(West, East; "West's partner is East")]
     #[test_case(East, West; "East's partner is West")]
-    fn partner(player: PlayerPosition, expected: PlayerPosition) {
+    fn partner(player: Seat, expected: Seat) {
         assert_eq!(player.partner(), expected)
     }
 }

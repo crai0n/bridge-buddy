@@ -1,4 +1,4 @@
-use crate::primitives::deal::player_position::PlayerPosition;
+use crate::primitives::deal::seat::Seat;
 use crate::primitives::deal::vulnerability::Vulnerability;
 use rand::prelude::*;
 
@@ -29,7 +29,7 @@ impl Board {
         Board { number }
     }
 
-    pub fn vulnerable(&self) -> Vulnerability {
+    pub fn vulnerability(&self) -> Vulnerability {
         let v = self.number - 1;
         let vul = v + v / 4;
         match vul % 4 {
@@ -40,21 +40,21 @@ impl Board {
         }
     }
 
-    pub fn is_vulnerable(&self, player: PlayerPosition) -> bool {
-        match self.vulnerable() {
+    pub fn is_vulnerable(&self, player: Seat) -> bool {
+        match self.vulnerability() {
             Vulnerability::None => false,
             Vulnerability::All => true,
-            Vulnerability::EastWest => matches!(player, PlayerPosition::East | PlayerPosition::West),
-            Vulnerability::NorthSouth => matches!(player, PlayerPosition::North | PlayerPosition::South),
+            Vulnerability::EastWest => matches!(player, Seat::East | Seat::West),
+            Vulnerability::NorthSouth => matches!(player, Seat::North | Seat::South),
         }
     }
 
-    pub fn dealer(&self) -> PlayerPosition {
+    pub fn dealer(&self) -> Seat {
         match (self.number - 1) % 4 {
-            0 => PlayerPosition::North,
-            1 => PlayerPosition::East,
-            2 => PlayerPosition::South,
-            _ => PlayerPosition::West,
+            0 => Seat::North,
+            1 => Seat::East,
+            2 => Seat::South,
+            _ => Seat::West,
         }
     }
 
@@ -72,8 +72,8 @@ impl Default for Board {
 #[cfg(test)]
 mod test {
     use super::Board;
-    use crate::primitives::deal::board::PlayerPosition;
-    use crate::primitives::deal::board::PlayerPosition::*;
+    use crate::primitives::deal::board::Seat;
+    use crate::primitives::deal::board::Seat::*;
     use crate::primitives::deal::vulnerability::Vulnerability;
     use crate::primitives::deal::vulnerability::Vulnerability::*;
     use rand::prelude::*;
@@ -99,10 +99,10 @@ mod test {
     #[test_case(16, EastWest, West)]
     #[test_case(17, None, North)]
     #[test_case(18, NorthSouth, East)]
-    fn dealer_and_vulnerability(number: usize, vulnerable: Vulnerability, dealer: PlayerPosition) {
+    fn dealer_and_vulnerability(number: usize, vulnerable: Vulnerability, dealer: Seat) {
         let deal = Board::from_number(number);
         assert_eq!(deal.dealer(), dealer);
-        assert_eq!(deal.vulnerable(), vulnerable);
+        assert_eq!(deal.vulnerability(), vulnerable);
     }
 
     #[test_case(0, West, true)]
@@ -124,7 +124,7 @@ mod test {
     #[test_case(16, West, true)]
     #[test_case(17, North, false)]
     #[test_case(18, East, false)]
-    fn is_vulnerable(number: usize, player: PlayerPosition, expected: bool) {
+    fn is_vulnerable(number: usize, player: Seat, expected: bool) {
         let deal = Board::from_number(number);
         assert_eq!(deal.is_vulnerable(player), expected);
     }

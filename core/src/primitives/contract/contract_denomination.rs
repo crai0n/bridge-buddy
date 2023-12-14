@@ -39,6 +39,28 @@ impl std::str::FromStr for ContractDenomination {
     }
 }
 
+impl ContractDenomination {
+    pub const fn next(&self) -> Self {
+        match self {
+            ContractDenomination::Trump(suit) => match suit {
+                Suit::Spades => ContractDenomination::NoTrump,
+                s => ContractDenomination::Trump(s.next()),
+            },
+            ContractDenomination::NoTrump => ContractDenomination::Trump(Suit::Clubs),
+        }
+    }
+
+    pub const fn previous(&self) -> Self {
+        match self {
+            ContractDenomination::Trump(suit) => match suit {
+                Suit::Clubs => ContractDenomination::NoTrump,
+                s => ContractDenomination::Trump(s.previous()),
+            },
+            ContractDenomination::NoTrump => ContractDenomination::Trump(Suit::Spades),
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::ContractDenomination;
@@ -57,6 +79,29 @@ mod test {
         assert_eq!(ContractDenomination::from_str(str).unwrap(), den)
     }
 
+    #[test_case("NP")]
+    #[test_case("PT")]
+    #[test_case("SS")]
+    #[test_case("K")]
+    #[test_case("i")]
+    fn from_str_fails(str: &str) {
+        assert!(ContractDenomination::from_str(str).is_err());
+    }
+
+    #[test_case(NoTrump, Trump(Clubs))]
+    #[test_case(Trump(Clubs), Trump(Diamonds))]
+    #[test_case(Trump(Spades), NoTrump)]
+    fn next(input: ContractDenomination, expected: ContractDenomination) {
+        assert_eq!(input.next(), expected);
+    }
+
+    #[test_case(NoTrump, Trump(Clubs))]
+    #[test_case(Trump(Clubs), Trump(Diamonds))]
+    #[test_case(Trump(Spades), NoTrump)]
+    fn previous(expected: ContractDenomination, input: ContractDenomination) {
+        assert_eq!(input.previous(), expected);
+    }
+
     #[test_case(NoTrump, "NT"; "No Trump")]
     fn serialize(contract_den: ContractDenomination, expected: &str) {
         let contract_str = format!("{}", contract_den);
@@ -71,5 +116,18 @@ mod test {
     fn ordering(one: ContractDenomination, other: ContractDenomination, expected: Ordering) {
         let ord = one.cmp(&other);
         assert_eq!(ord, expected);
+    }
+
+    #[test]
+    fn is_clone() {
+        let mut one = NoTrump;
+        let two = one;
+
+        assert_eq!(one, two);
+
+        one = Trump(Clubs);
+
+        assert_eq!(one, Trump(Clubs));
+        assert_eq!(two, NoTrump);
     }
 }

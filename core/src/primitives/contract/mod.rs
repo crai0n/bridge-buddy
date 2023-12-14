@@ -6,7 +6,7 @@ use crate::error::BBError;
 use std::fmt::Display;
 use std::str::FromStr;
 
-use crate::primitives::deal::PlayerPosition;
+use crate::primitives::deal::Seat;
 use crate::primitives::Suit;
 pub use contract_denomination::ContractDenomination;
 pub use contract_level::ContractLevel;
@@ -17,7 +17,7 @@ pub struct Contract {
     pub level: ContractLevel,
     pub denomination: ContractDenomination,
     pub state: ContractState,
-    pub declarer: PlayerPosition,
+    pub declarer: Seat,
 }
 
 impl Display for Contract {
@@ -41,7 +41,7 @@ impl FromStr for Contract {
             return Err(BBError::UnknownContract(s.into()));
         }
 
-        let declarer = match PlayerPosition::from_str(&s[..1]) {
+        let declarer = match Seat::from_str(&s[..1]) {
             Ok(d) => d,
             Err(_) => return Err(BBError::UnknownContract(s.into())),
         };
@@ -93,8 +93,8 @@ mod test {
     use super::ContractLevel::*;
     use super::ContractState::*;
     use super::{Contract, ContractDenomination, ContractLevel, ContractState};
-    use crate::primitives::deal::PlayerPosition;
-    use crate::primitives::deal::PlayerPosition::*;
+    use crate::primitives::deal::Seat;
+    use crate::primitives::deal::Seat::*;
     use crate::primitives::Suit;
     use crate::primitives::Suit::*;
     use std::str::FromStr;
@@ -106,7 +106,7 @@ mod test {
     #[test_case("W4♥X", West, Four, Trump(Hearts), Doubled; "Hearts")]
     fn from_str(
         str: &str,
-        declarer: PlayerPosition,
+        declarer: Seat,
         level: ContractLevel,
         denomination: ContractDenomination,
         state: ContractState,
@@ -126,7 +126,7 @@ mod test {
     #[test_case(South, Two, Trump(Hearts), Doubled, "2♥X by S"; "2cx")]
     #[test_case(West, Three, NoTrump, Redoubled, "3NTXX by W"; "3ntxx")]
     fn serialize(
-        declarer: PlayerPosition,
+        declarer: Seat,
         level: ContractLevel,
         denomination: ContractDenomination,
         state: ContractState,

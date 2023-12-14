@@ -56,7 +56,7 @@ impl Bid {
 #[cfg(test)]
 mod test {
     use super::AuxiliaryBid::*;
-    use super::ContractBid;
+    use super::{AuxiliaryBid, ContractBid};
     use crate::primitives::contract::ContractDenomination::*;
     use crate::primitives::contract::ContractLevel::*;
     use crate::primitives::Suit::*;
@@ -81,6 +81,12 @@ mod test {
         assert_eq!(Bid::from_str(str).unwrap(), bid)
     }
 
+    #[test_case("Y")]
+    #[test_case("3G")]
+    fn from_str_fails(str: &str) {
+        assert!(Bid::from_str(str).is_err())
+    }
+
     #[test_case(Auxiliary(Pass), "Pass"; "Pass")]
     #[test_case(Auxiliary(Double), "X"; "Double")]
     #[test_case(Auxiliary(Redouble), "XX"; "Redouble")]
@@ -99,5 +105,24 @@ mod test {
     #[test_case(Contract(ContractBid { level: Four, denomination: Trump(Hearts)}), Contract(ContractBid { level: Four, denomination: Trump(Hearts)}), true; "Four hearts is four hearts")]
     fn equality(one: Bid, other: Bid, expected: bool) {
         assert_eq!(one.eq(&other), expected)
+    }
+
+    #[test]
+    fn is_clone() {
+        let one = AuxiliaryBid::Pass;
+        let two = one;
+
+        assert_eq!(one, two);
+    }
+
+    #[test_case(Auxiliary(Pass), Some(Pass); "Pass is an Auxiliary")]
+    #[test_case(Contract(ContractBid { level: Four, denomination: Trump(Hearts)}), None; "4H is not an Auxiliary")]
+    fn access_auxiliary(bid: Bid, inner: Option<AuxiliaryBid>) {
+        assert_eq!(bid.access_auxiliary_bid(), inner);
+    }
+    #[test_case(Auxiliary(Pass), None; "Pass is an Auxiliary")]
+    #[test_case(Contract(ContractBid { level: Four, denomination: Trump(Hearts)}), Some(ContractBid { level: Four, denomination: Trump(Hearts)}); "4H is not a Contract Bid")]
+    fn access_contract(bid: Bid, inner: Option<ContractBid>) {
+        assert_eq!(bid.access_contract_bid(), inner);
     }
 }

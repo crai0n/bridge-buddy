@@ -1,5 +1,5 @@
 use crate::primitives::contract::{ContractDenomination, ContractLevel, ContractState};
-use crate::primitives::deal::{PlayerPosition, Vulnerability};
+use crate::primitives::deal::{Seat, Vulnerability};
 use crate::primitives::game_result::GameResult;
 use crate::primitives::Contract;
 use std::ops::{Add, AddAssign, Mul, MulAssign};
@@ -43,8 +43,8 @@ impl MulAssign<isize> for ScorePoints {
     }
 }
 
-pub struct Score;
-impl Score {
+pub struct ScoreCalculator;
+impl ScoreCalculator {
     pub const NO_SCORE: ScorePoints = ScorePoints(0);
     const MINOR_TRICK_POINTS: ScorePoints = ScorePoints(20);
     const MAJOR_TRICK_POINTS: ScorePoints = ScorePoints(30);
@@ -75,7 +75,7 @@ impl Score {
             ContractState::Doubled => Self::score_lose_doubled(undertricks, declarer_is_vulnerable),
             ContractState::Redoubled => Self::score_lose_doubled(undertricks, declarer_is_vulnerable) * 2_usize,
         };
-        if contract.declarer == PlayerPosition::East || contract.declarer == PlayerPosition::West {
+        if contract.declarer == Seat::East || contract.declarer == Seat::West {
             score *= -1_isize;
         }
         score
@@ -115,7 +115,7 @@ impl Score {
 
         score += Self::score_insult(contract);
 
-        if contract.declarer == PlayerPosition::East || contract.declarer == PlayerPosition::West {
+        if contract.declarer == Seat::East || contract.declarer == Seat::West {
             score *= -1_isize;
         }
         score
@@ -184,7 +184,7 @@ impl Score {
 
 #[cfg(test)]
 mod test {
-    use super::Score;
+    use super::ScoreCalculator;
     use super::ScorePoints;
     use crate::primitives::deal::Vulnerability;
     use crate::primitives::deal::Vulnerability::*;
@@ -214,7 +214,7 @@ mod test {
 
         let result = GameResult::calculate_game_result(contract, actual_tricks);
 
-        let score = Score::score_result(result, vulnerability);
+        let score = ScoreCalculator::score_result(result, vulnerability);
         assert_eq!(score, ScorePoints(expected));
     }
 }

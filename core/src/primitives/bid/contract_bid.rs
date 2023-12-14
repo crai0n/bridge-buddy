@@ -1,6 +1,7 @@
 use crate::error::BBError;
 use crate::primitives::contract::ContractDenomination;
 use crate::primitives::contract::*;
+use crate::primitives::Suit;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
 pub struct ContractBid {
@@ -36,6 +37,27 @@ impl std::fmt::Display for ContractBid {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}{}", self.level, self.denomination)?;
         Ok(())
+    }
+}
+
+impl ContractBid {
+    pub fn next(&self) -> Result<Self, BBError> {
+        match self.denomination {
+            ContractDenomination::NoTrump => Ok(ContractBid {
+                level: match self.level.next() {
+                    Ok(level) => level,
+                    Err(_) => Err(BBError::UnknownBid("-C".into()))?,
+                },
+                denomination: ContractDenomination::Trump(Suit::Clubs),
+            }),
+            ContractDenomination::Trump(suit) => Ok(ContractBid {
+                level: self.level,
+                denomination: match suit {
+                    Suit::Spades => ContractDenomination::NoTrump,
+                    s => ContractDenomination::Trump(s.next()),
+                },
+            }),
+        }
     }
 }
 
@@ -88,5 +110,17 @@ mod test {
         let c1 = ContractBid::from_str(one).unwrap();
         let c2 = ContractBid::from_str(other).unwrap();
         assert_eq!(c1.cmp(&c2), expected)
+    }
+
+    #[test_case("1S", "1NT")]
+    #[test_case("2H", "2S")]
+    #[test_case("3D", "3H")]
+    #[test_case("5C", "5D")]
+    #[test_case("5NT", "6C")]
+    #[test_case("7NT", "-C")]
+    fn next(current: &str, expected: &str) {
+        let current = ContractBid::from_str(current).unwrap();
+        let expected = ContractBid::from_str(expected);
+        assert_eq!(current.next(), expected)
     }
 }

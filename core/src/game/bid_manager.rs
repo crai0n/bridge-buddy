@@ -1,19 +1,20 @@
 use crate::error::BBError;
 use crate::primitives::bid::{AuxiliaryBid, Bid, ContractBid};
 use crate::primitives::bid_line::BidLine;
-use crate::primitives::contract::{ContractDenomination, ContractState};
+use crate::primitives::contract::{ContractDenomination, ContractLevel, ContractState};
 use crate::primitives::deal::axis::Axis;
-use crate::primitives::deal::PlayerPosition;
-use crate::primitives::Contract;
+use crate::primitives::deal::Seat;
+use crate::primitives::{Contract, Suit};
+use std::fmt::Display;
 
 #[derive(Debug, Clone)]
 pub struct BidManager {
-    dealer: PlayerPosition,
+    dealer: Seat,
     bid_line: BidLine,
 }
 
 impl BidManager {
-    pub fn new(dealer: PlayerPosition) -> Self {
+    pub fn new(dealer: Seat) -> Self {
         BidManager {
             dealer,
             bid_line: BidLine::new(),
@@ -60,13 +61,22 @@ impl BidManager {
     }
 
     pub fn bidding_has_ended(&self) -> bool {
-        self.bids().len() > 3 // every player has bid at least once
-            && self
-            .bids()
-            .iter()
-            .rev()
-            .take(3)
-            .all(|x| x == &Bid::Auxiliary(AuxiliaryBid::Pass))
+        self.every_player_has_bid_at_least_once() && self.check_last_three_bids(Self::is_three_passes)
+    }
+
+    fn every_player_has_bid_at_least_once(&self) -> bool {
+        self.bids().len() > 3
+    }
+
+    fn is_three_passes(line: &[Bid]) -> bool {
+        matches!(
+            line,
+            [
+                Bid::Auxiliary(AuxiliaryBid::Pass),
+                Bid::Auxiliary(AuxiliaryBid::Pass),
+                Bid::Auxiliary(AuxiliaryBid::Pass)
+            ]
+        )
     }
 
     fn can_bid_contract(&self, new: &ContractBid) -> bool {
@@ -77,7 +87,7 @@ impl BidManager {
             }
     }
 
-    fn last_contract_bid(&self) -> Option<&ContractBid> {
+    pub fn last_contract_bid(&self) -> Option<&ContractBid> {
         self.bids()
             .iter()
             .filter_map(|x| match x {
@@ -85,6 +95,16 @@ impl BidManager {
                 _ => None,
             })
             .last()
+    }
+
+    pub fn lowest_available_contract_bid(&self) -> Option<ContractBid> {
+        match self.last_contract_bid() {
+            None => Some(ContractBid {
+                level: ContractLevel::One,
+                denomination: ContractDenomination::Trump(Suit::Clubs),
+            }),
+            Some(bid) => bid.next().ok(),
+        }
     }
 
     fn can_redouble(&self) -> bool {
@@ -159,7 +179,7 @@ impl BidManager {
             None
         }
     }
-    fn implied_declarer(&self, denomination: ContractDenomination) -> PlayerPosition {
+    fn implied_declarer(&self, denomination: ContractDenomination) -> Seat {
         let axis = self
             .bids()
             .iter()
@@ -170,7 +190,7 @@ impl BidManager {
         self.first_to_name_denomination_on_axis(denomination, axis)
     }
 
-    fn first_to_name_denomination_on_axis(&self, denomination: ContractDenomination, axis: Axis) -> PlayerPosition {
+    fn first_to_name_denomination_on_axis(&self, denomination: ContractDenomination, axis: Axis) -> Seat {
         self.bids()
             .iter()
             .enumerate()
@@ -188,7 +208,7 @@ impl BidManager {
         }
     }
 
-    pub fn next_to_play(&self) -> PlayerPosition {
+    pub fn next_to_play(&self) -> Seat {
         self.dealer + self.bid_line.len()
     }
 }
@@ -201,21 +221,52 @@ impl TryFrom<BidLine> for BidManager {
     }
 }
 
+impl Display for BidManager {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "North East  South West  ",)?;
+        writeln!(f, "------------------------")?;
+
+        let mut x = match self.dealer {
+            Seat::North => 0,
+            Seat::East => 1,
+            Seat::South => 2,
+            Seat::West => 3,
+        };
+
+        let pad = "      ";
+
+        for _i in 0..x {
+            write!(f, "{}", pad)?;
+        }
+
+        for bid in self.bids() {
+            let str = format!("{}", bid);
+            write!(f, "{:<6}", str)?;
+            x += 1;
+            if x % 4 == 0 {
+                writeln!(f)?;
+            }
+        }
+        writeln!(f)?;
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::error::BBError;
     use crate::game::bid_manager::BidManager;
     use crate::primitives::bid::Bid;
     use crate::primitives::bid_line::BidLine;
-    use crate::primitives::deal::PlayerPosition;
-    use crate::primitives::deal::PlayerPosition::*;
+    use crate::primitives::deal::Seat;
+    use crate::primitives::deal::Seat::*;
     use crate::primitives::Contract;
     use std::str::FromStr;
     use test_case::test_case;
 
     #[test]
     fn bidding() {
-        let mut bid_manager = BidManager::new(PlayerPosition::North);
+        let mut bid_manager = BidManager::new(Seat::North);
         let bid = Bid::from_str("1NT").unwrap();
         bid_manager.bid(bid).unwrap();
         let bid = Bid::from_str("2NT").unwrap();
@@ -224,7 +275,7 @@ mod test {
     }
     #[test]
     fn invalid_bidding() {
-        let mut bid_manager = BidManager::new(PlayerPosition::West);
+        let mut bid_manager = BidManager::new(Seat::West);
         let bid = Bid::from_str("2NT").unwrap();
         bid_manager.bid(bid).unwrap();
         let bid = Bid::from_str("1NT").unwrap();
@@ -233,12 +284,12 @@ mod test {
 
     #[test]
     fn next_to_play() {
-        let mut bid_manager = BidManager::new(PlayerPosition::West);
+        let mut bid_manager = BidManager::new(Seat::West);
         let bid = Bid::from_str("1NT").unwrap();
         bid_manager.bid(bid).unwrap();
         let bid = Bid::from_str("2NT").unwrap();
         bid_manager.bid(bid).unwrap();
-        assert_eq!(bid_manager.next_to_play(), PlayerPosition::East);
+        assert_eq!(bid_manager.next_to_play(), Seat::East);
     }
 
     #[test_case("P-P", North, ""; "No Contract implied")]
@@ -249,7 +300,7 @@ mod test {
     #[test_case("1NT-X-2H-P-P-P", East, "W2H"; "Two Hearts")]
     #[test_case("1NT-2NT-P-3NT-P-P-P", North, "E3NT")]
     #[test_case("1NT-2H-P-3NT-P-P-P", West, "S3NT")]
-    fn implied_contract(input: &str, dealer: PlayerPosition, implied: &str) {
+    fn implied_contract(input: &str, dealer: Seat, implied: &str) {
         let bid_line = BidLine::from_str(input).unwrap();
         let mut manager = BidManager::new(dealer);
         for &bid in bid_line.bids() {
@@ -259,13 +310,23 @@ mod test {
         assert_eq!(manager.implied_contract(), implied_contract)
     }
 
+    #[test_case("1NT-2H-P-3NT-P-P-P", West, "North East  South West  \n------------------------\n                  1NT   \n2♥    Pass  3NT   Pass  \nPass  Pass  \n")]
+    fn display(input: &str, dealer: Seat, expected: &str) {
+        let bid_line = BidLine::from_str(input).unwrap();
+        let mut manager = BidManager::new(dealer);
+        for &bid in bid_line.bids() {
+            manager.bid(bid).unwrap();
+        }
+        assert_eq!(format!("{}", manager), expected)
+    }
+
     #[test_case("P-P-P", false; "Third player passes")]
     #[test_case("P-P-P-P", true; "All pass")]
     #[test_case("1NT-X-P", false; "Doubled 1NT")]
     #[test_case("1NT-X-2H-P-P-P", true; "Two Hearts")]
     fn bidding_has_ended(input: &str, expected: bool) {
         let bid_line = BidLine::from_str(input).unwrap();
-        let mut manager = BidManager::new(PlayerPosition::South);
+        let mut manager = BidManager::new(Seat::South);
         for &bid in bid_line.bids() {
             manager.bid(bid).unwrap();
         }
