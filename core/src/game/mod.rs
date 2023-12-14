@@ -88,12 +88,16 @@ impl Game {
         match self {
             Game::OpeningLead(state) => {
                 if state.inner.contract != bidding_ended_event.final_contract {
-                    Err(BBError::InvalidEvent(GameEvent::BiddingEnded(bidding_ended_event)))
+                    Err(BBError::InvalidEvent(Box::new(GameEvent::BiddingEnded(
+                        bidding_ended_event,
+                    ))))
                 } else {
                     Ok(())
                 }
             }
-            _ => Err(BBError::InvalidEvent(GameEvent::BiddingEnded(bidding_ended_event))),
+            _ => Err(BBError::InvalidEvent(Box::new(GameEvent::BiddingEnded(
+                bidding_ended_event,
+            )))),
         }
     }
 
@@ -107,7 +111,7 @@ impl Game {
                 }
                 Ok(())
             }
-            _ => Err(BBError::InvalidEvent(GameEvent::Bid(bid_event))),
+            _ => Err(BBError::InvalidEvent(Box::new(GameEvent::Bid(bid_event)))),
         }
     }
 
@@ -150,7 +154,7 @@ impl Game {
                 }
                 Ok(())
             }
-            _ => Err(BBError::InvalidEvent(GameEvent::Card(card_event))),
+            _ => Err(BBError::InvalidEvent(Box::new(GameEvent::Card(card_event)))),
         }
     }
 
@@ -167,14 +171,14 @@ impl Game {
 
                 Ok(())
             }
-            _ => Err(BBError::InvalidEvent(GameEvent::DummyUncovered(event)))?,
+            _ => Err(BBError::InvalidEvent(Box::new(GameEvent::DummyUncovered(event))))?,
         }
     }
 
     fn process_disclose_hand_event(&mut self, event: DiscloseHandEvent) -> Result<(), BBError> {
         match self {
             Game::Bidding(state) => state.process_disclose_hand_event(event),
-            _ => Err(BBError::InvalidEvent(GameEvent::DiscloseHand(event))),
+            _ => Err(BBError::InvalidEvent(Box::new(GameEvent::DiscloseHand(event)))),
         }
     }
 

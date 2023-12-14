@@ -34,7 +34,7 @@ pub enum BBError {
     OutOfTurn(Option<Seat>),
     PlayerUnreachable(Seat),
     SeatTaken(Seat),
-    InvalidEvent(GameEvent),
+    InvalidEvent(Box<GameEvent>),
     InvalidCard(Card),
     NotAuthorized(Seat),
     InsufficientInfo,
