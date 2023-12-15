@@ -43,8 +43,8 @@ impl HandManager {
     pub fn card_could_belong_to_player(&self, card: &Card, player: Seat) -> bool {
         if let Some(owner) = self.known_cards.get(card) {
             *owner == player
-        } else if self.count_known_cards_of(player) == 13 {
-            self.full_hand_known_for(player) // we haven't seen card, but player's hand is full
+        } else if self.full_hand_known_for(player) {
+            false // we know all the player's cards, but card is not one of them
         } else {
             true
         }
