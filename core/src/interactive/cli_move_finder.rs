@@ -11,8 +11,6 @@ use crate::primitives::deal::Seat;
 use crate::primitives::game_event::{BidEvent, CardEvent, GameEvent};
 use crate::primitives::player_event::PlayerEvent;
 use crate::primitives::Card;
-use std::io::stdin;
-use std::str::FromStr;
 
 #[allow(dead_code)]
 pub struct CliMoveFinder {
@@ -26,6 +24,18 @@ impl CliMoveFinder {
             bid_finder: CliBidFinder::new(seat),
             card_finder: CliCardFinder::new(seat),
         }
+    }
+
+    pub fn get_bid_from_user(&self, state: &GameState<Bidding>, presenter: &CliPresenter) -> Bid {
+        self.bid_finder.get_bid_from_user(state, presenter)
+    }
+
+    pub fn get_card_from_user_for(&self, state: &GameState<CardPlay>, seat: Seat, presenter: &CliPresenter) -> Card {
+        self.card_finder.get_card_from_user_for(state, seat, presenter)
+    }
+
+    pub fn get_opening_lead_from_user(&self, state: &GameState<OpeningLead>, presenter: &CliPresenter) -> Card {
+        self.card_finder.get_opening_lead_from_user(state, presenter)
     }
 }
 
@@ -73,21 +83,21 @@ impl CliPlayer {
                 if seat != self.seat {
                     return Err(BBError::CannotPlayFor(seat));
                 }
-                let bid = self.get_bid_from_user(state);
+                let bid = self.move_finder.get_bid_from_user(state, &self.presenter);
                 Ok(self.make_bid_as(bid, seat))
             }
             Game::OpeningLead(state) => {
                 if seat != self.seat {
                     return Err(BBError::CannotPlayFor(seat));
                 }
-                let card = self.get_opening_lead_from_user(state);
+                let card = self.move_finder.get_opening_lead_from_user(state, &self.presenter);
                 Ok(self.play_card_as(card, seat))
             }
             Game::CardPlay(state) => {
                 if seat != state.inner.contract.declarer.partner() && seat != self.seat {
                     return Err(BBError::CannotPlayFor(seat));
                 }
-                let card = self.get_card_from_user_for(state, seat);
+                let card = self.move_finder.get_card_from_user_for(state, seat, &self.presenter);
                 Ok(self.play_card_as(card, seat))
             }
             Game::WaitingForDummy(_) => Err(BBError::OutOfTurn(None)),
@@ -98,124 +108,6 @@ impl CliPlayer {
     fn make_bid_as(&self, bid: Bid, seat: Seat) -> PlayerEvent {
         let bid_event = BidEvent { player: seat, bid };
         PlayerEvent::Bid(bid_event)
-    }
-
-    fn get_bid_from_user(&self, state: &GameState<Bidding>) -> Bid {
-        self.presenter.display_bidding_state_for_user(state);
-        self.presenter
-            .display_hand_for_user(&state.inner.hand_manager.known_remaining_cards_of(self.seat));
-
-        println!("What do you want to bid?");
-
-        let mut user_input;
-        let mut user_bid: Bid;
-
-        loop {
-            user_input = String::new();
-            stdin().read_line(&mut user_input).unwrap();
-            user_bid = match Bid::from_str(user_input.trim()) {
-                Ok(bid) => bid,
-                _ => {
-                    println!("That's not a valid bid!");
-                    continue;
-                }
-            };
-
-            let event = BidEvent {
-                player: self.seat,
-                bid: user_bid,
-            };
-
-            if state.validate_make_bid_event(event).is_ok() {
-                break;
-            } else {
-                println!("That bid is not available anymore!");
-            }
-        }
-
-        user_bid
-    }
-
-    fn get_card_from_user_for(&self, state: &GameState<CardPlay>, seat: Seat) -> Card {
-        self.presenter.display_dummys_hand_for_user(
-            &state
-                .inner
-                .hand_manager
-                .known_remaining_cards_of(state.inner.contract.declarer.partner()),
-        );
-        self.presenter.display_trick_for_user(state);
-        self.presenter
-            .display_hand_for_user(&state.inner.hand_manager.known_remaining_cards_of(self.seat));
-
-        if seat == self.seat {
-            println!("You have to play from your own hand!");
-        } else {
-            println!("You have to play from dummy's hand!");
-        }
-
-        println!("What card do you want to play?");
-
-        let mut user_input;
-        let mut user_card: Card;
-
-        loop {
-            user_input = String::new();
-            stdin().read_line(&mut user_input).unwrap();
-            user_card = match Card::from_str(user_input.trim()) {
-                Ok(card) => card,
-                _ => {
-                    println!("That's not a valid card!");
-                    continue;
-                }
-            };
-            let event = CardEvent {
-                player: seat,
-                card: user_card,
-            };
-
-            if state.validate_play_card_event(event).is_ok() {
-                break;
-            } else {
-                println!("You can't play that card!");
-            }
-        }
-
-        user_card
-    }
-
-    fn get_opening_lead_from_user(&self, state: &GameState<OpeningLead>) -> Card {
-        self.presenter.display_final_contract_for_user(state);
-        self.presenter
-            .display_hand_for_user(&state.inner.hand_manager.known_remaining_cards_of(self.seat));
-
-        println!("What card do you want to play?");
-
-        let mut user_input;
-        let mut user_card: Card;
-
-        loop {
-            user_input = String::new();
-            stdin().read_line(&mut user_input).unwrap();
-            user_card = match Card::from_str(user_input.trim()) {
-                Ok(card) => card,
-                _ => {
-                    println!("That's not a valid card!");
-                    continue;
-                }
-            };
-            let event = CardEvent {
-                player: self.seat,
-                card: user_card,
-            };
-
-            if state.validate_play_card_event(event).is_ok() {
-                break;
-            } else {
-                println!("You can't play that card!");
-            }
-        }
-
-        user_card
     }
 
     fn play_card_as(&self, card: Card, seat: Seat) -> PlayerEvent {
@@ -263,7 +155,7 @@ mod test {
         player.process_game_event(hand_event).unwrap();
 
         let _bid = match player.game.as_ref().unwrap() {
-            Game::Bidding(state) => player.get_bid_from_user(state),
+            Game::Bidding(state) => player.move_finder.get_bid_from_user(state, &player.presenter),
             _ => panic!(),
         };
     }
