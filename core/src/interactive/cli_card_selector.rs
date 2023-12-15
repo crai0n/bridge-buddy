@@ -1,4 +1,4 @@
-use crate::engine::card_play::CardFinder;
+use crate::engine::card_play_engine::SelectCard;
 use crate::game::game_state::{CardPlay, GameState, OpeningLead};
 use crate::interactive::cli_presenter::CliPresenter;
 use crate::primitives::deal::Seat;
@@ -8,13 +8,13 @@ use std::io::stdin;
 use std::str::FromStr;
 
 #[allow(dead_code)]
-pub struct CliCardFinder {
+pub struct CliCardSelector {
     seat: Seat,
 }
 
-impl CliCardFinder {
+impl CliCardSelector {
     pub fn new(seat: Seat) -> Self {
-        CliCardFinder { seat }
+        CliCardSelector { seat }
     }
 
     fn get_card_from_user_for(&self, state: &GameState<CardPlay>, seat: Seat) -> Card {
@@ -98,12 +98,16 @@ impl CliCardFinder {
     }
 }
 
-impl CardFinder for CliCardFinder {
-    fn find_card_for(&self, state: &GameState<CardPlay>, seat: Seat) -> Card {
+impl SelectCard for CliCardSelector {
+    fn select_card_for(&self, state: &GameState<CardPlay>, seat: Seat) -> Card {
         self.get_card_from_user_for(state, seat)
     }
 
-    fn find_opening_lead(&self, state: &GameState<OpeningLead>) -> Card {
+    fn select_opening_lead(&self, state: &GameState<OpeningLead>) -> Card {
         self.get_opening_lead_from_user(state)
+    }
+
+    fn seat(&self) -> Seat {
+        self.seat
     }
 }

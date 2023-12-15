@@ -1,4 +1,4 @@
-use crate::engine::bidding::BidFinder;
+use crate::engine::bidding_engine::SelectBid;
 use crate::game::game_state::{Bidding, GameState};
 use crate::primitives::bid::{AuxiliaryBid, Bid, ContractBid};
 use crate::primitives::contract::{ContractDenomination, ContractLevel};
@@ -56,8 +56,8 @@ impl Default for MockBiddingEngine {
     }
 }
 
-impl BidFinder for MockBiddingEngine {
-    fn find_bid(&self, state: &GameState<Bidding>) -> Bid {
+impl SelectBid for MockBiddingEngine {
+    fn select_bid(&self, state: &GameState<Bidding>) -> Bid {
         self.find_bid(state)
     }
 }

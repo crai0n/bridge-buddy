@@ -1,6 +1,6 @@
 use bridge_buddy_core::actors::game_client::auto_game_client::AutoGameClient;
 use bridge_buddy_core::actors::table::Table;
-use bridge_buddy_core::engine::evaluator::ForumDPlus2015Evaluator;
+use bridge_buddy_core::engine::hand_evaluation::ForumDPlus2015Evaluator;
 use bridge_buddy_core::interactive::cli_game_client::CliGameClient;
 use bridge_buddy_core::primitives::card::Suit;
 use bridge_buddy_core::primitives::deal::Hand;

@@ -1,8 +1,8 @@
 use crate::actors::game_client::GameClient;
-use crate::engine::MoveFinder;
+use crate::engine::SelectMove;
 use crate::error::BBError;
 use crate::game::Game;
-use crate::interactive::cli_move_finder::CliMoveFinder;
+use crate::interactive::cli_move_selector::CliMoveSelector;
 use crate::interactive::cli_presenter::CliPresenter;
 use crate::primitives::deal::Seat;
 use crate::primitives::game_event::GameEvent;
@@ -12,8 +12,7 @@ use crate::primitives::player_event::PlayerEvent;
 pub struct CliGameClient {
     seat: Seat,
     game: Option<Game>,
-    presenter: CliPresenter,
-    move_finder: CliMoveFinder,
+    move_selector: CliMoveSelector,
 }
 
 impl GameClient for CliGameClient {
@@ -46,15 +45,14 @@ impl GameClient for CliGameClient {
 
 impl CliGameClient {
     fn get_move_for(&self, seat: Seat) -> Result<PlayerEvent, BBError> {
-        self.move_finder.find_move_for(self.game.as_ref().unwrap(), seat)
+        self.move_selector.select_move_for(self.game.as_ref().unwrap(), seat)
     }
 
     pub fn new(seat: Seat) -> Self {
         CliGameClient {
             seat,
             game: None,
-            presenter: CliPresenter {},
-            move_finder: CliMoveFinder::new(seat),
+            move_selector: CliMoveSelector::new(seat),
         }
     }
 }
@@ -62,7 +60,8 @@ impl CliGameClient {
 #[cfg(test)]
 mod test {
     use crate::actors::game_client::GameClient;
-    use crate::engine::MoveFinder;
+
+    use crate::engine::bidding_engine::SelectBid;
     use crate::game::Game;
     use crate::interactive::cli_game_client::CliGameClient;
     use crate::primitives::deal::Board;
@@ -90,7 +89,7 @@ mod test {
         player.process_game_event(hand_event).unwrap();
 
         let _bid = match player.game.as_ref().unwrap() {
-            Game::Bidding(state) => player.move_finder.find_bid(state),
+            Game::Bidding(state) => player.move_selector.select_bid(state),
             _ => panic!(),
         };
     }

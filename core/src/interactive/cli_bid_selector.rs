@@ -1,4 +1,4 @@
-use crate::engine::bidding::BidFinder;
+use crate::engine::bidding_engine::SelectBid;
 use crate::game::game_state::{Bidding, GameState};
 use crate::interactive::cli_presenter::CliPresenter;
 use crate::primitives::bid::Bid;
@@ -7,13 +7,13 @@ use crate::primitives::game_event::BidEvent;
 use std::io::stdin;
 use std::str::FromStr;
 
-pub struct CliBidFinder {
+pub struct CliBidSelector {
     seat: Seat,
 }
 
-impl CliBidFinder {
+impl CliBidSelector {
     pub fn new(seat: Seat) -> Self {
-        CliBidFinder { seat }
+        CliBidSelector { seat }
     }
 
     pub fn get_bid_from_user(&self, state: &GameState<Bidding>) -> Bid {
@@ -52,8 +52,8 @@ impl CliBidFinder {
     }
 }
 
-impl BidFinder for CliBidFinder {
-    fn find_bid(&self, state: &GameState<Bidding>) -> Bid {
+impl SelectBid for CliBidSelector {
+    fn select_bid(&self, state: &GameState<Bidding>) -> Bid {
         self.get_bid_from_user(state)
     }
 }

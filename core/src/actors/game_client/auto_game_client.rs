@@ -1,6 +1,6 @@
 use crate::actors::game_client::GameClient;
-use crate::engine::auto_move_finder::AutoMoveFinder;
-use crate::engine::MoveFinder;
+use crate::engine::mock_bridge_engine::MockBridgeEngine;
+use crate::engine::SelectMove;
 use crate::error::BBError;
 use crate::game::Game;
 use crate::primitives::deal::Seat;
@@ -10,7 +10,7 @@ use crate::primitives::player_event::PlayerEvent;
 pub struct AutoGameClient {
     seat: Seat,
     game: Option<Game>,
-    move_finder: AutoMoveFinder,
+    move_selector: MockBridgeEngine,
 }
 
 impl GameClient for AutoGameClient {
@@ -38,14 +38,14 @@ impl GameClient for AutoGameClient {
 
 impl AutoGameClient {
     fn get_move_for(&self, seat: Seat) -> Result<PlayerEvent, BBError> {
-        self.move_finder.find_move_for(self.game.as_ref().unwrap(), seat)
+        self.move_selector.select_move_for(self.game.as_ref().unwrap(), seat)
     }
 
     pub fn new(seat: Seat) -> Self {
         AutoGameClient {
             seat,
             game: None,
-            move_finder: AutoMoveFinder::new(seat),
+            move_selector: MockBridgeEngine::new(seat),
         }
     }
 }

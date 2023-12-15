@@ -1,4 +1,4 @@
-use crate::engine::card_play::CardFinder;
+use crate::engine::card_play_engine::SelectCard;
 use crate::game::game_state::{CardPlay, GameState, OpeningLead};
 use crate::primitives::deal::Seat;
 use crate::primitives::{Card, Suit};
@@ -41,13 +41,17 @@ impl MockCardPlayEngine {
     }
 }
 
-impl CardFinder for MockCardPlayEngine {
-    fn find_card_for(&self, state: &GameState<CardPlay>, seat: Seat) -> Card {
+impl SelectCard for MockCardPlayEngine {
+    fn select_card_for(&self, state: &GameState<CardPlay>, seat: Seat) -> Card {
         self.pick_card_for(state, seat)
     }
 
-    fn find_opening_lead(&self, state: &GameState<OpeningLead>) -> Card {
+    fn select_opening_lead(&self, state: &GameState<OpeningLead>) -> Card {
         self.pick_opening_lead(state)
+    }
+
+    fn seat(&self) -> Seat {
+        self.seat
     }
 }
 

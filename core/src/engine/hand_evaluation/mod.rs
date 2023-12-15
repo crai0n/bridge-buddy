@@ -458,7 +458,7 @@ impl ForumDPlus2015Evaluator {
 
 #[cfg(test)]
 mod test {
-    use crate::engine::evaluator::*;
+    use crate::engine::hand_evaluation::*;
     use crate::primitives::Hand;
     use crate::primitives::Suit;
     use std::str::FromStr;
