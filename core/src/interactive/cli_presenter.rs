@@ -1,9 +1,11 @@
+use crate::game::game_state::{Bidding, CardPlay, GameState, OpeningLead};
 use crate::presentation::PresentEvent;
 use crate::primitives::deal::Seat;
 use crate::primitives::game_event::{
     BidEvent, BiddingEndedEvent, CardEvent, DiscloseHandEvent, DummyUncoveredEvent, GameEndedEvent, GameEvent,
     NewGameEvent,
 };
+use crate::primitives::Card;
 
 #[allow(dead_code)]
 pub struct CliPresenter {
@@ -76,5 +78,36 @@ impl CliPresenter {
     fn print_dummy_uncovered_event_to_console(&self, event: DummyUncoveredEvent) {
         println!("Dummy has shown their hand:");
         println!("{}", event.dummy)
+    }
+
+    pub fn display_bidding_state_for_user(&self, state: &GameState<Bidding>) {
+        println!("The bidding so far is: ");
+        print!("{}", state.inner.bid_manager)
+    }
+
+    pub fn display_final_contract_for_user(&self, state: &GameState<OpeningLead>) {
+        println!("The final contract is: {}", state.inner.contract);
+    }
+
+    pub fn display_hand_for_user(&self, cards: &[Card]) {
+        println!("Your hand:");
+        for card in cards {
+            print!("{}", card)
+        }
+        println!();
+    }
+
+    pub fn display_dummys_hand_for_user(&self, cards: &[Card]) {
+        println!("Dummies Hand:");
+        for card in cards {
+            print!("{}", card)
+        }
+        println!();
+    }
+
+    pub fn display_trick_for_user(&self, state: &GameState<CardPlay>) {
+        if let Some(trick) = state.inner.trick_manager.current_trick() {
+            println!("Current Trick: {}", trick)
+        }
     }
 }

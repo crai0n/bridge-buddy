@@ -1,6 +1,6 @@
 use crate::error::BBError;
 use crate::game_manager::GameManager;
-use crate::interactive::cli_player::CliPlayer;
+use crate::interactive::cli_move_finder::CliPlayer;
 use crate::player::auto_player::AutoPlayer;
 use crate::player::{Move, Player};
 use crate::primitives::deal::Seat;

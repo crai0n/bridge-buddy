@@ -1,5 +1,5 @@
 use bridge_buddy_core::engine::evaluator::ForumDPlus2015Evaluator;
-use bridge_buddy_core::interactive::cli_player::CliPlayer;
+use bridge_buddy_core::interactive::cli_move_finder::CliPlayer;
 use bridge_buddy_core::player::auto_player::AutoPlayer;
 use bridge_buddy_core::primitives::card::Suit;
 use bridge_buddy_core::primitives::deal::Hand;

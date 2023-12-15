@@ -1,6 +1,8 @@
 use crate::error::BBError;
 use crate::game::game_state::{Bidding, CardPlay, GameState, OpeningLead};
 use crate::game::Game;
+use crate::interactive::cli_bid_finder::CliBidFinder;
+use crate::interactive::cli_card_finder::CliCardFinder;
 use crate::interactive::cli_presenter::CliPresenter;
 use crate::player::{Move, Player};
 use crate::presentation::PresentEvent;
@@ -12,10 +14,27 @@ use crate::primitives::Card;
 use std::io::stdin;
 use std::str::FromStr;
 
+#[allow(dead_code)]
+pub struct CliMoveFinder {
+    bid_finder: CliBidFinder,
+    card_finder: CliCardFinder,
+}
+
+impl CliMoveFinder {
+    pub fn new(seat: Seat) -> Self {
+        Self {
+            bid_finder: CliBidFinder::new(seat),
+            card_finder: CliCardFinder::new(seat),
+        }
+    }
+}
+
+#[allow(dead_code)]
 pub struct CliPlayer {
     seat: Seat,
     game: Option<Game>,
     presenter: CliPresenter,
+    move_finder: CliMoveFinder,
 }
 
 impl Player for CliPlayer {
@@ -82,8 +101,9 @@ impl CliPlayer {
     }
 
     fn get_bid_from_user(&self, state: &GameState<Bidding>) -> Bid {
-        self.display_bidding_state_for_user(state);
-        self.display_hand_for_user(&state.inner.hand_manager.known_remaining_cards_of(self.seat));
+        self.presenter.display_bidding_state_for_user(state);
+        self.presenter
+            .display_hand_for_user(&state.inner.hand_manager.known_remaining_cards_of(self.seat));
 
         println!("What do you want to bid?");
 
@@ -116,46 +136,16 @@ impl CliPlayer {
         user_bid
     }
 
-    fn display_bidding_state_for_user(&self, state: &GameState<Bidding>) {
-        println!("The bidding so far is: ");
-        print!("{}", state.inner.bid_manager)
-    }
-
-    pub fn display_final_contract_for_user(&self, state: &GameState<OpeningLead>) {
-        println!("The final contract is: {}", state.inner.contract);
-    }
-
-    fn display_hand_for_user(&self, cards: &[Card]) {
-        println!("Your hand:");
-        for card in cards {
-            print!("{}", card)
-        }
-        println!();
-    }
-
-    fn display_dummys_hand_for_user(&self, cards: &[Card]) {
-        println!("Dummies Hand:");
-        for card in cards {
-            print!("{}", card)
-        }
-        println!();
-    }
-
-    fn display_trick_for_user(&self, state: &GameState<CardPlay>) {
-        if let Some(trick) = state.inner.trick_manager.current_trick() {
-            println!("Current Trick: {}", trick)
-        }
-    }
-
     fn get_card_from_user_for(&self, state: &GameState<CardPlay>, seat: Seat) -> Card {
-        self.display_dummys_hand_for_user(
+        self.presenter.display_dummys_hand_for_user(
             &state
                 .inner
                 .hand_manager
                 .known_remaining_cards_of(state.inner.contract.declarer.partner()),
         );
-        self.display_trick_for_user(state);
-        self.display_hand_for_user(&state.inner.hand_manager.known_remaining_cards_of(self.seat));
+        self.presenter.display_trick_for_user(state);
+        self.presenter
+            .display_hand_for_user(&state.inner.hand_manager.known_remaining_cards_of(self.seat));
 
         if seat == self.seat {
             println!("You have to play from your own hand!");
@@ -194,8 +184,9 @@ impl CliPlayer {
     }
 
     fn get_opening_lead_from_user(&self, state: &GameState<OpeningLead>) -> Card {
-        self.display_final_contract_for_user(state);
-        self.display_hand_for_user(&state.inner.hand_manager.known_remaining_cards_of(self.seat));
+        self.presenter.display_final_contract_for_user(state);
+        self.presenter
+            .display_hand_for_user(&state.inner.hand_manager.known_remaining_cards_of(self.seat));
 
         println!("What card do you want to play?");
 
@@ -237,6 +228,7 @@ impl CliPlayer {
             seat,
             game: None,
             presenter: CliPresenter { seat },
+            move_finder: CliMoveFinder::new(seat),
         }
     }
 }
@@ -244,7 +236,7 @@ impl CliPlayer {
 #[cfg(test)]
 mod test {
     use crate::game::Game;
-    use crate::interactive::cli_player::CliPlayer;
+    use crate::interactive::cli_move_finder::CliPlayer;
     use crate::player::Player;
     use crate::primitives::deal::Board;
     use crate::primitives::game_event::GameEvent::DiscloseHand;
