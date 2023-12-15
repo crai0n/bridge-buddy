@@ -3,20 +3,19 @@ use crate::error::BBError;
 use crate::primitives::game_event::GameEvent;
 use crate::primitives::player_event::PlayerEvent;
 
-pub mod auto_player;
+pub mod auto_game_client;
 
-pub trait Player {
+pub trait GameClient {
     fn process_game_event(&mut self, event: GameEvent) -> Result<(), BBError>;
-}
-pub trait Move {
+
     fn get_move(&self) -> Result<PlayerEvent, BBError>;
     fn get_dummy_move(&self) -> Result<PlayerEvent, BBError>;
 }
 
 #[cfg(test)]
 mod test {
-    use crate::player::auto_player::AutoPlayer;
-    use crate::player::{Move, Player};
+    use crate::actors::game_client::auto_game_client::AutoGameClient;
+    use crate::actors::game_client::GameClient;
     use crate::primitives::bid::{Bid, ContractBid};
     use crate::primitives::deal::Board;
     use crate::primitives::game_event::GameEvent::DiscloseHand;
@@ -35,7 +34,7 @@ mod test {
 
         let seat = board.dealer();
 
-        let mut player = AutoPlayer::new(seat);
+        let mut player = AutoGameClient::new(seat);
 
         let ng_event = NewGameEvent { board };
         let event = GameEvent::NewGame(ng_event);
@@ -64,7 +63,7 @@ mod test {
 
         let seat = board.dealer();
 
-        let mut player = AutoPlayer::new(seat);
+        let mut player = AutoGameClient::new(seat);
 
         let ng_event = NewGameEvent { board };
         let event = GameEvent::NewGame(ng_event);

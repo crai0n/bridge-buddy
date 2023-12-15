@@ -1,23 +1,16 @@
+use crate::actors::game_client::GameClient;
+use crate::actors::game_manager::GameManager;
 use crate::error::BBError;
-use crate::game_manager::GameManager;
-use crate::interactive::cli_move_finder::CliPlayer;
-use crate::player::auto_player::AutoPlayer;
-use crate::player::{Move, Player};
+use crate::game::scoring::ScorePoints;
 use crate::primitives::deal::Seat;
 use crate::primitives::game_event::GameEvent;
 use crate::primitives::Deal;
-use crate::scoring::ScorePoints;
 use std::collections::btree_map::Entry;
 use std::collections::BTreeMap;
 
-pub trait NewTrait: Player + Move {}
-
-impl NewTrait for AutoPlayer {}
-impl NewTrait for CliPlayer {}
-
 pub struct Table<'a> {
     game_manager: Option<GameManager>,
-    seats: BTreeMap<Seat, &'a mut (dyn NewTrait)>,
+    seats: BTreeMap<Seat, &'a mut (dyn GameClient)>,
 }
 
 impl<'a> Table<'a> {
@@ -28,7 +21,7 @@ impl<'a> Table<'a> {
         }
     }
 
-    pub fn seat_player(&mut self, player: &'a mut impl NewTrait, seat: Seat) -> Result<(), BBError> {
+    pub fn seat_player(&mut self, player: &'a mut impl GameClient, seat: Seat) -> Result<(), BBError> {
         if let Entry::Vacant(e) = self.seats.entry(seat) {
             e.insert(player);
             Ok(())
@@ -123,18 +116,18 @@ impl<'a> Table<'a> {
 
 #[cfg(test)]
 mod test {
-    use crate::player::auto_player::AutoPlayer;
+    use crate::actors::game_client::auto_game_client::AutoGameClient;
+    use crate::actors::table::Table;
     use crate::primitives::deal::Seat::*;
-    use crate::table::Table;
 
     #[test]
     fn run_game() {
         let mut table = Table::empty();
 
-        let mut north_player = AutoPlayer::new(North);
-        let mut south_player = AutoPlayer::new(South);
-        let mut east_player = AutoPlayer::new(East);
-        let mut west_player = AutoPlayer::new(West);
+        let mut north_player = AutoGameClient::new(North);
+        let mut south_player = AutoGameClient::new(South);
+        let mut east_player = AutoGameClient::new(East);
+        let mut west_player = AutoGameClient::new(West);
 
         table.seat_player(&mut north_player, North).unwrap();
         table.seat_player(&mut south_player, South).unwrap();

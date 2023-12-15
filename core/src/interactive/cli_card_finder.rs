@@ -12,26 +12,20 @@ pub struct CliCardFinder {
     seat: Seat,
 }
 
-impl CardFinder for CliCardFinder {
-    fn find_card() -> Card {
-        todo!()
-    }
-}
-
 impl CliCardFinder {
     pub fn new(seat: Seat) -> Self {
         CliCardFinder { seat }
     }
 
-    pub fn get_card_from_user_for(&self, state: &GameState<CardPlay>, seat: Seat, presenter: &CliPresenter) -> Card {
-        presenter.display_dummys_hand_for_user(
+    fn get_card_from_user_for(&self, state: &GameState<CardPlay>, seat: Seat) -> Card {
+        CliPresenter::display_dummys_hand_for_user(
             &state
                 .inner
                 .hand_manager
                 .known_remaining_cards_of(state.inner.contract.declarer.partner()),
         );
-        presenter.display_trick_for_user(state);
-        presenter.display_hand_for_user(&state.inner.hand_manager.known_remaining_cards_of(self.seat));
+        CliPresenter::display_trick_for_user(state);
+        CliPresenter::display_hand_for_user(&state.inner.hand_manager.known_remaining_cards_of(self.seat));
 
         if seat == self.seat {
             println!("You have to play from your own hand!");
@@ -69,9 +63,9 @@ impl CliCardFinder {
         user_card
     }
 
-    pub fn get_opening_lead_from_user(&self, state: &GameState<OpeningLead>, presenter: &CliPresenter) -> Card {
-        presenter.display_final_contract_for_user(state);
-        presenter.display_hand_for_user(&state.inner.hand_manager.known_remaining_cards_of(self.seat));
+    fn get_opening_lead_from_user(&self, state: &GameState<OpeningLead>) -> Card {
+        CliPresenter::display_final_contract_for_user(state);
+        CliPresenter::display_hand_for_user(&state.inner.hand_manager.known_remaining_cards_of(self.seat));
 
         println!("What card do you want to play?");
 
@@ -101,5 +95,15 @@ impl CliCardFinder {
         }
 
         user_card
+    }
+}
+
+impl CardFinder for CliCardFinder {
+    fn find_card_for(&self, state: &GameState<CardPlay>, seat: Seat) -> Card {
+        self.get_card_from_user_for(state, seat)
+    }
+
+    fn find_opening_lead(&self, state: &GameState<OpeningLead>) -> Card {
+        self.get_opening_lead_from_user(state)
     }
 }

@@ -5,6 +5,7 @@ pub mod game_state;
 // mod bid_manager;
 pub mod bid_manager;
 pub mod hand_manager;
+pub mod scoring;
 
 use crate::error::BBError;
 use crate::game::game_state::{Bidding, CardPlay, Ended, GameState, OpeningLead, WaitingForDummy};
@@ -14,7 +15,7 @@ use crate::primitives::game_event::{
     BidEvent, BiddingEndedEvent, CardEvent, DiscloseHandEvent, DummyUncoveredEvent, GameEvent, NewGameEvent,
 };
 use crate::primitives::Hand;
-use crate::scoring::ScorePoints;
+use scoring::ScorePoints;
 
 #[derive(Debug, Clone)]
 pub enum Game {

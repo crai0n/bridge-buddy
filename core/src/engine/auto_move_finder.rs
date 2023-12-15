@@ -1,44 +1,41 @@
+use crate::engine::bidding::mock::MockBiddingEngine;
 use crate::engine::bidding::BidFinder;
+use crate::engine::card_play::mock::MockCardPlayEngine;
 use crate::engine::card_play::CardFinder;
 use crate::engine::MoveFinder;
-
 use crate::game::game_state::{Bidding, CardPlay, GameState, OpeningLead};
-
-use crate::interactive::cli_bid_finder::CliBidFinder;
-use crate::interactive::cli_card_finder::CliCardFinder;
 
 use crate::primitives::bid::Bid;
 use crate::primitives::deal::Seat;
 use crate::primitives::Card;
 
-#[allow(dead_code)]
-pub struct CliMoveFinder {
+pub struct AutoMoveFinder {
     seat: Seat,
-    bid_finder: CliBidFinder,
-    card_finder: CliCardFinder,
+    bidding_engine: MockBiddingEngine,
+    card_play_engine: MockCardPlayEngine,
 }
 
-impl CliMoveFinder {
+impl AutoMoveFinder {
     pub fn new(seat: Seat) -> Self {
         Self {
             seat,
-            bid_finder: CliBidFinder::new(seat),
-            card_finder: CliCardFinder::new(seat),
+            bidding_engine: MockBiddingEngine::new(),
+            card_play_engine: MockCardPlayEngine::new(seat),
         }
     }
 }
 
-impl MoveFinder for CliMoveFinder {
+impl MoveFinder for AutoMoveFinder {
     fn find_bid(&self, game_state: &GameState<Bidding>) -> Bid {
-        self.bid_finder.find_bid(game_state)
+        self.bidding_engine.find_bid(game_state)
     }
 
     fn pick_opening_lead(&self, game_state: &GameState<OpeningLead>) -> Card {
-        self.card_finder.find_opening_lead(game_state)
+        self.card_play_engine.find_opening_lead(game_state)
     }
 
     fn pick_card_for(&self, game_state: &GameState<CardPlay>, seat: Seat) -> Card {
-        self.card_finder.find_card_for(game_state, seat)
+        self.card_play_engine.find_card_for(game_state, seat)
     }
 
     fn seat(&self) -> Seat {

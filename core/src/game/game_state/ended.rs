@@ -1,12 +1,12 @@
 use crate::error::BBError;
 use crate::game::game_state::GameState;
 use crate::game::hand_manager::HandManager;
+use crate::game::scoring::{ScoreCalculator, ScorePoints};
 use crate::primitives::bid_line::BidLine;
 use crate::primitives::deal::{Board, Seat};
 use crate::primitives::game_result::GameResult;
 use crate::primitives::trick::PlayedTrick;
 use crate::primitives::Hand;
-use crate::scoring::{ScoreCalculator, ScorePoints};
 
 #[derive(Debug, Clone)]
 pub struct Ended {

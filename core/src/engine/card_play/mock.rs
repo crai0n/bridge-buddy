@@ -1,3 +1,4 @@
+use crate::engine::card_play::CardFinder;
 use crate::game::game_state::{CardPlay, GameState, OpeningLead};
 use crate::primitives::deal::Seat;
 use crate::primitives::{Card, Suit};
@@ -11,13 +12,13 @@ impl MockCardPlayEngine {
         Self { seat }
     }
 
-    pub fn pick_opening_lead(&self, state: &GameState<OpeningLead>) -> Card {
+    fn pick_opening_lead(&self, state: &GameState<OpeningLead>) -> Card {
         let hand = state.inner.hand_manager.known_remaining_cards_of(self.seat);
         let card = hand.first().unwrap();
         *card
     }
 
-    pub fn pick_card_for(&self, state: &GameState<CardPlay>, seat: Seat) -> Card {
+    fn pick_card_for(&self, state: &GameState<CardPlay>, seat: Seat) -> Card {
         match state.inner.trick_manager.suit_to_follow() {
             None => self.pick_lead_for(state, seat),
             Some(suit) => self.pick_discard_for(suit, state, seat),
@@ -37,6 +38,16 @@ impl MockCardPlayEngine {
         } else {
             *remaining_cards.first().unwrap()
         }
+    }
+}
+
+impl CardFinder for MockCardPlayEngine {
+    fn find_card_for(&self, state: &GameState<CardPlay>, seat: Seat) -> Card {
+        self.pick_card_for(state, seat)
+    }
+
+    fn find_opening_lead(&self, state: &GameState<OpeningLead>) -> Card {
+        self.pick_opening_lead(state)
     }
 }
 

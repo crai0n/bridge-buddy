@@ -1,3 +1,4 @@
+use crate::engine::bidding::BidFinder;
 use crate::game::game_state::{Bidding, GameState};
 use crate::interactive::cli_presenter::CliPresenter;
 use crate::primitives::bid::Bid;
@@ -6,7 +7,6 @@ use crate::primitives::game_event::BidEvent;
 use std::io::stdin;
 use std::str::FromStr;
 
-#[allow(dead_code)]
 pub struct CliBidFinder {
     seat: Seat,
 }
@@ -16,9 +16,9 @@ impl CliBidFinder {
         CliBidFinder { seat }
     }
 
-    pub fn get_bid_from_user(&self, state: &GameState<Bidding>, presenter: &CliPresenter) -> Bid {
-        presenter.display_bidding_state_for_user(state);
-        presenter.display_hand_for_user(&state.inner.hand_manager.known_remaining_cards_of(self.seat));
+    pub fn get_bid_from_user(&self, state: &GameState<Bidding>) -> Bid {
+        CliPresenter::display_bidding_state_for_user(state);
+        CliPresenter::display_hand_for_user(&state.inner.hand_manager.known_remaining_cards_of(self.seat));
 
         println!("What do you want to bid?");
 
@@ -49,5 +49,11 @@ impl CliBidFinder {
         }
 
         user_bid
+    }
+}
+
+impl BidFinder for CliBidFinder {
+    fn find_bid(&self, state: &GameState<Bidding>) -> Bid {
+        self.get_bid_from_user(state)
     }
 }

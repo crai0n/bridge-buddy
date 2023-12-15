@@ -1,10 +1,10 @@
+use bridge_buddy_core::actors::game_client::auto_game_client::AutoGameClient;
+use bridge_buddy_core::actors::table::Table;
 use bridge_buddy_core::engine::evaluator::ForumDPlus2015Evaluator;
-use bridge_buddy_core::interactive::cli_move_finder::CliPlayer;
-use bridge_buddy_core::player::auto_player::AutoPlayer;
+use bridge_buddy_core::interactive::cli_game_client::CliGameClient;
 use bridge_buddy_core::primitives::card::Suit;
 use bridge_buddy_core::primitives::deal::Hand;
 use bridge_buddy_core::primitives::deal::Seat::{East, North, South, West};
-use bridge_buddy_core::table::Table;
 use bridge_buddy_core::IntoEnumIterator;
 use clap::{Parser, Subcommand};
 use std::io::stdin;
@@ -37,10 +37,10 @@ fn main() {
         Command::Play => {
             let mut table = Table::empty();
 
-            let mut north_player = AutoPlayer::new(North);
-            let mut south_player = CliPlayer::new(South);
-            let mut east_player = AutoPlayer::new(East);
-            let mut west_player = AutoPlayer::new(West);
+            let mut north_player = AutoGameClient::new(North);
+            let mut south_player = CliGameClient::new(South);
+            let mut east_player = AutoGameClient::new(East);
+            let mut west_player = AutoGameClient::new(West);
 
             table.seat_player(&mut north_player, North).unwrap();
             table.seat_player(&mut south_player, South).unwrap();
