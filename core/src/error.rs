@@ -1,7 +1,7 @@
 use crate::primitives::bid::Bid;
 use crate::primitives::deal::Seat;
 use crate::primitives::game_event::GameEvent;
-use crate::primitives::Card;
+use crate::primitives::{Card, Suit};
 use std::fmt::{Debug, Display, Formatter};
 
 #[derive(Debug, PartialEq)]
@@ -43,6 +43,9 @@ pub enum BBError {
     NoGame,
     GameStuck,
     CannotPlayFor(Seat),
+    FollowSuit(Suit),
+    NotYourCard(Card),
+    AlreadyPlayed(Card),
 }
 
 impl Display for BBError {
@@ -81,6 +84,9 @@ impl Display for BBError {
             BBError::NoGame => writeln!(f, "There is no game to start"),
             BBError::GameStuck => writeln!(f, "It seems the game is stuck"),
             BBError::CannotPlayFor(seat) => writeln!(f, "You cannot play for {}.", seat),
+            BBError::FollowSuit(suit) => writeln!(f, "You have to follow suit: {}.", suit),
+            BBError::NotYourCard(card) => writeln!(f, "Card {} belongs to another player.", card),
+            BBError::AlreadyPlayed(card) => writeln!(f, "Card {} has already been played.", card),
         }
     }
 }

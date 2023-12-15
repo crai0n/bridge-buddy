@@ -60,11 +60,13 @@ impl HandManager {
     }
 
     pub fn validate_play_card_event(&self, card: Card, player: Seat) -> Result<(), BBError> {
-        if self.card_could_belong_to_player(&card, player) && !self.card_has_already_been_played(&card) {
-            Ok(())
-        } else {
-            Err(BBError::InvalidCard(card))
+        if !self.card_could_belong_to_player(&card, player) {
+            return Err(BBError::NotYourCard(card));
         }
+        if self.card_has_already_been_played(&card) {
+            return Err(BBError::AlreadyPlayed(card));
+        }
+        Ok(())
     }
 
     fn apply_play_card_event(&mut self, card: Card, player: Seat) -> Result<(), BBError> {
