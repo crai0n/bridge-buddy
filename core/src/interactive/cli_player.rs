@@ -1,13 +1,12 @@
 use crate::error::BBError;
 use crate::game::game_state::{Bidding, CardPlay, GameState, OpeningLead};
 use crate::game::Game;
-use crate::player::Player;
+use crate::interactive::cli_presenter::CliPresenter;
+use crate::player::{Move, Player};
+use crate::presentation::PresentEvent;
 use crate::primitives::bid::Bid;
 use crate::primitives::deal::Seat;
-use crate::primitives::game_event::{
-    BidEvent, BiddingEndedEvent, CardEvent, DiscloseHandEvent, DummyUncoveredEvent, GameEndedEvent, GameEvent,
-    NewGameEvent,
-};
+use crate::primitives::game_event::{BidEvent, CardEvent, GameEvent};
 use crate::primitives::player_event::PlayerEvent;
 use crate::primitives::Card;
 use std::io::stdin;
@@ -16,6 +15,7 @@ use std::str::FromStr;
 pub struct CliPlayer {
     seat: Seat,
     game: Option<Game>,
+    presenter: CliPresenter,
 }
 
 impl Player for CliPlayer {
@@ -23,20 +23,21 @@ impl Player for CliPlayer {
         match event {
             GameEvent::NewGame(new_game_event) => {
                 self.game = Some(Game::from_new_game_event(new_game_event));
-                self.display_new_game_event_for_user(new_game_event);
+                self.presenter.present_event(GameEvent::NewGame(new_game_event));
                 Ok(())
             }
             _ => match &mut self.game {
                 None => Err(BBError::GameHasNotStarted)?,
                 Some(game) => {
                     game.process_game_event(event)?;
-                    self.display_game_event_for_user(event);
+                    self.presenter.present_event(event);
                     Ok(())
                 }
             },
         }
     }
-
+}
+impl Move for CliPlayer {
     fn get_move(&self) -> Result<PlayerEvent, BBError> {
         self.get_move_for(self.seat)
     }
@@ -73,67 +74,6 @@ impl CliPlayer {
             Game::WaitingForDummy(_) => Err(BBError::OutOfTurn(None)),
             Game::Ended(_) => Err(BBError::GameHasEnded),
         }
-    }
-
-    fn display_game_event_for_user(&self, event: GameEvent) {
-        match event {
-            GameEvent::NewGame(ng_event) => self.display_new_game_event_for_user(ng_event),
-            GameEvent::DiscloseHand(dh_event) => self.display_disclose_hand_event_for_user(dh_event),
-            GameEvent::Bid(b_event) => self.display_bid_event_for_user(b_event),
-            GameEvent::BiddingEnded(mtcp_event) => self.display_move_to_card_play_event_for_user(mtcp_event),
-            GameEvent::Card(c_event) => self.display_card_event_for_user(c_event),
-            GameEvent::DummyUncovered(du_event) => self.display_dummy_uncovered_event_for_user(du_event),
-            GameEvent::GameEnded(ge_event) => self.display_game_ended_event_for_user(ge_event),
-        }
-    }
-
-    fn display_new_game_event_for_user(&self, event: NewGameEvent) {
-        println!("A new game has started!");
-        println!(
-            "We are playing board no. {}, {} is dealer, Vulnerable: {:?}",
-            event.board.number(),
-            event.board.dealer(),
-            event.board.vulnerability()
-        );
-    }
-
-    fn display_disclose_hand_event_for_user(&self, event: DiscloseHandEvent) {
-        println!("You've been dealt");
-        for card in event.hand.cards() {
-            print!("{}", card)
-        }
-        println!();
-    }
-
-    fn display_bid_event_for_user(&self, event: BidEvent) {
-        println!("{} bid {}", event.player, event.bid)
-    }
-
-    fn display_move_to_card_play_event_for_user(&self, event: BiddingEndedEvent) {
-        println!("Bidding has ended!");
-        println!(
-            "The final contract is {}{}{} played by {}",
-            event.final_contract.level,
-            event.final_contract.denomination,
-            event.final_contract.state,
-            event.final_contract.declarer
-        );
-        println!("{} plays the opening lead", event.final_contract.declarer + 1);
-    }
-
-    fn display_card_event_for_user(&self, event: CardEvent) {
-        println!("{} played {}", event.player, event.card)
-    }
-
-    fn display_game_ended_event_for_user(&self, event: GameEndedEvent) {
-        println!("The game ended");
-        println!("Result is {:?}", event.result);
-        println!("Final Score is: {:?}", event.score)
-    }
-
-    fn display_dummy_uncovered_event_for_user(&self, event: DummyUncoveredEvent) {
-        println!("Dummy has shown their hand:");
-        println!("{}", event.dummy)
     }
 
     fn make_bid_as(&self, bid: Bid, seat: Seat) -> PlayerEvent {
@@ -293,14 +233,18 @@ impl CliPlayer {
     }
 
     pub fn new(seat: Seat) -> Self {
-        CliPlayer { seat, game: None }
+        CliPlayer {
+            seat,
+            game: None,
+            presenter: CliPresenter { seat },
+        }
     }
 }
 
 #[cfg(test)]
 mod test {
     use crate::game::Game;
-    use crate::player::cli_player::CliPlayer;
+    use crate::interactive::cli_player::CliPlayer;
     use crate::player::Player;
     use crate::primitives::deal::Board;
     use crate::primitives::game_event::GameEvent::DiscloseHand;

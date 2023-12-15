@@ -1,7 +1,8 @@
+use crate::engine::bidding::mock::MockBiddingEngine;
+use crate::engine::card_play::mock::MockCardPlayEngine;
 use crate::error::BBError;
 use crate::game::Game;
-use crate::player::engine::{MockBiddingEngine, MockCardPlayEngine};
-use crate::player::Player;
+use crate::player::{Move, Player};
 use crate::primitives::bid::Bid;
 use crate::primitives::deal::Seat;
 use crate::primitives::game_event::{BidEvent, CardEvent, GameEvent};
@@ -28,7 +29,9 @@ impl Player for AutoPlayer {
             },
         }
     }
+}
 
+impl Move for AutoPlayer {
     fn get_move(&self) -> Result<PlayerEvent, BBError> {
         self.get_move_for(self.seat)
     }

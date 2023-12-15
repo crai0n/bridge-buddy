@@ -4,12 +4,11 @@ use crate::primitives::game_event::GameEvent;
 use crate::primitives::player_event::PlayerEvent;
 
 pub mod auto_player;
-// mod cli_player;
-pub mod cli_player;
-pub mod engine;
 
 pub trait Player {
     fn process_game_event(&mut self, event: GameEvent) -> Result<(), BBError>;
+}
+pub trait Move {
     fn get_move(&self) -> Result<PlayerEvent, BBError>;
     fn get_dummy_move(&self) -> Result<PlayerEvent, BBError>;
 }
@@ -17,7 +16,7 @@ pub trait Player {
 #[cfg(test)]
 mod test {
     use crate::player::auto_player::AutoPlayer;
-    use crate::player::Player;
+    use crate::player::{Move, Player};
     use crate::primitives::bid::{Bid, ContractBid};
     use crate::primitives::deal::Board;
     use crate::primitives::game_event::GameEvent::DiscloseHand;

@@ -1,6 +1,8 @@
 use crate::error::BBError;
 use crate::game_manager::GameManager;
-use crate::player::Player;
+use crate::interactive::cli_player::CliPlayer;
+use crate::player::auto_player::AutoPlayer;
+use crate::player::{Move, Player};
 use crate::primitives::deal::Seat;
 use crate::primitives::game_event::GameEvent;
 use crate::primitives::Deal;
@@ -8,9 +10,14 @@ use crate::scoring::ScorePoints;
 use std::collections::btree_map::Entry;
 use std::collections::BTreeMap;
 
+pub trait NewTrait: Player + Move {}
+
+impl NewTrait for AutoPlayer {}
+impl NewTrait for CliPlayer {}
+
 pub struct Table<'a> {
     game_manager: Option<GameManager>,
-    seats: BTreeMap<Seat, &'a mut dyn Player>,
+    seats: BTreeMap<Seat, &'a mut (dyn NewTrait)>,
 }
 
 impl<'a> Table<'a> {
@@ -21,7 +28,7 @@ impl<'a> Table<'a> {
         }
     }
 
-    pub fn seat_player(&mut self, player: &'a mut impl Player, seat: Seat) -> Result<(), BBError> {
+    pub fn seat_player(&mut self, player: &'a mut impl NewTrait, seat: Seat) -> Result<(), BBError> {
         if let Entry::Vacant(e) = self.seats.entry(seat) {
             e.insert(player);
             Ok(())
