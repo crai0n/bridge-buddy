@@ -31,7 +31,7 @@ impl std::str::FromStr for ContractDenomination {
                 Err(e) => Err(e),
             }
         } else {
-            match s {
+            match s.to_uppercase().as_ref() {
                 "SA" | "NT" => Ok(ContractDenomination::NoTrump),
                 _ => Err(BBError::UnknownContractDenomination(s.into())),
             }

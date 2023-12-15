@@ -1,10 +1,8 @@
 pub use strum::IntoEnumIterator;
 
+pub mod actors;
+pub mod engine;
 pub mod error;
-pub mod evaluator;
 pub mod game;
-pub mod game_manager;
-pub mod player;
+pub mod interactive;
 pub mod primitives;
-pub mod scoring;
-pub mod table;

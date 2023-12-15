@@ -50,21 +50,24 @@ impl GameState<CardPlay> {
             .hand_manager
             .validate_play_card_event(card_event.card, card_event.player)?;
 
-        if self.player_violates_suit_rule(card_event.player, card_event.card) {
-            return Err(BBError::InvalidCard(card_event.card));
-        }
+        self.validate_suit_rule(card_event.player, card_event.card)?;
         Ok(())
     }
 
-    pub fn player_violates_suit_rule(&self, player: Seat, card: Card) -> bool {
+    pub fn validate_suit_rule(&self, player: Seat, card: Card) -> Result<(), BBError> {
         if let Some(suit) = &self.inner.trick_manager.suit_to_follow() {
-            card.suit != *suit
+            if card.suit != *suit
                 && self
                     .inner
                     .hand_manager
                     .player_is_known_to_have_cards_left_in_suit(player, *suit)
+            {
+                Err(BBError::FollowSuit(*suit))
+            } else {
+                Ok(())
+            }
         } else {
-            false
+            Ok(())
         }
     }
 
