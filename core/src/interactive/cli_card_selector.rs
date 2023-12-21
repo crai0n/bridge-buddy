@@ -107,8 +107,4 @@ impl SelectCard for CliCardSelector {
     fn select_opening_lead(&self, state: &GameState<OpeningLead>) -> Card {
         self.get_opening_lead_from_user(state)
     }
-
-    fn seat(&self) -> Seat {
-        self.seat
-    }
 }

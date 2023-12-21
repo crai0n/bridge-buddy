@@ -32,23 +32,27 @@ impl GameClient {
     pub fn get_move(&self) -> Result<PlayerEvent, BBError> {
         match &self.game {
             None => Err(BBError::GameHasNotStarted),
-            Some(game) => match game.next_to_play() {
-                Some(next_player) if next_player == self.seat => self.get_move2(game),
-                Some(next_player) if Some(next_player) == self.dummy() && self.can_play_for_dummy() => {
-                    self.get_move2(game)
-                }
-                Some(next_player) => Err(BBError::CannotPlayFor(next_player)),
-                None => Err(BBError::OutOfTurn(None)),
-            },
+            Some(game) => self.get_move_for_game(game),
         }
     }
 
-    fn get_move2(&self, game: &Game) -> Result<PlayerEvent, BBError> {
-        let engine_move = self.move_selector.select_move(game)?;
-        let player = game.next_to_play().unwrap();
-        match engine_move {
-            Move::Bid(bid) => Ok(PlayerEvent::Bid(BidEvent { player, bid })),
-            Move::Card(card) => Ok(PlayerEvent::Card(CardEvent { player, card })),
+    fn get_move_for_game(&self, game: &Game) -> Result<PlayerEvent, BBError> {
+        match game.next_to_play() {
+            Some(next_player)
+                if next_player == self.seat || Some(next_player) == self.dummy() && self.can_play_for_dummy() =>
+            {
+                let chosen_move = self.move_selector.select_move(game)?;
+                Ok(Self::wrap_move_in_event(chosen_move, next_player))
+            }
+            Some(next_player) => Err(BBError::CannotPlayFor(next_player)),
+            None => Err(BBError::OutOfTurn(None)),
+        }
+    }
+
+    fn wrap_move_in_event(chosen_move: Move, player: Seat) -> PlayerEvent {
+        match chosen_move {
+            Move::Bid(bid) => PlayerEvent::Bid(BidEvent { player, bid }),
+            Move::Card(card) => PlayerEvent::Card(CardEvent { player, card }),
         }
     }
 

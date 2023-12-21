@@ -52,8 +52,4 @@ impl SelectCard for CliMoveSelector {
     fn select_opening_lead(&self, game_state: &GameState<OpeningLead>) -> Card {
         self.card_selector.select_opening_lead(game_state)
     }
-
-    fn seat(&self) -> Seat {
-        self.seat
-    }
 }

@@ -12,7 +12,6 @@ use crate::primitives::game_event::GameEvent;
 use crate::primitives::Card;
 
 pub struct MockBridgeEngine {
-    seat: Seat,
     bidding_engine: MockBiddingEngine,
     card_play_engine: MockCardPlayEngine,
 }
@@ -20,7 +19,6 @@ pub struct MockBridgeEngine {
 impl MockBridgeEngine {
     pub fn new(seat: Seat) -> Self {
         Self {
-            seat,
             bidding_engine: MockBiddingEngine::new(),
             card_play_engine: MockCardPlayEngine::new(seat),
         }
@@ -40,10 +38,6 @@ impl SelectCard for MockBridgeEngine {
 
     fn select_opening_lead(&self, state: &GameState<OpeningLead>) -> Card {
         self.card_play_engine.select_opening_lead(state)
-    }
-
-    fn seat(&self) -> Seat {
-        self.seat
     }
 }
 

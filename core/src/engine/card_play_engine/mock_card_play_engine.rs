@@ -49,10 +49,6 @@ impl SelectCard for MockCardPlayEngine {
     fn select_opening_lead(&self, state: &GameState<OpeningLead>) -> Card {
         self.pick_opening_lead(state)
     }
-
-    fn seat(&self) -> Seat {
-        self.seat
-    }
 }
 
 impl Default for MockCardPlayEngine {
