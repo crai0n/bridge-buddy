@@ -1,11 +1,11 @@
 use crate::actors::game_client::GameClient;
-use crate::engine::SelectMove;
+use crate::engine::{Move, SelectMove};
 use crate::error::BBError;
 use crate::game::Game;
 use crate::interactive::cli_move_selector::CliMoveSelector;
 use crate::interactive::cli_presenter::CliPresenter;
 use crate::primitives::deal::Seat;
-use crate::primitives::game_event::GameEvent;
+use crate::primitives::game_event::{BidEvent, CardEvent, GameEvent};
 use crate::primitives::player_event::PlayerEvent;
 
 #[allow(dead_code)]
@@ -35,13 +35,28 @@ impl GameClient for CliGameClient {
     }
 
     fn get_move(&self) -> Result<PlayerEvent, BBError> {
-        self.get_move()
+        match &self.game {
+            None => Err(BBError::GameHasNotStarted),
+            Some(game) => match game.next_to_play() {
+                Some(next_player) if next_player == self.seat => self.get_move(game),
+                Some(next_player) if Some(next_player) == self.dummy() && self.can_play_for_dummy() => {
+                    self.get_move(game)
+                }
+                Some(next_player) => Err(BBError::CannotPlayFor(next_player)),
+                None => Err(BBError::OutOfTurn(None)),
+            },
+        }
     }
 }
 
 impl CliGameClient {
-    fn get_move(&self) -> Result<PlayerEvent, BBError> {
-        self.move_selector.select_move(self.game.as_ref().unwrap())
+    fn get_move(&self, game: &Game) -> Result<PlayerEvent, BBError> {
+        let engine_move = self.move_selector.select_move(game)?;
+        let player = game.next_to_play().unwrap();
+        match engine_move {
+            Move::Bid(bid) => Ok(PlayerEvent::Bid(BidEvent { player, bid })),
+            Move::Card(card) => Ok(PlayerEvent::Card(CardEvent { player, card })),
+        }
     }
 
     pub fn new(seat: Seat) -> Self {
@@ -49,6 +64,20 @@ impl CliGameClient {
             seat,
             game: None,
             move_selector: CliMoveSelector::new(seat),
+        }
+    }
+
+    pub fn can_play_for_dummy(&self) -> bool {
+        match &self.game {
+            Some(Game::CardPlay(state)) => state.declarer() == self.seat,
+            _ => false,
+        }
+    }
+
+    pub fn dummy(&self) -> Option<Seat> {
+        match &self.game {
+            Some(Game::CardPlay(state)) => Some(state.declarer().partner()),
+            _ => None,
         }
     }
 }

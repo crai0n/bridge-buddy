@@ -34,6 +34,20 @@ impl GameState<Ended> {
         ScoreCalculator::score_result(self.inner.result, self.inner.board.vulnerability())
     }
 
+    pub fn declarer(&self) -> Option<Seat> {
+        match self.inner.result {
+            GameResult::Unplayed => None,
+            GameResult::Made {
+                contract,
+                overtricks: _,
+            } => Some(contract.declarer),
+            GameResult::Failed {
+                contract,
+                undertricks: _,
+            } => Some(contract.declarer),
+        }
+    }
+
     pub fn board(&self) -> Board {
         self.inner.board
     }

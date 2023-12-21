@@ -33,6 +33,10 @@ impl GameState<WaitingForDummy> {
         Ok(())
     }
 
+    pub fn declarer(&self) -> Seat {
+        self.inner.contract.declarer
+    }
+
     pub fn hand_of(&self, player: Seat) -> Result<Hand, BBError> {
         self.inner.hand_manager.hand_of(player)
     }
