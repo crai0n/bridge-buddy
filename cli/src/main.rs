@@ -1,7 +1,6 @@
-use bridge_buddy_core::actors::game_client::auto_game_client::AutoGameClient;
+use bridge_buddy_core::actors::game_client::GameClient;
 use bridge_buddy_core::actors::table::Table;
 use bridge_buddy_core::engine::hand_evaluation::ForumDPlus2015Evaluator;
-use bridge_buddy_core::interactive::cli_game_client::CliGameClient;
 use bridge_buddy_core::primitives::card::Suit;
 use bridge_buddy_core::primitives::deal::Hand;
 use bridge_buddy_core::primitives::deal::Seat::{East, North, South, West};
@@ -37,10 +36,10 @@ fn main() {
         Command::Play => {
             let mut table = Table::empty();
 
-            let mut north_player = AutoGameClient::new(North);
-            let mut south_player = CliGameClient::new(South);
-            let mut east_player = AutoGameClient::new(East);
-            let mut west_player = AutoGameClient::new(West);
+            let mut north_player = GameClient::new_with_engine(North);
+            let mut south_player = GameClient::new_interactive(South);
+            let mut east_player = GameClient::new_with_engine(East);
+            let mut west_player = GameClient::new_with_engine(West);
 
             table.seat_player(&mut north_player, North).unwrap();
             table.seat_player(&mut south_player, South).unwrap();

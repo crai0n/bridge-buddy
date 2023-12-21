@@ -10,7 +10,7 @@ use std::collections::BTreeMap;
 
 pub struct Table<'a> {
     game_manager: Option<GameManager>,
-    seats: BTreeMap<Seat, &'a mut (dyn GameClient)>,
+    seats: BTreeMap<Seat, &'a mut GameClient>,
 }
 
 impl<'a> Table<'a> {
@@ -21,7 +21,7 @@ impl<'a> Table<'a> {
         }
     }
 
-    pub fn seat_player(&mut self, player: &'a mut impl GameClient, seat: Seat) -> Result<(), BBError> {
+    pub fn seat_player(&mut self, player: &'a mut GameClient, seat: Seat) -> Result<(), BBError> {
         if let Entry::Vacant(e) = self.seats.entry(seat) {
             e.insert(player);
             Ok(())
@@ -112,7 +112,7 @@ impl<'a> Table<'a> {
 
 #[cfg(test)]
 mod test {
-    use crate::actors::game_client::auto_game_client::AutoGameClient;
+    use crate::actors::game_client::GameClient;
     use crate::actors::table::Table;
     use crate::primitives::deal::Seat::*;
 
@@ -120,10 +120,10 @@ mod test {
     fn run_game() {
         let mut table = Table::empty();
 
-        let mut north_player = AutoGameClient::new(North);
-        let mut south_player = AutoGameClient::new(South);
-        let mut east_player = AutoGameClient::new(East);
-        let mut west_player = AutoGameClient::new(West);
+        let mut north_player = GameClient::new_with_engine(North);
+        let mut south_player = GameClient::new_with_engine(South);
+        let mut east_player = GameClient::new_with_engine(East);
+        let mut west_player = GameClient::new_with_engine(West);
 
         table.seat_player(&mut north_player, North).unwrap();
         table.seat_player(&mut south_player, South).unwrap();

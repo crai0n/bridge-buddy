@@ -3,10 +3,12 @@ use crate::engine::bidding_engine::SelectBid;
 use crate::engine::card_play_engine::mock_card_play_engine::MockCardPlayEngine;
 use crate::engine::card_play_engine::SelectCard;
 use crate::engine::SelectMove;
+use crate::error::BBError;
 use crate::game::game_state::{Bidding, CardPlay, GameState, OpeningLead};
 
 use crate::primitives::bid::Bid;
 use crate::primitives::deal::Seat;
+use crate::primitives::game_event::GameEvent;
 use crate::primitives::Card;
 
 pub struct MockBridgeEngine {
@@ -45,4 +47,8 @@ impl SelectCard for MockBridgeEngine {
     }
 }
 
-impl SelectMove for MockBridgeEngine {}
+impl SelectMove for MockBridgeEngine {
+    fn process_game_event(&mut self, _event: GameEvent) -> Result<(), BBError> {
+        Ok(())
+    }
+}

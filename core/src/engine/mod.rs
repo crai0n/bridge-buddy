@@ -3,6 +3,7 @@ use crate::engine::card_play_engine::SelectCard;
 use crate::error::BBError;
 use crate::game::Game;
 use crate::primitives::bid::Bid;
+use crate::primitives::game_event::GameEvent;
 use crate::primitives::Card;
 
 pub mod bidding_engine;
@@ -34,4 +35,6 @@ pub trait SelectMove: SelectCard + SelectBid {
             Game::Ended(_) => Err(BBError::GameHasEnded),
         }
     }
+
+    fn process_game_event(&mut self, event: GameEvent) -> Result<(), BBError>;
 }
