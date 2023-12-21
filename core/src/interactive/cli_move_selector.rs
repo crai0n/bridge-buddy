@@ -37,8 +37,8 @@ impl SelectBid for CliMoveSelector {
 }
 
 impl SelectCard for CliMoveSelector {
-    fn select_card_for(&self, game_state: &GameState<CardPlay>, seat: Seat) -> Card {
-        self.card_selector.select_card_for(game_state, seat)
+    fn select_card(&self, game_state: &GameState<CardPlay>) -> Card {
+        self.card_selector.select_card(game_state)
     }
 
     fn select_opening_lead(&self, game_state: &GameState<OpeningLead>) -> Card {

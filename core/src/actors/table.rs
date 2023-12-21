@@ -85,11 +85,7 @@ impl<'a> Table<'a> {
                 // println!("Next Player: {:?}", next_player);
 
                 let player_event = if Some(next_player) == dummy {
-                    self.seats
-                        .get(&dummy.unwrap().partner())
-                        .unwrap()
-                        .get_dummy_move()
-                        .unwrap()
+                    self.seats.get(&dummy.unwrap().partner()).unwrap().get_move().unwrap()
                 } else {
                     self.seats.get(&next_player).unwrap().get_move().unwrap()
                 };

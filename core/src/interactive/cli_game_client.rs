@@ -35,17 +35,13 @@ impl GameClient for CliGameClient {
     }
 
     fn get_move(&self) -> Result<PlayerEvent, BBError> {
-        self.get_move_for(self.seat)
-    }
-
-    fn get_dummy_move(&self) -> Result<PlayerEvent, BBError> {
-        self.get_move_for(self.seat.partner())
+        self.get_move()
     }
 }
 
 impl CliGameClient {
-    fn get_move_for(&self, seat: Seat) -> Result<PlayerEvent, BBError> {
-        self.move_selector.select_move_for(self.game.as_ref().unwrap(), seat)
+    fn get_move(&self) -> Result<PlayerEvent, BBError> {
+        self.move_selector.select_move(self.game.as_ref().unwrap())
     }
 
     pub fn new(seat: Seat) -> Self {

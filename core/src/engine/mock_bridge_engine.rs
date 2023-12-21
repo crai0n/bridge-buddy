@@ -32,8 +32,8 @@ impl SelectBid for MockBridgeEngine {
 }
 
 impl SelectCard for MockBridgeEngine {
-    fn select_card_for(&self, state: &GameState<CardPlay>, seat: Seat) -> Card {
-        self.card_play_engine.select_card_for(state, seat)
+    fn select_card(&self, state: &GameState<CardPlay>) -> Card {
+        self.card_play_engine.select_card(state)
     }
 
     fn select_opening_lead(&self, state: &GameState<OpeningLead>) -> Card {

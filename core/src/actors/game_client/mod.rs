@@ -9,7 +9,6 @@ pub trait GameClient {
     fn process_game_event(&mut self, event: GameEvent) -> Result<(), BBError>;
 
     fn get_move(&self) -> Result<PlayerEvent, BBError>;
-    fn get_dummy_move(&self) -> Result<PlayerEvent, BBError>;
 }
 
 #[cfg(test)]
