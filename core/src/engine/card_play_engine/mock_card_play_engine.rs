@@ -18,22 +18,22 @@ impl MockCardPlayEngine {
         *card
     }
 
-    fn pick_card_for(&self, state: &GameState<CardPlay>, seat: Seat) -> Card {
+    fn pick_card(&self, state: &GameState<CardPlay>) -> Card {
         match state.inner.trick_manager.suit_to_follow() {
-            None => self.pick_lead_for(state, seat),
-            Some(suit) => self.pick_discard_for(suit, state, seat),
+            None => self.pick_lead(state),
+            Some(suit) => self.pick_discard(suit, state),
         }
     }
 
-    fn pick_lead_for(&self, state: &GameState<CardPlay>, seat: Seat) -> Card {
-        let remaining_cards = state.inner.hand_manager.known_remaining_cards_of(seat);
+    fn pick_lead(&self, state: &GameState<CardPlay>) -> Card {
+        let remaining_cards = state.inner.hand_manager.known_remaining_cards_of(state.next_to_play());
         let card = remaining_cards.first().unwrap();
         *card
     }
 
-    fn pick_discard_for(&self, suit: Suit, state: &GameState<CardPlay>, seat: Seat) -> Card {
-        let remaining_cards = state.inner.hand_manager.known_remaining_cards_of(seat);
-        if let Some(card) = remaining_cards.iter().find(|x| x.suit == suit) {
+    fn pick_discard(&self, suit_to_follow: Suit, state: &GameState<CardPlay>) -> Card {
+        let remaining_cards = state.inner.hand_manager.known_remaining_cards_of(state.next_to_play());
+        if let Some(card) = remaining_cards.iter().find(|x| x.suit == suit_to_follow) {
             *card
         } else {
             *remaining_cards.first().unwrap()
@@ -42,16 +42,12 @@ impl MockCardPlayEngine {
 }
 
 impl SelectCard for MockCardPlayEngine {
-    fn select_card_for(&self, state: &GameState<CardPlay>, seat: Seat) -> Card {
-        self.pick_card_for(state, seat)
+    fn select_card(&self, state: &GameState<CardPlay>) -> Card {
+        self.pick_card(state)
     }
 
     fn select_opening_lead(&self, state: &GameState<OpeningLead>) -> Card {
         self.pick_opening_lead(state)
-    }
-
-    fn seat(&self) -> Seat {
-        self.seat
     }
 }
 

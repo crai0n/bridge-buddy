@@ -37,6 +37,10 @@ impl GameState<Bidding> {
         self.inner.bid_manager.next_to_play()
     }
 
+    pub fn declarer(&self) -> Option<Seat> {
+        None
+    }
+
     pub fn hand_of(&self, player: Seat) -> Result<Hand, BBError> {
         self.inner.hand_manager.hand_of(player)
     }

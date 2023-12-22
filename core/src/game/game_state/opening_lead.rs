@@ -33,6 +33,10 @@ impl GameState<OpeningLead> {
         self.inner.hand_manager.hand_of(player)
     }
 
+    pub fn declarer(&self) -> Seat {
+        self.inner.contract.declarer
+    }
+
     pub fn process_play_card_event(&mut self, card_event: CardEvent) -> Result<(), BBError> {
         self.validate_play_card_event(card_event)?;
         self.inner.trick_manager.play(card_event.card)?;

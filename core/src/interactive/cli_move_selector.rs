@@ -1,14 +1,17 @@
 use crate::engine::bidding_engine::SelectBid;
 use crate::engine::card_play_engine::SelectCard;
 use crate::engine::SelectMove;
+use crate::error::BBError;
 
 use crate::game::game_state::{Bidding, CardPlay, GameState, OpeningLead};
 
 use crate::interactive::cli_bid_selector::CliBidSelector;
 use crate::interactive::cli_card_selector::CliCardSelector;
+use crate::interactive::cli_presenter::CliPresenter;
 
 use crate::primitives::bid::Bid;
 use crate::primitives::deal::Seat;
+use crate::primitives::game_event::GameEvent;
 use crate::primitives::Card;
 
 #[allow(dead_code)]
@@ -28,7 +31,12 @@ impl CliMoveSelector {
     }
 }
 
-impl SelectMove for CliMoveSelector {}
+impl SelectMove for CliMoveSelector {
+    fn process_game_event(&mut self, event: GameEvent) -> Result<(), BBError> {
+        CliPresenter::print_game_event_to_console(event);
+        Ok(())
+    }
+}
 
 impl SelectBid for CliMoveSelector {
     fn select_bid(&self, game_state: &GameState<Bidding>) -> Bid {
@@ -37,15 +45,11 @@ impl SelectBid for CliMoveSelector {
 }
 
 impl SelectCard for CliMoveSelector {
-    fn select_card_for(&self, game_state: &GameState<CardPlay>, seat: Seat) -> Card {
-        self.card_selector.select_card_for(game_state, seat)
+    fn select_card(&self, game_state: &GameState<CardPlay>) -> Card {
+        self.card_selector.select_card(game_state)
     }
 
     fn select_opening_lead(&self, game_state: &GameState<OpeningLead>) -> Card {
         self.card_selector.select_opening_lead(game_state)
-    }
-
-    fn seat(&self) -> Seat {
-        self.seat
     }
 }

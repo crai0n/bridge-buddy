@@ -17,7 +17,7 @@ impl CliCardSelector {
         CliCardSelector { seat }
     }
 
-    fn get_card_from_user_for(&self, state: &GameState<CardPlay>, seat: Seat) -> Card {
+    fn get_card_from_user(&self, state: &GameState<CardPlay>) -> Card {
         CliPresenter::display_dummys_hand_for_user(
             &state
                 .inner
@@ -27,6 +27,7 @@ impl CliCardSelector {
         CliPresenter::display_trick_for_user(state);
         CliPresenter::display_hand_for_user(&state.inner.hand_manager.known_remaining_cards_of(self.seat));
 
+        let seat = state.next_to_play();
         if seat == self.seat {
             println!("You have to play from your own hand!");
         } else {
@@ -99,15 +100,11 @@ impl CliCardSelector {
 }
 
 impl SelectCard for CliCardSelector {
-    fn select_card_for(&self, state: &GameState<CardPlay>, seat: Seat) -> Card {
-        self.get_card_from_user_for(state, seat)
+    fn select_card(&self, state: &GameState<CardPlay>) -> Card {
+        self.get_card_from_user(state)
     }
 
     fn select_opening_lead(&self, state: &GameState<OpeningLead>) -> Card {
         self.get_opening_lead_from_user(state)
-    }
-
-    fn seat(&self) -> Seat {
-        self.seat
     }
 }

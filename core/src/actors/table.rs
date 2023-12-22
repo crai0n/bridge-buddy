@@ -10,7 +10,7 @@ use std::collections::BTreeMap;
 
 pub struct Table<'a> {
     game_manager: Option<GameManager>,
-    seats: BTreeMap<Seat, &'a mut (dyn GameClient)>,
+    seats: BTreeMap<Seat, Box<GameClient<'a>>>,
 }
 
 impl<'a> Table<'a> {
@@ -21,9 +21,9 @@ impl<'a> Table<'a> {
         }
     }
 
-    pub fn seat_player(&mut self, player: &'a mut impl GameClient, seat: Seat) -> Result<(), BBError> {
+    pub fn seat_player(&mut self, player: GameClient<'a>, seat: Seat) -> Result<(), BBError> {
         if let Entry::Vacant(e) = self.seats.entry(seat) {
-            e.insert(player);
+            e.insert(Box::new(player));
             Ok(())
         } else {
             Err(BBError::SeatTaken(seat))
@@ -85,11 +85,7 @@ impl<'a> Table<'a> {
                 // println!("Next Player: {:?}", next_player);
 
                 let player_event = if Some(next_player) == dummy {
-                    self.seats
-                        .get(&dummy.unwrap().partner())
-                        .unwrap()
-                        .get_dummy_move()
-                        .unwrap()
+                    self.seats.get(&dummy.unwrap().partner()).unwrap().get_move().unwrap()
                 } else {
                     self.seats.get(&next_player).unwrap().get_move().unwrap()
                 };
@@ -116,7 +112,7 @@ impl<'a> Table<'a> {
 
 #[cfg(test)]
 mod test {
-    use crate::actors::game_client::auto_game_client::AutoGameClient;
+    use crate::actors::game_client::GameClient;
     use crate::actors::table::Table;
     use crate::primitives::deal::Seat::*;
 
@@ -124,15 +120,15 @@ mod test {
     fn run_game() {
         let mut table = Table::empty();
 
-        let mut north_player = AutoGameClient::new(North);
-        let mut south_player = AutoGameClient::new(South);
-        let mut east_player = AutoGameClient::new(East);
-        let mut west_player = AutoGameClient::new(West);
+        let north_player = GameClient::new_with_engine(North);
+        let south_player = GameClient::new_with_engine(South);
+        let east_player = GameClient::new_with_engine(East);
+        let west_player = GameClient::new_with_engine(West);
 
-        table.seat_player(&mut north_player, North).unwrap();
-        table.seat_player(&mut south_player, South).unwrap();
-        table.seat_player(&mut east_player, East).unwrap();
-        table.seat_player(&mut west_player, West).unwrap();
+        table.seat_player(north_player, North).unwrap();
+        table.seat_player(south_player, South).unwrap();
+        table.seat_player(east_player, East).unwrap();
+        table.seat_player(west_player, West).unwrap();
 
         table.new_game().unwrap();
         table.run_game().unwrap();

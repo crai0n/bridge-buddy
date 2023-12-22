@@ -198,6 +198,16 @@ impl Game {
             _ => None,
         }
     }
+
+    pub fn declarer(&self) -> Option<Seat> {
+        match &self {
+            Game::Bidding(_) => None,
+            Game::OpeningLead(state) => Some(state.declarer()),
+            Game::WaitingForDummy(state) => Some(state.declarer()),
+            Game::CardPlay(state) => Some(state.declarer()),
+            Game::Ended(state) => state.declarer(),
+        }
+    }
 }
 
 #[cfg(test)]
