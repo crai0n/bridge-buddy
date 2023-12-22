@@ -8,13 +8,13 @@ use crate::primitives::deal::Seat;
 use crate::primitives::game_event::{BidEvent, CardEvent, GameEvent};
 use crate::primitives::player_event::PlayerEvent;
 
-pub struct GameClient {
+pub struct GameClient<'a> {
     seat: Seat,
     game: Option<Game>,
-    move_selector: Box<dyn SelectMove>,
+    move_selector: Box<dyn SelectMove + 'a>,
 }
 
-impl GameClient {
+impl<'a> GameClient<'a> {
     pub fn process_game_event(&mut self, event: GameEvent) -> Result<(), BBError> {
         match event {
             GameEvent::NewGame(new_game_event) => {
@@ -69,6 +69,14 @@ impl GameClient {
             seat,
             game: None,
             move_selector: Box::new(CliMoveSelector::new(seat)),
+        }
+    }
+
+    pub fn new_with_move_selector<T: SelectMove + 'a>(seat: Seat, selector: T) -> Self {
+        GameClient {
+            seat,
+            game: None,
+            move_selector: Box::new(selector),
         }
     }
 

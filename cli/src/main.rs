@@ -1,6 +1,7 @@
 use bridge_buddy_core::actors::game_client::GameClient;
 use bridge_buddy_core::actors::table::Table;
 use bridge_buddy_core::engine::hand_evaluation::ForumDPlus2015Evaluator;
+use bridge_buddy_core::engine::mock_bridge_engine::MockBridgeEngine;
 use bridge_buddy_core::primitives::card::Suit;
 use bridge_buddy_core::primitives::deal::Hand;
 use bridge_buddy_core::primitives::deal::Seat::{East, North, South, West};
@@ -36,15 +37,15 @@ fn main() {
         Command::Play => {
             let mut table = Table::empty();
 
-            let mut north_player = GameClient::new_with_engine(North);
-            let mut south_player = GameClient::new_interactive(South);
-            let mut east_player = GameClient::new_with_engine(East);
-            let mut west_player = GameClient::new_with_engine(West);
+            let north_player = GameClient::new_with_engine(North);
+            let south_player = GameClient::new_interactive(South);
+            let east_player = GameClient::new_with_engine(East);
+            let west_player = GameClient::new_with_move_selector(West, MockBridgeEngine::new(West));
 
-            table.seat_player(&mut north_player, North).unwrap();
-            table.seat_player(&mut south_player, South).unwrap();
-            table.seat_player(&mut east_player, East).unwrap();
-            table.seat_player(&mut west_player, West).unwrap();
+            table.seat_player(north_player, North).unwrap();
+            table.seat_player(south_player, South).unwrap();
+            table.seat_player(east_player, East).unwrap();
+            table.seat_player(west_player, West).unwrap();
 
             table.new_game().unwrap();
             table.run_game().unwrap();
