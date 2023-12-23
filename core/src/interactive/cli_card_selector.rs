@@ -1,5 +1,5 @@
 use crate::engine::card_play_engine::SelectCard;
-use crate::game::game_state::{CardPlay, GameState, OpeningLead};
+use crate::game::game_state::{CardPlay, GameState, NextToPlay, OpeningLead};
 use crate::interactive::cli_presenter::CliPresenter;
 use crate::primitives::deal::Seat;
 use crate::primitives::game_event::CardEvent;

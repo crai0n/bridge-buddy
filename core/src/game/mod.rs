@@ -8,7 +8,7 @@ pub mod hand_manager;
 pub mod scoring;
 
 use crate::error::BBError;
-use crate::game::game_state::{Bidding, CardPlay, Ended, GameState, OpeningLead, WaitingForDummy};
+use crate::game::game_state::{Bidding, CardPlay, Ended, GameState, NextToPlay, OpeningLead, WaitingForDummy};
 
 use crate::primitives::deal::{Board, Seat};
 use crate::primitives::game_event::{
@@ -216,7 +216,8 @@ mod test {
     use crate::primitives::bid::Bid;
     use crate::primitives::deal::Seat;
     use crate::primitives::game_event::{BidEvent, CardEvent, DummyUncoveredEvent, GameEvent};
-    use crate::primitives::{Card, Deal};
+    use crate::primitives::game_result::GameResult;
+    use crate::primitives::{Card, Contract, Deal};
     use rand::thread_rng;
     use std::str::FromStr;
 
@@ -314,7 +315,13 @@ mod test {
         match game {
             Game::Ended(state) => {
                 assert_eq!(state.inner.hands.count_played_cards(), 52);
-                assert_eq!(state.tricks_won_by_axis(Seat::North), 7);
+                assert_eq!(
+                    state.inner.result,
+                    GameResult::Failed {
+                        contract: Contract::from_str("N4S").unwrap(),
+                        undertricks: 3
+                    }
+                );
             }
             _ => panic!(),
         }

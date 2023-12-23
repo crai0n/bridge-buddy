@@ -1,7 +1,8 @@
 use crate::error::BBError;
-use crate::game::game_state::{CardPlay, GameState};
+use crate::game::game_state::{CardPlay, GameState, NextToPlay};
 use crate::game::hand_manager::HandManager;
 use crate::game::trick_manager::TrickManager;
+
 use crate::primitives::bid_line::BidLine;
 use crate::primitives::deal::{Board, Seat};
 use crate::primitives::game_event::DummyUncoveredEvent;
@@ -16,21 +17,15 @@ pub struct WaitingForDummy {
     pub board: Board,
 }
 
-impl GameState<WaitingForDummy> {
-    pub fn next_to_play(&self) -> Seat {
+impl NextToPlay for GameState<WaitingForDummy> {
+    fn next_to_play(&self) -> Seat {
         self.inner.trick_manager.next_to_play()
     }
+}
 
+impl GameState<WaitingForDummy> {
     pub fn board(&self) -> Board {
         self.inner.board
-    }
-
-    pub fn validate_turn_order(&self, player: Seat) -> Result<(), BBError> {
-        let turn = self.next_to_play();
-        if player != turn {
-            return Err(BBError::OutOfTurn(Some(turn)));
-        }
-        Ok(())
     }
 
     pub fn declarer(&self) -> Seat {
