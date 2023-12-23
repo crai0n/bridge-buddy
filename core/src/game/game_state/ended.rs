@@ -18,14 +18,6 @@ pub struct Ended {
 }
 
 impl GameState<Ended> {
-    pub fn tricks_won_by_axis(&self, player: Seat) -> usize {
-        self.inner
-            .tricks
-            .iter()
-            .filter(|x| x.winner() == player || x.winner() == player.partner())
-            .count()
-    }
-
     pub fn hand_of(&self, player: Seat) -> Result<Hand, BBError> {
         self.inner.hands.hand_of(player)
     }

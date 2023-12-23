@@ -1,6 +1,6 @@
 use crate::error::BBError;
 use crate::game::game_state::waiting_for_dummy::WaitingForDummy;
-use crate::game::game_state::GameState;
+use crate::game::game_state::{GameState, NextToPlay};
 use crate::game::hand_manager::HandManager;
 use crate::game::trick_manager::TrickManager;
 use crate::primitives::bid_line::BidLine;
@@ -17,18 +17,13 @@ pub struct OpeningLead {
     pub board: Board,
 }
 
-impl GameState<OpeningLead> {
-    pub fn next_to_play(&self) -> Seat {
+impl NextToPlay for GameState<OpeningLead> {
+    fn next_to_play(&self) -> Seat {
         self.inner.trick_manager.next_to_play()
     }
+}
 
-    pub fn validate_turn_order(&self, player: Seat) -> Result<(), BBError> {
-        let turn = self.next_to_play();
-        if player != turn {
-            return Err(BBError::OutOfTurn(Some(turn)));
-        }
-        Ok(())
-    }
+impl GameState<OpeningLead> {
     pub fn hand_of(&self, player: Seat) -> Result<Hand, BBError> {
         self.inner.hand_manager.hand_of(player)
     }

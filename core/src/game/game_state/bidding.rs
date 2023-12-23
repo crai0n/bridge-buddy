@@ -2,7 +2,7 @@ use crate::error::BBError;
 use crate::game::bid_manager::BidManager;
 use crate::game::game_state::ended::Ended;
 use crate::game::game_state::opening_lead::OpeningLead;
-use crate::game::game_state::GameState;
+use crate::game::game_state::{GameState, NextToPlay};
 use crate::game::hand_manager::HandManager;
 use crate::game::trick_manager::TrickManager;
 use crate::primitives::deal::{Board, Seat};
@@ -27,14 +27,16 @@ impl Bidding {
     }
 }
 
+impl NextToPlay for GameState<Bidding> {
+    fn next_to_play(&self) -> Seat {
+        self.inner.bid_manager.next_to_play()
+    }
+}
+
 impl GameState<Bidding> {
     pub fn new(board: Board) -> Self {
         let inner = Bidding::new(board);
         GameState { inner }
-    }
-
-    pub fn next_to_play(&self) -> Seat {
-        self.inner.bid_manager.next_to_play()
     }
 
     pub fn declarer(&self) -> Option<Seat> {
@@ -57,14 +59,6 @@ impl GameState<Bidding> {
         self.validate_turn_order(bid_event.player)?;
         if !self.inner.bid_manager.is_valid_bid(&bid_event.bid) {
             return Err(BBError::InvalidBid(bid_event.bid));
-        }
-        Ok(())
-    }
-
-    pub fn validate_turn_order(&self, player: Seat) -> Result<(), BBError> {
-        let turn = self.next_to_play();
-        if player != turn {
-            return Err(BBError::OutOfTurn(Some(turn)));
         }
         Ok(())
     }
