@@ -47,6 +47,9 @@ impl std::str::FromStr for BidLine {
     type Err = BBError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.is_empty() {
+            return Ok(BidLine::new());
+        }
         let bids = s
             .trim()
             .trim_matches('-')
@@ -80,6 +83,7 @@ mod test {
     #[test_case("p-1NT-P-2C-Pass-2D-", &["P", "1NT", "P", "2C", "P", "2D"]; "Two Diamonds")]
     #[test_case("P-1NT-X-Pass-p-xX", &["P", "1NT", "X", "P", "P", "XX"]; "Redoubled 1NT")]
     #[test_case("P-1NT-P-P-x", &["P", "1NT", "P", "P", "X"]; "Doubled 1NT")]
+    #[test_case("", &[]; "unbid")]
     fn from_str(input: &str, expect_line: &[&str]) {
         let input_line = BidLine::from_str(input).unwrap();
         let expected = expect_line.iter().map(|x| Bid::from_str(x).unwrap()).collect();
