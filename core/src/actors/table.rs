@@ -116,8 +116,13 @@ mod test {
     use crate::actors::table::Table;
     use crate::primitives::deal::Seat::*;
 
+    fn init() {
+        let _ = env_logger::builder().is_test(true).try_init();
+    }
+
     #[test]
     fn run_game() {
+        init();
         let mut table = Table::empty();
 
         let north_player = GameClient::new_with_engine(North);
