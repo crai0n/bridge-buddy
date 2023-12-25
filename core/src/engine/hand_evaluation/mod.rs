@@ -25,14 +25,17 @@ pub struct ForumDPlus2015Evaluator {}
 
 impl ForumDPlus2015Evaluator {
     pub fn hcp(hand: &Hand) -> f64 {
-        //basic hcp-count
-        hand.cards()
-            .fold(0.0, |hcp, c| hcp + ForumDPlus2015Evaluator::card_value(c) as f64)
+        Self::hcp_for_cards(&mut hand.cards())
     }
 
     pub fn hcp_in(suit: Suit, hand: &Hand) -> f64 {
-        hand.cards_in(suit)
-            .fold(0.0, |hcp, c| hcp + ForumDPlus2015Evaluator::card_value(c) as f64)
+        Self::hcp_for_cards(&mut hand.cards_in(suit))
+    }
+
+    fn hcp_for_cards<'a>(cards: &mut impl DoubleEndedIterator<Item = &'a Card>) -> f64 {
+        cards.fold(0.0, |total_hcp, card| {
+            total_hcp + ForumDPlus2015Evaluator::card_value(card) as f64
+        })
     }
 
     const fn card_value(card: &Card) -> u8 {
@@ -76,51 +79,60 @@ impl ForumDPlus2015Evaluator {
     pub fn suit_quality(hand: &Hand, suit: Suit) -> SuitQuality {
         let cards = hand.cards_in(suit).map(|c| c.denomination).rev().collect_vec();
 
-        //check for Standing Suit
-        // AKQJ, for 7-card-suits and longer AKQ are sufficient
-        if (cards.len() >= 7 && cards[..3] == [Ace, King, Queen])
-            || cards.len() >= 4 && cards[..4] == [Ace, King, Queen, Jack]
-        {
+        if Self::is_standing_suit(&cards) {
             return SuitQuality::Standing;
         }
 
-        //check for AlmostStanding Suit
-        // 4 honors of 5 (not AKQJ), for a 6-card-suit AKD is sufficient, for a 7-card-suit or longer KDB is sufficient
-        if Self::count_honors_out_of_top(5, &cards) >= 4 // four of top five honors
-            || (cards.len() >= 6 && cards[..3] == [Ace, King, Queen])
-            || (cards.len() >= 7 && cards[..3] == [King, Queen, Jack])
-        {
+        if Self::is_almost_standing_suit(&cards) {
             return SuitQuality::AlmostStanding;
         }
 
-        //check for VeryGood Suit
-        // Two of (A,K,D) with mid-values, for 7-card-suits and longer, two of (A,K,D) are sufficient
-        if Self::count_honors_out_of_top(3, &cards) >= 2 // two of the top three honors
-            && (cards.contains(&Jack) || (cards.contains(&Ten) && cards.contains(&Nine)) || cards.len() >= 7)
-            || cards.len() >= 3 && cards[..3] == [Ace, King, Queen]
-        // Three top honors
-        // mid-values or length
-        {
+        if Self::is_very_good_suit(&cards) {
             return SuitQuality::VeryGood;
         }
 
-        // check for Good Suit
-        // A or K with mid-values, or two of (A,K,D), or QJT
-        if ((cards.contains(&Ace) || cards.contains(&King))
-            && (cards.contains(&Jack) || (cards.contains(&Ten) && cards.contains(&Nine))))
-            || Self::count_honors_out_of_top(3, &cards) >= 2
-            || cards.len() >= 3 && cards[..3] == [Queen, Jack, Ten]
-        {
+        if Self::is_good_suit(&cards) {
             return SuitQuality::Good;
         }
 
-        // check for Acceptable Suit
-        // at least 3 HCP
-        if Self::hcp_in(suit, hand) >= 3.0 {
+        if Self::is_acceptable_suit(hand, suit) {
             return SuitQuality::Acceptable;
         }
 
         SuitQuality::Weak // less than acceptable
+    }
+
+    fn is_acceptable_suit(hand: &Hand, suit: Suit) -> bool {
+        // at least 3 HCP
+        Self::hcp_in(suit, hand) >= 3.0
+    }
+
+    fn is_good_suit(cards: &[Denomination]) -> bool {
+        // A or K with mid-values, or two of (A,K,D), or QJT
+        ((cards.contains(&Ace) || cards.contains(&King))
+            && (cards.contains(&Jack) || (cards.contains(&Ten) && cards.contains(&Nine))))
+            || Self::count_honors_out_of_top(3, cards) >= 2
+            || cards.len() >= 3 && cards[..3] == [Queen, Jack, Ten]
+    }
+
+    fn is_very_good_suit(cards: &[Denomination]) -> bool {
+        // Two of (A,K,D) with mid-values, for 7-card-suits and longer, two of (A,K,D) are sufficient
+        Self::count_honors_out_of_top(3, cards) >= 2
+            && (cards.contains(&Jack) || (cards.contains(&Ten) && cards.contains(&Nine)) || cards.len() >= 7)
+            || cards.len() >= 3 && cards[..3] == [Ace, King, Queen]
+    }
+
+    fn is_almost_standing_suit(cards: &[Denomination]) -> bool {
+        // 4 honors of 5 (not AKQJ), for a 6-card-suit AKD is sufficient, for a 7-card-suit or longer KDB is sufficient
+        Self::count_honors_out_of_top(5, cards) >= 4
+            || (cards.len() >= 6 && cards[..3] == [Ace, King, Queen])
+            || (cards.len() >= 7 && cards[..3] == [King, Queen, Jack])
+    }
+
+    fn is_standing_suit(cards: &[Denomination]) -> bool {
+        // AKQJ, for 7-card-suits and longer AKQ are sufficient
+        (cards.len() >= 7 && cards[..3] == [Ace, King, Queen])
+            || cards.len() >= 4 && cards[..4] == [Ace, King, Queen, Jack]
     }
 
     fn count_honors_out_of_top(n: usize, cards: &[Denomination]) -> usize {
