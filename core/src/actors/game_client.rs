@@ -103,9 +103,12 @@ impl<'a> GameClient<'a> {
 mod test {
     use crate::actors::game_client::GameClient;
     use crate::primitives::bid::{Bid, ContractBid};
+    use crate::primitives::contract::Contract;
     use crate::primitives::deal::Board;
-    use crate::primitives::game_event::GameEvent::DiscloseHand;
-    use crate::primitives::game_event::{BidEvent, CardEvent, DiscloseHandEvent, GameEvent, NewGameEvent};
+    use crate::primitives::game_event::GameEvent::{BiddingEnded, DiscloseHand};
+    use crate::primitives::game_event::{
+        BidEvent, BiddingEndedEvent, CardEvent, DiscloseHandEvent, GameEvent, NewGameEvent,
+    };
     use crate::primitives::player_event::PlayerEvent;
     use crate::primitives::{Card, Hand};
     use std::str::FromStr;
@@ -173,6 +176,11 @@ mod test {
             player.process_game_event(event).unwrap();
             player_pos = player_pos + 1;
         }
+
+        let final_contract = Contract::from_str("W1NT").unwrap();
+
+        let bidding_ended_event = BiddingEnded(BiddingEndedEvent { final_contract });
+        player.process_game_event(bidding_ended_event).unwrap();
 
         let player_event = player.get_move().unwrap();
 

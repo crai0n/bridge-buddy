@@ -89,7 +89,7 @@ impl GameState<CardPlay> {
         GameState { inner }
     }
 
-    fn calculate_game_result(&self) -> GameResult {
+    pub fn calculate_game_result(&self) -> GameResult {
         GameResult::calculate_game_result(
             self.inner.contract,
             self.inner

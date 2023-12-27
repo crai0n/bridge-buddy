@@ -12,10 +12,11 @@ use crate::game::game_state::{Bidding, CardPlay, Ended, GameState, NextToPlay, O
 
 use crate::primitives::deal::{Board, Seat};
 use crate::primitives::game_event::{
-    BidEvent, BiddingEndedEvent, CardEvent, DiscloseHandEvent, DummyUncoveredEvent, GameEvent, NewGameEvent,
+    BidEvent, BiddingEndedEvent, CardEvent, DiscloseHandEvent, DummyUncoveredEvent, GameEndedEvent, GameEvent,
+    NewGameEvent,
 };
+use crate::primitives::game_result::GameResult;
 use crate::primitives::Hand;
-use scoring::ScorePoints;
 
 #[derive(Debug, Clone)]
 pub enum Game {
@@ -72,29 +73,28 @@ impl Game {
             GameEvent::NewGame(_) => Err(BBError::GameAlreadyStarted),
             GameEvent::DiscloseHand(disclose_hand_event) => self.process_disclose_hand_event(disclose_hand_event),
             GameEvent::Bid(bid_event) => self.process_make_bid_event(bid_event),
+            GameEvent::BiddingEnded(bidding_ended_event) => self.process_bidding_ended_event(bidding_ended_event),
             GameEvent::Card(card_event) => self.process_play_card_event(card_event),
             GameEvent::DummyUncovered(dummy_uncovered_event) => {
                 self.process_dummy_uncovered_event(dummy_uncovered_event)
             }
-            GameEvent::GameEnded(game_ended_event) => {
-                let my_score = self.score().unwrap();
-                assert_eq!(game_ended_event.score, my_score);
-                Ok(())
-            }
-            GameEvent::BiddingEnded(bidding_ended_event) => self.process_bidding_ended_event(bidding_ended_event),
+            GameEvent::GameEnded(game_ended_event) => self.process_game_ended_event(game_ended_event),
         }
     }
 
     pub fn process_bidding_ended_event(&mut self, bidding_ended_event: BiddingEndedEvent) -> Result<(), BBError> {
         match self {
-            Game::OpeningLead(state) => {
-                if state.inner.contract != bidding_ended_event.final_contract {
+            Game::Bidding(state) => {
+                if state.inner.bid_manager.implied_contract() != Some(bidding_ended_event.final_contract)
+                    || !state.bidding_has_ended()
+                {
                     Err(BBError::InvalidEvent(Box::new(GameEvent::BiddingEnded(
                         bidding_ended_event,
-                    ))))
-                } else {
-                    Ok(())
+                    ))))?
                 }
+                let new_state = state.clone().move_to_opening_lead(bidding_ended_event.final_contract);
+                *self = Game::OpeningLead(new_state);
+                Ok(())
             }
             _ => Err(BBError::InvalidEvent(Box::new(GameEvent::BiddingEnded(
                 bidding_ended_event,
@@ -102,29 +102,27 @@ impl Game {
         }
     }
 
-    pub fn process_make_bid_event(&mut self, bid_event: BidEvent) -> Result<(), BBError> {
+    pub fn process_game_ended_event(&mut self, game_ended_event: GameEndedEvent) -> Result<(), BBError> {
         match self {
             Game::Bidding(state) => {
-                state.process_make_bid_event(bid_event)?;
-                if state.bidding_has_ended() {
-                    let new_state = state.clone();
-                    self.move_from_bidding_to_next_phase_with_state(new_state);
-                }
-                Ok(())
+                assert_eq!(game_ended_event.result, GameResult::Unplayed);
+                let new_state = state.clone().move_to_ended_without_card_play();
+                *self = Game::Ended(new_state);
             }
-            _ => Err(BBError::InvalidEvent(Box::new(GameEvent::Bid(bid_event)))),
-        }
+            Game::CardPlay(state) => {
+                assert_eq!(state.calculate_game_result(), game_ended_event.result);
+                let new_state = state.clone().move_from_card_play_to_ended();
+                *self = Game::Ended(new_state);
+            }
+            _ => Err(BBError::InvalidEvent(Box::new(GameEvent::GameEnded(game_ended_event))))?,
+        };
+        Ok(())
     }
 
-    fn move_from_bidding_to_next_phase_with_state(&mut self, state: GameState<Bidding>) {
-        if let Some(contract) = state.inner.bid_manager.implied_contract() {
-            let new_state = state.clone().move_to_opening_lead(contract);
-
-            *self = Game::OpeningLead(new_state);
-        } else {
-            let new_state = state.clone().move_to_ended_without_card_play();
-
-            *self = Game::Ended(new_state);
+    pub fn process_make_bid_event(&mut self, bid_event: BidEvent) -> Result<(), BBError> {
+        match self {
+            Game::Bidding(state) => state.process_make_bid_event(bid_event),
+            _ => Err(BBError::InvalidEvent(Box::new(GameEvent::Bid(bid_event)))),
         }
     }
 
@@ -132,27 +130,12 @@ impl Game {
         match self {
             Game::OpeningLead(state) => {
                 state.process_play_card_event(card_event)?;
-
-                let state = state.clone();
-
-                let inner = WaitingForDummy {
-                    bids: state.inner.bids,
-                    trick_manager: state.inner.trick_manager,
-                    hand_manager: state.inner.hand_manager,
-                    contract: state.inner.contract,
-                    board: state.inner.board,
-                };
-
-                let new_state = GameState { inner };
+                let new_state = state.clone().move_to_waiting_for_dummy();
                 *self = Game::WaitingForDummy(new_state);
                 Ok(())
             }
             Game::CardPlay(state) => {
                 state.process_play_card_event(card_event)?;
-                if state.card_play_has_ended() {
-                    let new_state = state.clone().move_from_card_play_to_ended();
-                    *self = Game::Ended(new_state);
-                }
                 Ok(())
             }
             _ => Err(BBError::InvalidEvent(Box::new(GameEvent::Card(card_event)))),
@@ -164,12 +147,8 @@ impl Game {
             Game::WaitingForDummy(state) => {
                 state.process_dummy_uncovered_event(event)?;
 
-                let state = state.clone();
-
-                let new_state = state.move_to_card_play();
-
+                let new_state = state.clone().move_to_card_play();
                 *self = Game::CardPlay(new_state);
-
                 Ok(())
             }
             _ => Err(BBError::InvalidEvent(Box::new(GameEvent::DummyUncovered(event))))?,
@@ -192,13 +171,6 @@ impl Game {
         Self::new_from_board(event.board)
     }
 
-    pub fn score(&self) -> Option<ScorePoints> {
-        match &self {
-            Game::Ended(state) => Some(state.calculate_score()),
-            _ => None,
-        }
-    }
-
     pub fn declarer(&self) -> Option<Seat> {
         match &self {
             Game::Bidding(_) => None,
@@ -212,10 +184,13 @@ impl Game {
 
 #[cfg(test)]
 mod test {
+    use crate::game::scoring::ScoreCalculator;
     use crate::game::Game;
     use crate::primitives::bid::Bid;
     use crate::primitives::deal::Seat;
-    use crate::primitives::game_event::{BidEvent, CardEvent, DummyUncoveredEvent, GameEvent};
+    use crate::primitives::game_event::{
+        BidEvent, BiddingEndedEvent, CardEvent, DummyUncoveredEvent, GameEndedEvent, GameEvent,
+    };
     use crate::primitives::game_result::GameResult;
     use crate::primitives::{Card, Contract, Deal};
     use rand::thread_rng;
@@ -248,7 +223,13 @@ mod test {
         // for event in game.history {
         //     println!("{:?}", event);
         // }
-        assert!(matches!(game, Game::Ended(_)));
+        match game {
+            Game::Bidding(state) => {
+                assert!(state.bidding_has_ended());
+                assert_eq!(state.inner.bid_manager.implied_contract(), None);
+            }
+            _ => panic!(),
+        }
     }
 
     #[test]
@@ -269,6 +250,18 @@ mod test {
             let game_event = GameEvent::Bid(bid_event);
             game.process_game_event(game_event).unwrap();
         }
+
+        let final_contract = match &game {
+            Game::Bidding(state) => {
+                assert!(state.inner.bid_manager.bidding_has_ended());
+                state.inner.bid_manager.implied_contract().unwrap()
+            }
+            _ => panic!(),
+        };
+
+        let game_event = GameEvent::BiddingEnded(BiddingEndedEvent { final_contract });
+
+        game.process_game_event(game_event).unwrap();
 
         assert_eq!(game.next_to_play(), Some(Seat::East));
 
@@ -311,6 +304,15 @@ mod test {
             let game_event = GameEvent::Card(card_event);
             game.process_game_event(game_event).unwrap();
         }
+
+        let result = match &game {
+            Game::CardPlay(state) => state.calculate_game_result(),
+            _ => panic!(),
+        };
+        let score = ScoreCalculator::score_result(result, deal.vulnerable());
+
+        let game_event = GameEvent::GameEnded(GameEndedEvent { result, deal, score });
+        game.process_game_event(game_event).unwrap();
 
         match game {
             Game::Ended(state) => {

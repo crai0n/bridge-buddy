@@ -1,7 +1,6 @@
 use crate::error::BBError;
 use crate::game::game_state::GameState;
 use crate::game::hand_manager::HandManager;
-use crate::game::scoring::{ScoreCalculator, ScorePoints};
 use crate::primitives::bid_line::BidLine;
 use crate::primitives::deal::{Board, Seat};
 use crate::primitives::game_result::GameResult;
@@ -20,10 +19,6 @@ pub struct Ended {
 impl GameState<Ended> {
     pub fn hand_of(&self, player: Seat) -> Result<Hand, BBError> {
         self.inner.hands.hand_of(player)
-    }
-
-    pub fn calculate_score(&self) -> ScorePoints {
-        ScoreCalculator::score_result(self.inner.result, self.inner.board.vulnerability())
     }
 
     pub fn declarer(&self) -> Option<Seat> {
