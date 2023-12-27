@@ -1,8 +1,8 @@
-use crate::game::game_state::{Bidding, GameState};
+use crate::game::game_data::{Bidding, GameData};
 use crate::primitives::bid::Bid;
 
 pub mod mock_bidding_engine;
 
 pub trait SelectBid {
-    fn select_bid(&self, state: &GameState<Bidding>) -> Bid;
+    fn select_bid(&self, state: &GameData<Bidding>) -> Bid;
 }

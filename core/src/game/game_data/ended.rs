@@ -1,5 +1,5 @@
 use crate::error::BBError;
-use crate::game::game_state::GameState;
+use crate::game::game_data::GameData;
 use crate::game::hand_manager::HandManager;
 use crate::primitives::bid_line::BidLine;
 use crate::primitives::deal::{Board, Seat};
@@ -16,7 +16,7 @@ pub struct Ended {
     pub board: Board,
 }
 
-impl GameState<Ended> {
+impl GameData<Ended> {
     pub fn hand_of(&self, player: Seat) -> Result<Hand, BBError> {
         self.inner.hands.hand_of(player)
     }

@@ -1,5 +1,5 @@
 use crate::error::BBError;
-use crate::game::game_state::{CardPlay, GameState, NextToPlay};
+use crate::game::game_data::{CardPlay, GameData, NextToPlay};
 use crate::game::hand_manager::HandManager;
 use crate::game::trick_manager::TrickManager;
 
@@ -17,13 +17,13 @@ pub struct WaitingForDummy {
     pub board: Board,
 }
 
-impl NextToPlay for GameState<WaitingForDummy> {
+impl NextToPlay for GameData<WaitingForDummy> {
     fn next_to_play(&self) -> Seat {
         self.inner.trick_manager.next_to_play()
     }
 }
 
-impl GameState<WaitingForDummy> {
+impl GameData<WaitingForDummy> {
     pub fn board(&self) -> Board {
         self.inner.board
     }
@@ -44,7 +44,7 @@ impl GameState<WaitingForDummy> {
         Ok(())
     }
 
-    pub fn move_to_card_play(self) -> GameState<CardPlay> {
+    pub fn move_to_card_play(self) -> GameData<CardPlay> {
         let inner = CardPlay {
             bids: self.inner.bids,
             trick_manager: self.inner.trick_manager,
@@ -53,6 +53,6 @@ impl GameState<WaitingForDummy> {
             board: self.inner.board,
         };
 
-        GameState { inner }
+        GameData { inner }
     }
 }

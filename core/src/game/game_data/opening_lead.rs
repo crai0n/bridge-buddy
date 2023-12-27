@@ -1,16 +1,15 @@
 use crate::error::BBError;
-use crate::game::game_state::ended::Ended;
-use crate::game::game_state::{GameState, NextToPlay};
+use crate::game::game_data::waiting_for_dummy::WaitingForDummy;
+use crate::game::game_data::{GameData, NextToPlay};
 use crate::game::hand_manager::HandManager;
 use crate::game::trick_manager::TrickManager;
 use crate::primitives::bid_line::BidLine;
 use crate::primitives::deal::{Board, Seat};
 use crate::primitives::game_event::CardEvent;
-use crate::primitives::game_result::GameResult;
 use crate::primitives::{Card, Contract, Hand};
 
 #[derive(Debug, Clone)]
-pub struct CardPlay {
+pub struct OpeningLead {
     pub bids: BidLine,
     pub trick_manager: TrickManager,
     pub hand_manager: HandManager,
@@ -18,13 +17,13 @@ pub struct CardPlay {
     pub board: Board,
 }
 
-impl NextToPlay for GameState<CardPlay> {
+impl NextToPlay for GameData<OpeningLead> {
     fn next_to_play(&self) -> Seat {
         self.inner.trick_manager.next_to_play()
     }
 }
 
-impl GameState<CardPlay> {
+impl GameData<OpeningLead> {
     pub fn hand_of(&self, player: Seat) -> Result<Hand, BBError> {
         self.inner.hand_manager.hand_of(player)
     }
@@ -48,54 +47,34 @@ impl GameState<CardPlay> {
             .hand_manager
             .validate_play_card_event(card_event.card, card_event.player)?;
 
-        self.validate_suit_rule(card_event.player, card_event.card)?;
+        if self.player_violates_suit_rule(card_event.player, card_event.card) {
+            return Err(BBError::InvalidCard(card_event.card));
+        }
         Ok(())
     }
 
-    pub fn validate_suit_rule(&self, player: Seat, card: Card) -> Result<(), BBError> {
+    pub fn player_violates_suit_rule(&self, player: Seat, card: Card) -> bool {
         if let Some(suit) = &self.inner.trick_manager.suit_to_follow() {
-            if card.suit != *suit
+            card.suit != *suit
                 && self
                     .inner
                     .hand_manager
                     .player_is_known_to_have_cards_left_in_suit(player, *suit)
-            {
-                Err(BBError::FollowSuit(*suit))
-            } else {
-                Ok(())
-            }
         } else {
-            Ok(())
+            false
         }
     }
 
-    pub fn card_play_has_ended(&self) -> bool {
-        self.inner.trick_manager.card_play_has_ended()
-    }
-
-    pub fn move_from_card_play_to_ended(self) -> GameState<Ended> {
-        let tricks = self.inner.trick_manager.played_tricks().into();
-
-        let result = self.calculate_game_result();
-
-        let inner = Ended {
+    pub fn move_to_waiting_for_dummy(self) -> GameData<WaitingForDummy> {
+        let inner = WaitingForDummy {
             bids: self.inner.bids,
-            tricks,
-            hands: self.inner.hand_manager,
-            result,
+            trick_manager: self.inner.trick_manager,
+            hand_manager: self.inner.hand_manager,
+            contract: self.inner.contract,
             board: self.inner.board,
         };
 
-        GameState { inner }
-    }
-
-    pub fn calculate_game_result(&self) -> GameResult {
-        GameResult::calculate_game_result(
-            self.inner.contract,
-            self.inner
-                .trick_manager
-                .tricks_won_by_axis(self.inner.contract.declarer),
-        )
+        GameData { inner }
     }
 
     pub fn board(&self) -> Board {

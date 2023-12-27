@@ -1,7 +1,7 @@
 use crate::engine::bidding_engine::SelectBid;
 use crate::engine::card_play_engine::SelectCard;
 use crate::error::BBError;
-use crate::game::Game;
+use crate::game::GameState;
 use crate::primitives::bid::Bid;
 use crate::primitives::game_event::GameEvent;
 use crate::primitives::Card;
@@ -17,22 +17,22 @@ pub enum Move {
 }
 
 pub trait SelectMove: SelectCard + SelectBid {
-    fn select_move(&self, game: &Game) -> Result<Move, BBError> {
+    fn select_move(&self, game: &GameState) -> Result<Move, BBError> {
         match game {
-            Game::Bidding(state) => {
+            GameState::Bidding(state) => {
                 let bid = self.select_bid(state);
                 Ok(Move::Bid(bid))
             }
-            Game::OpeningLead(state) => {
+            GameState::OpeningLead(state) => {
                 let card = self.select_opening_lead(state);
                 Ok(Move::Card(card))
             }
-            Game::CardPlay(state) => {
+            GameState::CardPlay(state) => {
                 let card = self.select_card(state);
                 Ok(Move::Card(card))
             }
-            Game::WaitingForDummy(_) => Err(BBError::OutOfTurn(None)),
-            Game::Ended(_) => Err(BBError::GameHasEnded),
+            GameState::WaitingForDummy(_) => Err(BBError::OutOfTurn(None)),
+            GameState::Ended(_) => Err(BBError::GameHasEnded),
         }
     }
 

@@ -1,5 +1,5 @@
 use crate::engine::card_play_engine::SelectCard;
-use crate::game::game_state::{CardPlay, GameState, NextToPlay, OpeningLead};
+use crate::game::game_data::{CardPlay, GameData, NextToPlay, OpeningLead};
 use crate::interactive::cli_presenter::CliPresenter;
 use crate::primitives::deal::Seat;
 use crate::primitives::game_event::CardEvent;
@@ -17,7 +17,7 @@ impl CliCardSelector {
         CliCardSelector { seat }
     }
 
-    fn get_card_from_user(&self, state: &GameState<CardPlay>) -> Card {
+    fn get_card_from_user(&self, state: &GameData<CardPlay>) -> Card {
         CliPresenter::display_dummys_hand_for_user(
             &state
                 .inner
@@ -64,7 +64,7 @@ impl CliCardSelector {
         user_card
     }
 
-    fn get_opening_lead_from_user(&self, state: &GameState<OpeningLead>) -> Card {
+    fn get_opening_lead_from_user(&self, state: &GameData<OpeningLead>) -> Card {
         CliPresenter::display_final_contract_for_user(state);
         CliPresenter::display_hand_for_user(&state.inner.hand_manager.known_remaining_cards_of(self.seat));
 
@@ -100,11 +100,11 @@ impl CliCardSelector {
 }
 
 impl SelectCard for CliCardSelector {
-    fn select_card(&self, state: &GameState<CardPlay>) -> Card {
+    fn select_card(&self, state: &GameData<CardPlay>) -> Card {
         self.get_card_from_user(state)
     }
 
-    fn select_opening_lead(&self, state: &GameState<OpeningLead>) -> Card {
+    fn select_opening_lead(&self, state: &GameData<OpeningLead>) -> Card {
         self.get_opening_lead_from_user(state)
     }
 }

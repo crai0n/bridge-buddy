@@ -1,8 +1,8 @@
 use crate::error::BBError;
 use crate::game::bid_manager::BidManager;
-use crate::game::game_state::ended::Ended;
-use crate::game::game_state::opening_lead::OpeningLead;
-use crate::game::game_state::{GameState, NextToPlay};
+use crate::game::game_data::ended::Ended;
+use crate::game::game_data::opening_lead::OpeningLead;
+use crate::game::game_data::{GameData, NextToPlay};
 use crate::game::hand_manager::HandManager;
 use crate::game::trick_manager::TrickManager;
 use crate::primitives::deal::{Board, Seat};
@@ -27,16 +27,16 @@ impl Bidding {
     }
 }
 
-impl NextToPlay for GameState<Bidding> {
+impl NextToPlay for GameData<Bidding> {
     fn next_to_play(&self) -> Seat {
         self.inner.bid_manager.next_to_play()
     }
 }
 
-impl GameState<Bidding> {
+impl GameData<Bidding> {
     pub fn new(board: Board) -> Self {
         let inner = Bidding::new(board);
-        GameState { inner }
+        GameData { inner }
     }
 
     pub fn declarer(&self) -> Option<Seat> {
@@ -74,7 +74,7 @@ impl GameState<Bidding> {
         Ok(())
     }
 
-    pub fn move_to_opening_lead(self, contract: Contract) -> GameState<OpeningLead> {
+    pub fn move_to_opening_lead(self, contract: Contract) -> GameData<OpeningLead> {
         let inner = OpeningLead {
             bids: self.inner.bid_manager.bid_line().clone(),
             trick_manager: TrickManager::new(contract.declarer + 1, contract.trump_suit()),
@@ -83,10 +83,10 @@ impl GameState<Bidding> {
             board: self.inner.board,
         };
 
-        GameState { inner }
+        GameData { inner }
     }
 
-    pub fn move_to_ended_without_card_play(self) -> GameState<Ended> {
+    pub fn move_to_ended_without_card_play(self) -> GameData<Ended> {
         let inner = Ended {
             bids: self.inner.bid_manager.bid_line(),
             tricks: Vec::new(),
@@ -95,6 +95,6 @@ impl GameState<Bidding> {
             board: self.inner.board,
         };
 
-        GameState { inner }
+        GameData { inner }
     }
 }

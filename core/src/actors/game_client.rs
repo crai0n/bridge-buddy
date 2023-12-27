@@ -1,7 +1,7 @@
 use crate::engine::mock_bridge_engine::MockBridgeEngine;
 use crate::engine::{Move, SelectMove};
 use crate::error::BBError;
-use crate::game::Game;
+use crate::game::GameState;
 use crate::interactive::cli_move_selector::CliMoveSelector;
 use crate::primitives::deal::Seat;
 
@@ -10,7 +10,7 @@ use crate::primitives::player_event::PlayerEvent;
 
 pub struct GameClient<'a> {
     seat: Seat,
-    game: Option<Game>,
+    game: Option<GameState>,
     move_selector: Box<dyn SelectMove + 'a>,
 }
 
@@ -18,7 +18,7 @@ impl<'a> GameClient<'a> {
     pub fn process_game_event(&mut self, event: GameEvent) -> Result<(), BBError> {
         match event {
             GameEvent::NewGame(new_game_event) => {
-                self.game = Some(Game::from_new_game_event(new_game_event));
+                self.game = Some(GameState::from_new_game_event(new_game_event));
                 Ok(())
             }
             _ => match &mut self.game {
@@ -36,7 +36,7 @@ impl<'a> GameClient<'a> {
         }
     }
 
-    fn get_move_for_game(&self, game: &Game) -> Result<PlayerEvent, BBError> {
+    fn get_move_for_game(&self, game: &GameState) -> Result<PlayerEvent, BBError> {
         match game.next_to_play() {
             Some(next_player)
                 if next_player == self.seat || Some(next_player) == self.dummy() && self.can_play_for_dummy() =>
@@ -82,14 +82,14 @@ impl<'a> GameClient<'a> {
 
     pub fn can_play_for_dummy(&self) -> bool {
         match &self.game {
-            Some(Game::CardPlay(state)) => state.declarer() == self.seat,
+            Some(GameState::CardPlay(state)) => state.declarer() == self.seat,
             _ => false,
         }
     }
 
     pub fn dummy(&self) -> Option<Seat> {
         match &self.game {
-            Some(Game::CardPlay(state)) => Some(state.declarer().partner()),
+            Some(GameState::CardPlay(state)) => Some(state.declarer().partner()),
             _ => None,
         }
     }
