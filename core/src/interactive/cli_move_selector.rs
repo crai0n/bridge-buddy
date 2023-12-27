@@ -3,7 +3,7 @@ use crate::engine::card_play_engine::SelectCard;
 use crate::engine::SelectMove;
 use crate::error::BBError;
 
-use crate::game::game_state::{Bidding, CardPlay, GameState, OpeningLead};
+use crate::game::game_data::{Bidding, CardPlay, GameData, OpeningLead};
 
 use crate::interactive::cli_bid_selector::CliBidSelector;
 use crate::interactive::cli_card_selector::CliCardSelector;
@@ -39,17 +39,17 @@ impl SelectMove for CliMoveSelector {
 }
 
 impl SelectBid for CliMoveSelector {
-    fn select_bid(&self, game_state: &GameState<Bidding>) -> Bid {
+    fn select_bid(&self, game_state: &GameData<Bidding>) -> Bid {
         self.bid_selector.select_bid(game_state)
     }
 }
 
 impl SelectCard for CliMoveSelector {
-    fn select_card(&self, game_state: &GameState<CardPlay>) -> Card {
+    fn select_card(&self, game_state: &GameData<CardPlay>) -> Card {
         self.card_selector.select_card(game_state)
     }
 
-    fn select_opening_lead(&self, game_state: &GameState<OpeningLead>) -> Card {
+    fn select_opening_lead(&self, game_state: &GameData<OpeningLead>) -> Card {
         self.card_selector.select_opening_lead(game_state)
     }
 }

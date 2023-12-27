@@ -1,4 +1,4 @@
-use crate::game::game_state::{Bidding, CardPlay, GameState, OpeningLead};
+use crate::game::game_data::{Bidding, CardPlay, GameData, OpeningLead};
 
 use crate::primitives::game_event::{
     BidEvent, BiddingEndedEvent, CardEvent, DiscloseHandEvent, DummyUncoveredEvent, GameEndedEvent, GameEvent,
@@ -70,12 +70,12 @@ impl CliPresenter {
         println!("{}", event.dummy)
     }
 
-    pub fn display_bidding_state_for_user(state: &GameState<Bidding>) {
+    pub fn display_bidding_state_for_user(state: &GameData<Bidding>) {
         println!("The bidding so far is: ");
         print!("{}", state.inner.bid_manager)
     }
 
-    pub fn display_final_contract_for_user(state: &GameState<OpeningLead>) {
+    pub fn display_final_contract_for_user(state: &GameData<OpeningLead>) {
         println!("The final contract is: {}", state.inner.contract);
     }
 
@@ -95,7 +95,7 @@ impl CliPresenter {
         println!();
     }
 
-    pub fn display_trick_for_user(state: &GameState<CardPlay>) {
+    pub fn display_trick_for_user(state: &GameData<CardPlay>) {
         if let Some(trick) = state.inner.trick_manager.current_trick() {
             println!("Current Trick: {}", trick)
         }

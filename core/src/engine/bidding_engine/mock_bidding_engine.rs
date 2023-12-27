@@ -1,5 +1,5 @@
 use crate::engine::bidding_engine::SelectBid;
-use crate::game::game_state::{Bidding, GameState};
+use crate::game::game_data::{Bidding, GameData};
 use crate::primitives::bid::{AuxiliaryBid, Bid, ContractBid};
 use crate::primitives::contract::{ContractDenomination, ContractLevel};
 use crate::primitives::Suit;
@@ -37,7 +37,7 @@ impl MockBiddingEngine {
         ContractBid { level, denomination }
     }
 
-    fn find_bid(&self, state: &GameState<Bidding>) -> Bid {
+    fn find_bid(&self, state: &GameData<Bidding>) -> Bid {
         let my_target_bid = Self::select_random_contract_bid_as_target();
 
         match state.inner.bid_manager.lowest_available_contract_bid() {
@@ -57,7 +57,7 @@ impl Default for MockBiddingEngine {
 }
 
 impl SelectBid for MockBiddingEngine {
-    fn select_bid(&self, state: &GameState<Bidding>) -> Bid {
+    fn select_bid(&self, state: &GameData<Bidding>) -> Bid {
         self.find_bid(state)
     }
 }

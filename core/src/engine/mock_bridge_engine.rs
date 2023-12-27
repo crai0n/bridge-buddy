@@ -4,7 +4,7 @@ use crate::engine::card_play_engine::mock_card_play_engine::MockCardPlayEngine;
 use crate::engine::card_play_engine::SelectCard;
 use crate::engine::SelectMove;
 use crate::error::BBError;
-use crate::game::game_state::{Bidding, CardPlay, GameState, OpeningLead};
+use crate::game::game_data::{Bidding, CardPlay, GameData, OpeningLead};
 
 use crate::primitives::bid::Bid;
 use crate::primitives::deal::Seat;
@@ -26,17 +26,17 @@ impl MockBridgeEngine {
 }
 
 impl SelectBid for MockBridgeEngine {
-    fn select_bid(&self, state: &GameState<Bidding>) -> Bid {
+    fn select_bid(&self, state: &GameData<Bidding>) -> Bid {
         self.bidding_engine.select_bid(state)
     }
 }
 
 impl SelectCard for MockBridgeEngine {
-    fn select_card(&self, state: &GameState<CardPlay>) -> Card {
+    fn select_card(&self, state: &GameData<CardPlay>) -> Card {
         self.card_play_engine.select_card(state)
     }
 
-    fn select_opening_lead(&self, state: &GameState<OpeningLead>) -> Card {
+    fn select_opening_lead(&self, state: &GameData<OpeningLead>) -> Card {
         self.card_play_engine.select_opening_lead(state)
     }
 }

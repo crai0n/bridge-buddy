@@ -13,7 +13,7 @@ mod opening_lead;
 mod waiting_for_dummy;
 
 #[derive(Debug, Clone)]
-pub struct GameState<Phase> {
+pub struct GameData<Phase> {
     pub inner: Phase,
 }
 

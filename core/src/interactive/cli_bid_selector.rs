@@ -1,5 +1,5 @@
 use crate::engine::bidding_engine::SelectBid;
-use crate::game::game_state::{Bidding, GameState};
+use crate::game::game_data::{Bidding, GameData};
 use crate::interactive::cli_presenter::CliPresenter;
 use crate::primitives::bid::Bid;
 use crate::primitives::deal::Seat;
@@ -16,7 +16,7 @@ impl CliBidSelector {
         CliBidSelector { seat }
     }
 
-    pub fn get_bid_from_user(&self, state: &GameState<Bidding>) -> Bid {
+    pub fn get_bid_from_user(&self, state: &GameData<Bidding>) -> Bid {
         CliPresenter::display_bidding_state_for_user(state);
         CliPresenter::display_hand_for_user(&state.inner.hand_manager.known_remaining_cards_of(self.seat));
 
@@ -53,7 +53,7 @@ impl CliBidSelector {
 }
 
 impl SelectBid for CliBidSelector {
-    fn select_bid(&self, state: &GameState<Bidding>) -> Bid {
+    fn select_bid(&self, state: &GameData<Bidding>) -> Bid {
         self.get_bid_from_user(state)
     }
 }

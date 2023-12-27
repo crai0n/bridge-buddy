@@ -1,18 +1,19 @@
 use crate::error::BBError;
-use crate::game::Game;
+use crate::game::scoring::ScoreCalculator;
+use crate::game::GameState;
 use crate::primitives::deal::Seat;
 use crate::primitives::game_event::{
     BiddingEndedEvent, DiscloseHandEvent, DummyUncoveredEvent, GameEndedEvent, GameEvent, NewGameEvent,
 };
 use crate::primitives::game_result::GameResult;
 use crate::primitives::player_event::PlayerEvent;
-use crate::primitives::Deal;
+use crate::primitives::{Contract, Deal};
 use itertools::Itertools;
 use strum::IntoEnumIterator;
 
 pub struct GameManager {
     deal: Deal,
-    game: Option<Game>,
+    game: Option<GameState>,
     history: Vec<GameEvent>,
 }
 
@@ -48,7 +49,7 @@ impl GameManager {
                 let new_game_event = NewGameEvent { board: self.deal.board };
                 let game_event = GameEvent::NewGame(new_game_event);
                 self.add_event_to_history(game_event);
-                self.game = Some(Game::from_new_game_event(new_game_event));
+                self.game = Some(GameState::from_new_game_event(new_game_event));
                 self.disclose_hands();
                 Ok(())
             }
@@ -71,24 +72,40 @@ impl GameManager {
 
     fn react_to_new_game_state(&mut self) {
         match &mut self.game.as_mut().unwrap() {
-            Game::OpeningLead(state) => {
-                let bidding_ended_event = BiddingEndedEvent {
-                    final_contract: state.inner.contract,
-                };
-                let game_event = GameEvent::BiddingEnded(bidding_ended_event);
-                self.add_event_to_history(game_event);
-                self.game.as_mut().unwrap().process_game_event(game_event).unwrap();
+            GameState::Bidding(state) => {
+                if state.bidding_has_ended() {
+                    match state.inner.bid_manager.implied_contract() {
+                        Some(contract) => {
+                            self.end_bidding(contract);
+                        }
+                        None => {
+                            let result = GameResult::Unplayed;
+                            self.end_game(result);
+                        }
+                    }
+                }
             }
-            Game::WaitingForDummy(state) => {
+            GameState::WaitingForDummy(state) => {
                 let dummy = state.inner.contract.declarer.partner();
                 self.disclose_dummy(dummy);
             }
-            Game::Ended(state) => {
-                let result = state.inner.result;
-                self.finalize_result(result)
+            GameState::CardPlay(state) => {
+                if state.card_play_has_ended() {
+                    let result = state.calculate_game_result();
+                    self.end_game(result);
+                }
             }
             _ => (),
         }
+    }
+
+    fn end_bidding(&mut self, contract: Contract) {
+        let bidding_ended_event = BiddingEndedEvent {
+            final_contract: contract,
+        };
+        let game_event = GameEvent::BiddingEnded(bidding_ended_event);
+        self.add_event_to_history(game_event);
+        self.game.as_mut().unwrap().process_game_event(game_event).unwrap();
     }
 
     fn disclose_hands(&mut self) {
@@ -112,14 +129,15 @@ impl GameManager {
         self.game.as_mut().unwrap().process_game_event(game_event).unwrap();
     }
 
-    fn finalize_result(&mut self, result: GameResult) {
+    fn end_game(&mut self, result: GameResult) {
         let game_ended_event = GameEndedEvent {
             deal: self.deal,
             result,
-            score: self.game.as_mut().unwrap().score().unwrap(),
+            score: ScoreCalculator::score_result(result, self.deal.vulnerable()),
         };
         let event = GameEvent::GameEnded(game_ended_event);
         self.add_event_to_history(event);
+        self.game.as_mut().unwrap().process_game_event(event).unwrap();
     }
 
     fn add_event_to_history(&mut self, event: GameEvent) {
