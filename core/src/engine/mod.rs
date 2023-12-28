@@ -10,6 +10,7 @@ pub mod bidding_engine;
 pub mod card_play_engine;
 pub mod hand_evaluation;
 pub mod mock_bridge_engine;
+pub mod subjective_game_view;
 
 pub enum Move {
     Bid(Bid),

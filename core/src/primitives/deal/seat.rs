@@ -74,23 +74,15 @@ impl Seat {
 
     pub const fn axis(&self) -> Axis {
         match self {
-            Seat::North => Axis::NorthSouth,
-            Seat::South => Axis::NorthSouth,
-            Seat::East => Axis::EastWest,
-            Seat::West => Axis::EastWest,
+            Seat::North | Seat::South => Axis::NorthSouth,
+            Seat::East | Seat::West => Axis::EastWest,
         }
     }
 
     pub const fn is_on_axis(&self, axis: &Axis) -> bool {
-        match (axis, self) {
-            (Axis::NorthSouth, Seat::North) => true,
-            (Axis::NorthSouth, Seat::South) => true,
-            (Axis::NorthSouth, Seat::East) => false,
-            (Axis::NorthSouth, Seat::West) => false,
-            (Axis::EastWest, Seat::North) => false,
-            (Axis::EastWest, Seat::South) => false,
-            (Axis::EastWest, Seat::East) => true,
-            (Axis::EastWest, Seat::West) => true,
+        match axis {
+            Axis::NorthSouth => matches!(self, Seat::North | Seat::South),
+            Axis::EastWest => matches!(self, Seat::East | Seat::West),
         }
     }
 
