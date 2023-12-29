@@ -1,8 +1,8 @@
 use crate::engine::card_play_engine::SelectCard;
-use crate::game::game_data::{CardPlay, GameData, NextToPlay, OpeningLead};
+use crate::engine::subjective_game_view::{SubjectiveGameDataView, SubjectiveSeat};
+use crate::game::game_data::{CardPlay, OpeningLead};
 use crate::interactive::cli_presenter::CliPresenter;
 use crate::primitives::deal::Seat;
-use crate::primitives::game_event::CardEvent;
 use crate::primitives::Card;
 use std::io::stdin;
 use std::str::FromStr;
@@ -17,18 +17,13 @@ impl CliCardSelector {
         CliCardSelector { seat }
     }
 
-    fn get_card_from_user(&self, state: &GameData<CardPlay>) -> Card {
-        CliPresenter::display_dummys_hand_for_user(
-            &state
-                .inner
-                .hand_manager
-                .known_remaining_cards_of(state.inner.contract.declarer.partner()),
-        );
-        CliPresenter::display_trick_for_user(state);
-        CliPresenter::display_hand_for_user(&state.inner.hand_manager.known_remaining_cards_of(self.seat));
+    fn get_card_from_user(&self, state: SubjectiveGameDataView<CardPlay>) -> Card {
+        CliPresenter::display_dummys_hand_for_user(&state.dummys_remaining_cards());
+        CliPresenter::display_trick_for_user(&state);
+        CliPresenter::display_hand_for_user(&state.my_remaining_cards());
 
         let seat = state.next_to_play();
-        if seat == self.seat {
+        if seat == SubjectiveSeat::Myself {
             println!("You have to play from your own hand!");
         } else {
             println!("You have to play from dummy's hand!");
@@ -49,12 +44,8 @@ impl CliCardSelector {
                     continue;
                 }
             };
-            let event = CardEvent {
-                player: seat,
-                card: user_card,
-            };
 
-            if state.validate_play_card_event(event).is_ok() {
+            if state.validate_card_play(user_card, seat).is_ok() {
                 break;
             } else {
                 println!("You can't play that card!");
@@ -64,9 +55,8 @@ impl CliCardSelector {
         user_card
     }
 
-    fn get_opening_lead_from_user(&self, state: &GameData<OpeningLead>) -> Card {
-        CliPresenter::display_final_contract_for_user(state);
-        CliPresenter::display_hand_for_user(&state.inner.hand_manager.known_remaining_cards_of(self.seat));
+    fn get_opening_lead_from_user(&self, state: SubjectiveGameDataView<OpeningLead>) -> Card {
+        CliPresenter::display_hand_for_user(&state.my_remaining_cards());
 
         println!("What card do you want to play?");
 
@@ -83,12 +73,8 @@ impl CliCardSelector {
                     continue;
                 }
             };
-            let event = CardEvent {
-                player: self.seat,
-                card: user_card,
-            };
 
-            if state.validate_play_card_event(event).is_ok() {
+            if state.validate_lead(user_card).is_ok() {
                 break;
             } else {
                 println!("You can't play that card!");
@@ -100,11 +86,11 @@ impl CliCardSelector {
 }
 
 impl SelectCard for CliCardSelector {
-    fn select_card(&self, state: &GameData<CardPlay>) -> Card {
+    fn select_card(&self, state: SubjectiveGameDataView<CardPlay>) -> Card {
         self.get_card_from_user(state)
     }
 
-    fn select_opening_lead(&self, state: &GameData<OpeningLead>) -> Card {
+    fn select_opening_lead(&self, state: SubjectiveGameDataView<OpeningLead>) -> Card {
         self.get_opening_lead_from_user(state)
     }
 }

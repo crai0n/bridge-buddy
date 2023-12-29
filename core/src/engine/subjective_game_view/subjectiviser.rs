@@ -23,6 +23,16 @@ impl Subjectiviser {
         }
     }
 
+    pub const fn objective_seat(&self, seat: SubjectiveSeat) -> Seat {
+        match (seat as usize + self.seat as usize) % 4 {
+            0 => Seat::North,
+            1 => Seat::East,
+            2 => Seat::South,
+            3 => Seat::West,
+            _ => unreachable!(),
+        }
+    }
+
     #[allow(dead_code)]
     pub const fn subjective_axis(&self, axis: Axis) -> SubjectiveAxis {
         match (self.seat, axis) {

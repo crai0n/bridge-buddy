@@ -1,52 +1,73 @@
 use crate::engine::card_play_engine::SelectCard;
-use crate::game::game_data::{CardPlay, GameData, NextToPlay, OpeningLead};
+use crate::engine::subjective_game_view::{SubjectiveGameDataView, SubjectiveSeat};
+use crate::game::game_data::{CardPlay, OpeningLead};
 use crate::primitives::deal::Seat;
 use crate::primitives::{Card, Suit};
+use itertools::Itertools;
 
 pub struct MockCardPlayEngine {
-    seat: Seat,
+    _seat: Seat,
 }
 
 impl MockCardPlayEngine {
     pub fn new(seat: Seat) -> Self {
-        Self { seat }
+        Self { _seat: seat }
     }
 
-    fn pick_opening_lead(&self, state: &GameData<OpeningLead>) -> Card {
-        let hand = state.inner.hand_manager.known_remaining_cards_of(self.seat);
+    fn pick_opening_lead(&self, data: SubjectiveGameDataView<OpeningLead>) -> Card {
+        let hand = data.my_remaining_cards();
         let card = hand.first().unwrap();
         *card
     }
 
-    fn pick_card(&self, state: &GameData<CardPlay>) -> Card {
-        match state.inner.trick_manager.suit_to_follow() {
+    fn pick_card(&self, state: SubjectiveGameDataView<CardPlay>) -> Card {
+        match state.suit_to_follow() {
             None => self.pick_lead(state),
-            Some(suit) => self.pick_discard(suit, state),
+            Some(suit) => self.pick_card_to_trick(suit, state),
         }
     }
 
-    fn pick_lead(&self, state: &GameData<CardPlay>) -> Card {
-        let remaining_cards = state.inner.hand_manager.known_remaining_cards_of(state.next_to_play());
+    fn pick_lead(&self, state: SubjectiveGameDataView<CardPlay>) -> Card {
+        let remaining_cards = match state.next_to_play() {
+            SubjectiveSeat::Myself => state.my_remaining_cards(),
+            SubjectiveSeat::Partner => state.dummys_remaining_cards(),
+            _ => unreachable!(),
+        };
         let card = remaining_cards.first().unwrap();
         *card
     }
 
-    fn pick_discard(&self, suit_to_follow: Suit, state: &GameData<CardPlay>) -> Card {
-        let remaining_cards = state.inner.hand_manager.known_remaining_cards_of(state.next_to_play());
-        if let Some(card) = remaining_cards.iter().find(|x| x.suit == suit_to_follow) {
-            *card
+    fn pick_card_to_trick(&self, suit: Suit, state: SubjectiveGameDataView<CardPlay>) -> Card {
+        let remaining_cards = match state.next_to_play() {
+            SubjectiveSeat::Myself => state.my_remaining_cards(),
+            SubjectiveSeat::Partner => state.dummys_remaining_cards(),
+            _ => unreachable!(),
+        };
+
+        let cards_in_suit = remaining_cards.iter().filter(|x| x.suit == suit).collect_vec();
+
+        if cards_in_suit.is_empty() {
+            self.pick_discard(&remaining_cards, state)
         } else {
-            *remaining_cards.first().unwrap()
+            self.pick_card_from(&cards_in_suit, state)
         }
+    }
+
+    fn pick_discard(&self, cards: &[Card], _state: SubjectiveGameDataView<CardPlay>) -> Card {
+        *cards.first().unwrap()
+    }
+
+    fn pick_card_from(&self, choices: &[&Card], _state: SubjectiveGameDataView<CardPlay>) -> Card {
+        **choices.first().unwrap()
     }
 }
 
 impl SelectCard for MockCardPlayEngine {
-    fn select_card(&self, state: &GameData<CardPlay>) -> Card {
+    fn select_card(&self, state: SubjectiveGameDataView<CardPlay>) -> Card {
         self.pick_card(state)
     }
 
-    fn select_opening_lead(&self, state: &GameData<OpeningLead>) -> Card {
+    fn select_opening_lead(&self, state: SubjectiveGameDataView<OpeningLead>) -> Card {
         self.pick_opening_lead(state)
     }
 }
