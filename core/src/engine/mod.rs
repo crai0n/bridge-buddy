@@ -1,7 +1,7 @@
 use crate::engine::bidding_engine::SelectBid;
 use crate::engine::card_play_engine::SelectCard;
+use crate::engine::subjective_game_view::SubjectiveGameStateView;
 use crate::error::BBError;
-use crate::game::GameState;
 use crate::primitives::bid::Bid;
 use crate::primitives::game_event::GameEvent;
 use crate::primitives::Card;
@@ -10,6 +10,7 @@ pub mod bidding_engine;
 pub mod card_play_engine;
 pub mod hand_evaluation;
 pub mod mock_bridge_engine;
+pub mod subjective_game_view;
 
 pub enum Move {
     Bid(Bid),
@@ -17,22 +18,22 @@ pub enum Move {
 }
 
 pub trait SelectMove: SelectCard + SelectBid {
-    fn select_move(&self, game: &GameState) -> Result<Move, BBError> {
+    fn select_move(&self, game: SubjectiveGameStateView) -> Result<Move, BBError> {
         match game {
-            GameState::Bidding(state) => {
+            SubjectiveGameStateView::Bidding(state) => {
                 let bid = self.select_bid(state);
                 Ok(Move::Bid(bid))
             }
-            GameState::OpeningLead(state) => {
+            SubjectiveGameStateView::OpeningLead(state) => {
                 let card = self.select_opening_lead(state);
                 Ok(Move::Card(card))
             }
-            GameState::CardPlay(state) => {
+            SubjectiveGameStateView::CardPlay(state) => {
                 let card = self.select_card(state);
                 Ok(Move::Card(card))
             }
-            GameState::WaitingForDummy(_) => Err(BBError::OutOfTurn(None)),
-            GameState::Ended(_) => Err(BBError::GameHasEnded),
+            SubjectiveGameStateView::WaitingForDummy(_) => Err(BBError::OutOfTurn(None)),
+            SubjectiveGameStateView::Ended(_) => Err(BBError::GameHasEnded),
         }
     }
 

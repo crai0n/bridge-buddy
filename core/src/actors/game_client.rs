@@ -1,4 +1,5 @@
 use crate::engine::mock_bridge_engine::MockBridgeEngine;
+use crate::engine::subjective_game_view::SubjectiveGameStateView;
 use crate::engine::{Move, SelectMove};
 use crate::error::BBError;
 use crate::game::GameState;
@@ -41,7 +42,9 @@ impl<'a> GameClient<'a> {
             Some(next_player)
                 if next_player == self.seat || Some(next_player) == self.dummy() && self.can_play_for_dummy() =>
             {
-                let chosen_move = self.move_selector.select_move(game)?;
+                let chosen_move = self
+                    .move_selector
+                    .select_move(SubjectiveGameStateView::new(game, self.seat))?;
                 Ok(Self::wrap_move_in_event(chosen_move, next_player))
             }
             Some(next_player) => Err(BBError::CannotPlayFor(next_player)),

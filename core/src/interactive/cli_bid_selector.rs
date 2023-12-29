@@ -1,24 +1,24 @@
 use crate::engine::bidding_engine::SelectBid;
-use crate::game::game_data::{Bidding, GameData};
+use crate::engine::subjective_game_view::SubjectiveGameDataView;
+use crate::game::game_data::Bidding;
 use crate::interactive::cli_presenter::CliPresenter;
 use crate::primitives::bid::Bid;
 use crate::primitives::deal::Seat;
-use crate::primitives::game_event::BidEvent;
 use std::io::stdin;
 use std::str::FromStr;
 
 pub struct CliBidSelector {
-    seat: Seat,
+    _seat: Seat,
 }
 
 impl CliBidSelector {
     pub fn new(seat: Seat) -> Self {
-        CliBidSelector { seat }
+        CliBidSelector { _seat: seat }
     }
 
-    pub fn get_bid_from_user(&self, state: &GameData<Bidding>) -> Bid {
-        CliPresenter::display_bidding_state_for_user(state);
-        CliPresenter::display_hand_for_user(&state.inner.hand_manager.known_remaining_cards_of(self.seat));
+    pub fn get_bid_from_user(&self, state: SubjectiveGameDataView<Bidding>) -> Bid {
+        CliPresenter::display_bidding_state_for_user(&state);
+        CliPresenter::display_starting_hand_for_user(state.my_starting_hand().unwrap());
 
         println!("What do you want to bid?");
 
@@ -36,12 +36,7 @@ impl CliBidSelector {
                 }
             };
 
-            let event = BidEvent {
-                player: self.seat,
-                bid: user_bid,
-            };
-
-            if state.validate_make_bid_event(event).is_ok() {
+            if state.validate_bid(user_bid).is_ok() {
                 break;
             } else {
                 println!("That bid is not available anymore!");
@@ -53,7 +48,7 @@ impl CliBidSelector {
 }
 
 impl SelectBid for CliBidSelector {
-    fn select_bid(&self, state: &GameData<Bidding>) -> Bid {
+    fn select_bid(&self, state: SubjectiveGameDataView<Bidding>) -> Bid {
         self.get_bid_from_user(state)
     }
 }
