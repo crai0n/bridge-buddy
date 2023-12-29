@@ -92,9 +92,9 @@ impl<'a> SubjectiveGameStateView<'a> {
     pub fn declarer(&self) -> Option<SubjectiveSeat> {
         match &self {
             Self::Bidding(_) => None,
-            Self::OpeningLead(data) => data.declarer(),
-            Self::WaitingForDummy(data) => data.declarer(),
-            Self::CardPlay(data) => data.declarer(),
+            Self::OpeningLead(data) => Some(data.declarer()),
+            Self::WaitingForDummy(data) => Some(data.declarer()),
+            Self::CardPlay(data) => Some(data.declarer()),
             Self::Ended(data) => data.declarer(),
         }
     }
@@ -185,9 +185,9 @@ impl<'a> SubjectiveGameDataView<'a, OpeningLead> {
         self.game_data.inner.hand_manager.known_remaining_cards_of(self.seat)
     }
 
-    pub fn declarer(&self) -> Option<SubjectiveSeat> {
+    pub fn declarer(&self) -> SubjectiveSeat {
         let declarer = self.game_data.declarer();
-        Some(self.subjectiviser.subjective_seat(declarer))
+        self.subjectiviser.subjective_seat(declarer)
     }
 
     pub fn dealer(&self) -> SubjectiveSeat {
@@ -230,9 +230,9 @@ impl<'a> SubjectiveGameDataView<'a, WaitingForDummy> {
         self.game_data.inner.hand_manager.known_remaining_cards_of(self.seat)
     }
 
-    pub fn declarer(&self) -> Option<SubjectiveSeat> {
+    pub fn declarer(&self) -> SubjectiveSeat {
         let declarer = self.game_data.declarer();
-        Some(self.subjectiviser.subjective_seat(declarer))
+        self.subjectiviser.subjective_seat(declarer)
     }
 
     pub fn dealer(&self) -> SubjectiveSeat {
@@ -288,9 +288,9 @@ impl<'a> SubjectiveGameDataView<'a, CardPlay> {
             .known_remaining_cards_of(self.game_data.declarer().partner())
     }
 
-    pub fn declarer(&self) -> Option<SubjectiveSeat> {
+    pub fn declarer(&self) -> SubjectiveSeat {
         let declarer = self.game_data.declarer();
-        Some(self.subjectiviser.subjective_seat(declarer))
+        self.subjectiviser.subjective_seat(declarer)
     }
 
     pub fn dealer(&self) -> SubjectiveSeat {

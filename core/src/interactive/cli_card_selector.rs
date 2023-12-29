@@ -18,7 +18,7 @@ impl CliCardSelector {
     }
 
     fn get_card_from_user(&self, state: SubjectiveGameDataView<CardPlay>) -> Card {
-        CliPresenter::display_dummys_hand_for_user(&state.dummys_remaining_cards());
+        CliPresenter::display_dummys_hand_for_user(&state.dummys_remaining_cards(), state.declarer());
         CliPresenter::display_trick_for_user(&state);
         CliPresenter::display_hand_for_user(&state.my_remaining_cards());
 

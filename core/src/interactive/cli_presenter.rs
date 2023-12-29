@@ -1,11 +1,13 @@
 use crate::engine::subjective_game_view::{SubjectiveGameDataView, SubjectiveSeat};
 use crate::game::game_data::{Bidding, CardPlay};
+use itertools::Itertools;
+use strum::IntoEnumIterator;
 
 use crate::primitives::game_event::{
     BidEvent, BiddingEndedEvent, CardEvent, DiscloseHandEvent, DummyUncoveredEvent, GameEndedEvent, GameEvent,
     NewGameEvent,
 };
-use crate::primitives::Card;
+use crate::primitives::{Card, Hand, Suit};
 
 pub struct CliPresenter {}
 
@@ -77,54 +79,104 @@ impl CliPresenter {
     }
 
     pub fn display_hand_for_user(cards: &[Card]) {
-        println!("Your hand:");
-        for card in cards {
-            print!("{}", card)
+        for suit in Suit::iter().rev() {
+            let suited_cards = cards.iter().filter(|x| x.suit == suit).rev().collect_vec();
+            if !suited_cards.is_empty() {
+                print!("{}", suit);
+            }
+            for card in suited_cards {
+                print!("{}", card.denomination);
+            }
         }
         println!();
     }
 
-    pub fn display_dummys_hand_for_user(cards: &[Card]) {
-        println!("Dummy's Hand:");
-        for card in cards {
-            print!("{}", card)
+    pub fn display_starting_hand_for_user(hand: Hand) {
+        println!("Your hand:");
+        Self::display_hand_for_user(hand.cards().copied().collect_vec().as_slice())
+    }
+
+    pub fn display_dummys_hand_for_user(cards: &[Card], declarer: SubjectiveSeat) {
+        match declarer {
+            SubjectiveSeat::Myself => {
+                for suit in Suit::iter().rev() {
+                    let suited_cards = cards.iter().filter(|x| x.suit == suit).rev().collect_vec();
+                    if !suited_cards.is_empty() {
+                        print!("{}", suit);
+                    }
+                    for card in suited_cards {
+                        print!("{}", card.denomination);
+                    }
+                }
+                println!();
+            }
+            SubjectiveSeat::RightHandOpponent => {
+                for suit in Suit::iter().rev() {
+                    let suited_cards = cards.iter().filter(|x| x.suit == suit);
+                    print!("{}", suit);
+                    for card in suited_cards.rev() {
+                        print!("{}", card.denomination);
+                    }
+                    println!();
+                }
+            }
+            SubjectiveSeat::LeftHandOpponent => {
+                for suit in Suit::iter().rev() {
+                    let suited_cards = cards.iter().filter(|x| x.suit == suit);
+
+                    let mut card_string = String::new();
+                    for card in suited_cards {
+                        card_string += &format!("{}", card.denomination);
+                    }
+                    card_string += &format!("{}", suit);
+                    println!("{:>15}", card_string);
+                }
+            }
+            _ => unreachable!(),
         }
-        println!();
     }
 
     pub fn display_trick_for_user(state: &SubjectiveGameDataView<CardPlay>) {
         let trick = state.active_trick();
 
         match (trick.cards(), trick.lead(), state.next_to_play()) {
-            ([], SubjectiveSeat::Myself, SubjectiveSeat::Myself) => println!("You are leading to the next trick!"),
-            ([], SubjectiveSeat::Partner, SubjectiveSeat::Partner) => println!("Dummy is leading to the next trick!"),
+            ([], SubjectiveSeat::Myself, SubjectiveSeat::Myself) => {
+                println!();
+                println!();
+                println!("  ↓↓");
+            }
+            ([], SubjectiveSeat::Partner, SubjectiveSeat::Partner) => {
+                println!("  ↑↑");
+                println!();
+                println!();
+            }
             ([c1], SubjectiveSeat::RightHandOpponent, SubjectiveSeat::Myself) => {
-                println!("  []");
-                println!("[]  {}", c1);
-                println!("  []");
+                println!();
+                println!("    {}", c1);
+                println!("  ↓↓");
             }
             ([c1, c2], SubjectiveSeat::Partner, SubjectiveSeat::Myself) => {
                 println!("  {}", c1);
-                println!("[]  {}", c2);
-                println!("  []");
+                println!("    {}", c2);
+                println!("  ↓↓");
             }
             ([c1, c2, c3], SubjectiveSeat::LeftHandOpponent, SubjectiveSeat::Myself) => {
                 println!("  {}", c2);
                 println!("{}  {}", c1, c3);
-                println!("  []");
+                println!("  ↓↓");
             }
             ([c1], SubjectiveSeat::LeftHandOpponent, SubjectiveSeat::Partner) => {
-                println!("  []");
-                println!("{}  []", c1);
-                println!("  []");
+                println!("  ↑↑");
+                println!("{}    ", c1);
+                println!();
             }
             ([c1, c2], SubjectiveSeat::Myself, SubjectiveSeat::Partner) => {
-                println!("  []");
-                println!("{}  []", c2);
+                println!("  ↑↑");
+                println!("{}", c2);
                 println!("  {}", c1);
             }
             ([c1, c2, c3], SubjectiveSeat::RightHandOpponent, SubjectiveSeat::Partner) => {
-                println!("  []");
+                println!("  ↑↑");
                 println!("{}  {}", c3, c1);
                 println!("  {}", c2);
             }

@@ -18,7 +18,7 @@ impl CliBidSelector {
 
     pub fn get_bid_from_user(&self, state: SubjectiveGameDataView<Bidding>) -> Bid {
         CliPresenter::display_bidding_state_for_user(&state);
-        CliPresenter::display_hand_for_user(&state.my_remaining_cards());
+        CliPresenter::display_starting_hand_for_user(state.my_starting_hand().unwrap());
 
         println!("What do you want to bid?");
 
