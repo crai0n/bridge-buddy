@@ -1,4 +1,4 @@
-use crate::engine::subjective_game_view::SubjectiveGameDataView;
+use crate::engine::subjective_game_view::{SubjectiveGameDataView, SubjectiveSeat};
 use crate::game::game_data::{Bidding, CardPlay};
 
 use crate::primitives::game_event::{
@@ -85,7 +85,7 @@ impl CliPresenter {
     }
 
     pub fn display_dummys_hand_for_user(cards: &[Card]) {
-        println!("Dummies Hand:");
+        println!("Dummy's Hand:");
         for card in cards {
             print!("{}", card)
         }
@@ -93,6 +93,42 @@ impl CliPresenter {
     }
 
     pub fn display_trick_for_user(state: &SubjectiveGameDataView<CardPlay>) {
-        println!("{}", state.trick_string())
+        let trick = state.active_trick();
+
+        match (trick.cards(), trick.lead(), state.next_to_play()) {
+            ([], SubjectiveSeat::Myself, SubjectiveSeat::Myself) => println!("You are leading to the next trick!"),
+            ([], SubjectiveSeat::Partner, SubjectiveSeat::Partner) => println!("Dummy is leading to the next trick!"),
+            ([c1], SubjectiveSeat::RightHandOpponent, SubjectiveSeat::Myself) => {
+                println!("  []");
+                println!("[]  {}", c1);
+                println!("  []");
+            }
+            ([c1, c2], SubjectiveSeat::Partner, SubjectiveSeat::Myself) => {
+                println!("  {}", c1);
+                println!("[]  {}", c2);
+                println!("  []");
+            }
+            ([c1, c2, c3], SubjectiveSeat::LeftHandOpponent, SubjectiveSeat::Myself) => {
+                println!("  {}", c2);
+                println!("{}  {}", c1, c3);
+                println!("  []");
+            }
+            ([c1], SubjectiveSeat::LeftHandOpponent, SubjectiveSeat::Partner) => {
+                println!("  []");
+                println!("{}  []", c1);
+                println!("  []");
+            }
+            ([c1, c2], SubjectiveSeat::Myself, SubjectiveSeat::Partner) => {
+                println!("  []");
+                println!("{}  []", c2);
+                println!("  {}", c1);
+            }
+            ([c1, c2, c3], SubjectiveSeat::RightHandOpponent, SubjectiveSeat::Partner) => {
+                println!("  []");
+                println!("{}  {}", c3, c1);
+                println!("  {}", c2);
+            }
+            _ => unreachable!(),
+        }
     }
 }

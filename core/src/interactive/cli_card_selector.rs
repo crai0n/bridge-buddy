@@ -1,5 +1,5 @@
 use crate::engine::card_play_engine::SelectCard;
-use crate::engine::subjective_game_view::{SubjectiveGameDataView, SubjectiveSeat};
+use crate::engine::subjective_game_view::SubjectiveGameDataView;
 use crate::game::game_data::{CardPlay, OpeningLead};
 use crate::interactive::cli_presenter::CliPresenter;
 use crate::primitives::deal::Seat;
@@ -23,11 +23,11 @@ impl CliCardSelector {
         CliPresenter::display_hand_for_user(&state.my_remaining_cards());
 
         let seat = state.next_to_play();
-        if seat == SubjectiveSeat::Myself {
-            println!("You have to play from your own hand!");
-        } else {
-            println!("You have to play from dummy's hand!");
-        }
+        // if seat == SubjectiveSeat::Myself {
+        //     println!("You have to play from your own hand!");
+        // } else {
+        //     println!("You have to play from dummy's hand!");
+        // }
 
         println!("What card do you want to play?");
 

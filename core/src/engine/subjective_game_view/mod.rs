@@ -8,12 +8,14 @@ use crate::primitives::bid::{Bid, ContractBid};
 use crate::primitives::deal::Seat;
 use crate::primitives::{Card, Hand, Suit};
 
+use crate::engine::subjective_game_view::subjective_trick::SubjectiveTrick;
 use crate::primitives::game_event::CardEvent;
 use crate::primitives::trick::Trick;
 pub use subjective_seat::SubjectiveSeat;
 
 mod subjective_axis;
 mod subjective_seat;
+mod subjective_trick;
 mod subjective_vulnerability;
 mod subjectiviser;
 
@@ -305,36 +307,15 @@ impl<'a> SubjectiveGameDataView<'a, CardPlay> {
         self.subjectiviser.subjective_vulnerability(vul)
     }
 
-    pub fn trick_string(&self) -> String {
+    pub fn active_trick(&self) -> SubjectiveTrick {
         match self.game_data.inner.trick_manager.current_trick() {
-            None => "You are leading to the next trick!".to_string(),
+            None => {
+                let lead = self.subjectiviser.subjective_seat(self.game_data.next_to_play());
+                SubjectiveTrick::new(lead)
+            }
             Some(active_trick) => {
                 let lead = self.subjectiviser.subjective_seat(active_trick.lead());
-
-                let first_line;
-                let second_line;
-
-                match lead {
-                    SubjectiveSeat::LeftHandOpponent => {
-                        let [c1, c2, c3] = active_trick.cards() else {
-                            unreachable!()
-                        };
-                        first_line = format!("  {}  \n", c2);
-                        second_line = format!("{}  {}\n", c1, c3);
-                    }
-                    SubjectiveSeat::Partner => {
-                        let [c1, c2] = active_trick.cards() else { unreachable!() };
-                        first_line = format!("  {}  \n", c1);
-                        second_line = format!("[]  {}\n", c2);
-                    }
-                    SubjectiveSeat::RightHandOpponent => {
-                        let [c1] = active_trick.cards() else { unreachable!() };
-                        first_line = "  []  \n".to_string();
-                        second_line = format!("[]  {}\n", c1);
-                    }
-                    SubjectiveSeat::Myself => unreachable!(),
-                };
-                first_line + &second_line
+                SubjectiveTrick::with_cards(lead, active_trick.cards())
             }
         }
     }
