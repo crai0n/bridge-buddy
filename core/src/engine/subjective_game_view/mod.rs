@@ -17,7 +17,7 @@ mod subjective_axis;
 mod subjective_seat;
 mod subjective_trick;
 mod subjective_vulnerability;
-mod subjectiviser;
+pub mod subjectiviser;
 
 pub enum SubjectiveGameStateView<'a> {
     Bidding(SubjectiveGameDataView<'a, Bidding>),

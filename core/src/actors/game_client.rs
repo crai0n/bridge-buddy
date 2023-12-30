@@ -1,4 +1,5 @@
 use crate::engine::mock_bridge_engine::MockBridgeEngine;
+use crate::engine::subjective_game_view::subjectiviser::Subjectiviser;
 use crate::engine::subjective_game_view::SubjectiveGameStateView;
 use crate::engine::{Move, SelectMove};
 use crate::error::BBError;
@@ -27,7 +28,8 @@ impl<'a> GameClient<'a> {
                 Some(game) => game.process_game_event(event),
             },
         }?;
-        self.move_selector.process_game_event(event)
+        self.move_selector
+            .process_game_event(event, Subjectiviser::new(self.seat))
     }
 
     pub fn get_move(&self) -> Result<PlayerEvent, BBError> {

@@ -1,5 +1,6 @@
 use crate::engine::bidding_engine::SelectBid;
 use crate::engine::card_play_engine::SelectCard;
+use crate::engine::subjective_game_view::subjectiviser::Subjectiviser;
 use crate::engine::subjective_game_view::SubjectiveGameDataView;
 use crate::engine::SelectMove;
 use crate::error::BBError;
@@ -33,7 +34,7 @@ impl CliMoveSelector {
 }
 
 impl SelectMove for CliMoveSelector {
-    fn process_game_event(&mut self, event: GameEvent) -> Result<(), BBError> {
+    fn process_game_event(&mut self, event: GameEvent, _subjectiviser: Subjectiviser) -> Result<(), BBError> {
         CliPresenter::print_game_event_to_console(event);
         Ok(())
     }

@@ -2,6 +2,7 @@ use crate::engine::bidding_engine::mock_bidding_engine::MockBiddingEngine;
 use crate::engine::bidding_engine::SelectBid;
 use crate::engine::card_play_engine::mock_card_play_engine::MockCardPlayEngine;
 use crate::engine::card_play_engine::SelectCard;
+use crate::engine::subjective_game_view::subjectiviser::Subjectiviser;
 use crate::engine::subjective_game_view::SubjectiveGameDataView;
 use crate::engine::SelectMove;
 use crate::error::BBError;
@@ -43,7 +44,7 @@ impl SelectCard for MockBridgeEngine {
 }
 
 impl SelectMove for MockBridgeEngine {
-    fn process_game_event(&mut self, _event: GameEvent) -> Result<(), BBError> {
+    fn process_game_event(&mut self, _event: GameEvent, _subjectiviser: Subjectiviser) -> Result<(), BBError> {
         Ok(())
     }
 }
