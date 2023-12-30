@@ -131,7 +131,7 @@ impl std::fmt::Display for HandType {
             Self::ThreeSuited(s1, s2, s3) => write!(f, "three-suited: {}, {} and {}", s1, s2, s3),
             Self::TwoSuited(s1, s2) => write!(f, "two-suited: {} and {}", s1, s2),
             Self::SingleSuited(s) => write!(f, "single-suited: {}", s),
-            Self::Balanced(Some(s)) => write!(f, "balanced with five cards in {}", s),
+            Self::Balanced(Some(s)) => write!(f, "balanced with 5 cards in {}", s),
             Self::Balanced(None) => write!(f, "balanced"),
         }
     }

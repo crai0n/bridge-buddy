@@ -8,6 +8,7 @@ use crate::primitives::Card;
 
 pub mod bidding_engine;
 pub mod card_play_engine;
+mod engine_state;
 pub mod hand_evaluation;
 pub mod mock_bridge_engine;
 pub mod subjective_game_view;
@@ -37,5 +38,5 @@ pub trait SelectMove: SelectCard + SelectBid {
         }
     }
 
-    fn process_game_event(&mut self, event: GameEvent) -> Result<(), BBError>;
+    fn process_game_event(&mut self, event: GameEvent, game_state: SubjectiveGameStateView) -> Result<(), BBError>;
 }

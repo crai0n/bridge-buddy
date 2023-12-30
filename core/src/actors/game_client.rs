@@ -24,10 +24,13 @@ impl<'a> GameClient<'a> {
             }
             _ => match &mut self.game {
                 None => Err(BBError::GameHasNotStarted)?,
-                Some(game) => game.process_game_event(event),
+                Some(game) => {
+                    self.move_selector
+                        .process_game_event(event, SubjectiveGameStateView::new(game, self.seat))?;
+                    game.process_game_event(event)
+                }
             },
-        }?;
-        self.move_selector.process_game_event(event)
+        }
     }
 
     pub fn get_move(&self) -> Result<PlayerEvent, BBError> {

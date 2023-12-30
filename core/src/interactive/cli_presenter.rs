@@ -73,9 +73,34 @@ impl CliPresenter {
         println!("{}", event.dummy)
     }
 
-    pub fn display_bidding_state_for_user(state: &SubjectiveGameDataView<Bidding>) {
-        println!("The bidding so far is: ");
-        print!("{}", state.bidding_string())
+    pub fn display_bidding_state_for_user(data: &SubjectiveGameDataView<Bidding>) {
+        println!("You  LHO  Ptn  RHO");
+        println!("------------------");
+
+        let mut x = match data.dealer() {
+            SubjectiveSeat::Myself => 0,
+            SubjectiveSeat::LeftHandOpponent => 1,
+            SubjectiveSeat::Partner => 2,
+            SubjectiveSeat::RightHandOpponent => 3,
+        };
+
+        let pad = "     ";
+
+        for _i in 0..x {
+            print!("{}", pad);
+        }
+
+        for bid in data.bids() {
+            let bid_str = format!("{}", bid);
+            print!("{:<5}", bid_str);
+            x += 1;
+            if x % 4 == 0 {
+                println!();
+            }
+        }
+        if x % 4 != 0 {
+            println!();
+        }
     }
 
     pub fn display_hand_for_user(cards: &[Card]) {
