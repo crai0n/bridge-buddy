@@ -125,8 +125,8 @@ impl<'a> SubjectiveGameDataView<'a, Bidding> {
         }
     }
 
-    pub fn bidding_string(&self) -> String {
-        format!("{}", self.game_data.inner.bid_manager)
+    pub fn bids(&self) -> Vec<Bid> {
+        self.game_data.inner.bid_manager.bids().to_vec()
     }
 
     pub fn validate_bid(&self, bid: Bid) -> Result<(), BBError> {
