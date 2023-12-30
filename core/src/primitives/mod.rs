@@ -11,5 +11,6 @@ pub mod contract;
 pub mod deal;
 pub mod game_event;
 pub mod game_result;
+pub mod hand_info;
 pub mod player_event;
 pub mod trick;
