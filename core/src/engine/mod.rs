@@ -1,6 +1,5 @@
 use crate::engine::bidding_engine::SelectBid;
 use crate::engine::card_play_engine::SelectCard;
-use crate::engine::subjective_game_view::subjectiviser::Subjectiviser;
 use crate::engine::subjective_game_view::SubjectiveGameStateView;
 use crate::error::BBError;
 use crate::primitives::bid::Bid;
@@ -9,6 +8,7 @@ use crate::primitives::Card;
 
 pub mod bidding_engine;
 pub mod card_play_engine;
+mod engine_state;
 pub mod hand_evaluation;
 pub mod mock_bridge_engine;
 pub mod subjective_game_view;
@@ -38,5 +38,5 @@ pub trait SelectMove: SelectCard + SelectBid {
         }
     }
 
-    fn process_game_event(&mut self, event: GameEvent, subjectiviser: Subjectiviser) -> Result<(), BBError>;
+    fn process_game_event(&mut self, event: GameEvent, game_state: SubjectiveGameStateView) -> Result<(), BBError>;
 }

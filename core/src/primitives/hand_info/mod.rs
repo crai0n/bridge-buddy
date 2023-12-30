@@ -1,4 +1,4 @@
-mod ranges;
+pub mod ranges;
 pub mod suit_quality;
 
 use crate::primitives::deal::hand::HandType;
@@ -7,7 +7,7 @@ use crate::primitives::hand_info::suit_quality::SuitQuality;
 use crate::primitives::Suit;
 
 #[allow(dead_code)]
-enum HandInfo {
+pub enum HandInfo {
     HandType(HandType),
     SuitLength(Suit, LengthRange),
     SuitQuality(Suit, SuitQuality),
