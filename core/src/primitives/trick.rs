@@ -1,3 +1,4 @@
+use crate::error::BBError;
 use crate::primitives::deal::Seat;
 use crate::primitives::{Card, Suit};
 use std::fmt::{Display, Formatter};
@@ -20,6 +21,17 @@ impl ActiveTrick {
             cards: Vec::with_capacity(4),
         }
     }
+
+    pub fn new_with_cards(lead: Seat, cards: &[Card]) -> Result<ActiveTrick, BBError> {
+        if cards.len() > 4 {
+            return Err(BBError::CardCount);
+        }
+        Ok(ActiveTrick {
+            lead,
+            cards: cards.to_vec(),
+        })
+    }
+
     pub fn play(&mut self, card: Card) {
         self.cards.push(card);
     }
@@ -61,6 +73,14 @@ impl PlayedTrick {
             lead: active.lead(),
             cards: active.cards().into(),
             winner,
+        }
+    }
+
+    pub fn new(lead: Seat, cards: [Card; 4], winner: Seat) -> Self {
+        PlayedTrick {
+            lead,
+            winner,
+            cards: cards.into(),
         }
     }
 

@@ -308,16 +308,9 @@ impl<'a> SubjectiveGameDataView<'a, CardPlay> {
     }
 
     pub fn active_trick(&self) -> SubjectiveTrick {
-        match self.game_data.inner.trick_manager.current_trick() {
-            None => {
-                let lead = self.subjectiviser.subjective_seat(self.game_data.next_to_play());
-                SubjectiveTrick::new(lead)
-            }
-            Some(active_trick) => {
-                let lead = self.subjectiviser.subjective_seat(active_trick.lead());
-                SubjectiveTrick::with_cards(lead, active_trick.cards())
-            }
-        }
+        let active_trick = self.game_data.inner.trick_manager.current_trick();
+        let lead = self.subjectiviser.subjective_seat(active_trick.lead());
+        SubjectiveTrick::with_cards(lead, active_trick.cards())
     }
 }
 

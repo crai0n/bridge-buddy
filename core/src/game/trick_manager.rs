@@ -1,13 +1,13 @@
 use crate::error::BBError;
 use crate::primitives::deal::Seat;
-use crate::primitives::trick::Trick;
-use crate::primitives::trick::{ActiveTrick, PlayedTrick};
+use crate::primitives::trick::{ActiveTrick, PlayedTrick, Trick};
 use crate::primitives::{Card, Suit};
+use std::mem;
 
 #[derive(Debug, Clone)]
 pub struct TrickManager {
     trump_suit: Option<Suit>,
-    current_trick: Option<ActiveTrick>,
+    current_trick: ActiveTrick,
     next_to_play: Seat,
     played_tricks: Vec<PlayedTrick>,
 }
@@ -15,7 +15,7 @@ pub struct TrickManager {
 impl TrickManager {
     pub fn new(lead: Seat, trump_suit: Option<Suit>) -> Self {
         TrickManager {
-            current_trick: None,
+            current_trick: ActiveTrick::new(lead),
             next_to_play: lead,
             played_tricks: Vec::with_capacity(13),
             trump_suit,
@@ -23,13 +23,10 @@ impl TrickManager {
     }
 
     pub fn suit_to_follow(&self) -> Option<Suit> {
-        match &self.current_trick {
-            Some(trick) => trick.suit_to_follow(),
-            None => None,
-        }
+        self.current_trick.suit_to_follow()
     }
 
-    pub fn current_trick(&self) -> Option<ActiveTrick> {
+    pub fn current_trick(&self) -> ActiveTrick {
         self.current_trick.clone()
     }
 
@@ -47,11 +44,9 @@ impl TrickManager {
 
     fn trick_winner(&self) -> Seat {
         let winning_card = self.winning_card();
-        let winner = self.current_trick.as_ref().unwrap().lead()
+        let winner = self.current_trick.lead()
             + self
                 .current_trick
-                .as_ref()
-                .unwrap()
                 .cards()
                 .iter()
                 .position(|x| *x == winning_card)
@@ -60,7 +55,7 @@ impl TrickManager {
     }
 
     fn winning_card(&self) -> Card {
-        let mut cards = self.current_trick.as_ref().unwrap().cards().iter();
+        let mut cards = self.current_trick.cards().iter();
         let mut winning_card = cards.next().unwrap();
         for card in cards {
             if let Some(trump) = self.trump_suit {
@@ -78,8 +73,8 @@ impl TrickManager {
     fn move_to_next_trick(&mut self) {
         let winner = self.trick_winner();
 
-        let played_trick = self.current_trick.take();
-        let played_trick = PlayedTrick::from_active_trick(played_trick.unwrap(), winner);
+        let played_trick = mem::replace(&mut self.current_trick, ActiveTrick::new(winner));
+        let played_trick = PlayedTrick::from_active_trick(played_trick, winner);
         self.played_tricks.push(played_trick);
         self.next_to_play = winner;
     }
@@ -97,12 +92,8 @@ impl TrickManager {
     }
 
     pub fn play(&mut self, card: Card) -> Result<(), BBError> {
-        if self.current_trick.is_none() {
-            self.current_trick = Some(ActiveTrick::new(self.next_to_play()));
-        }
-
-        self.current_trick.as_mut().unwrap().play(card);
-        if self.current_trick.as_mut().unwrap().cards().len() == 4 {
+        self.current_trick.play(card);
+        if self.current_trick.cards().len() == 4 {
             self.move_to_next_trick();
         } else {
             self.next_to_play = self.next_to_play + 1;
