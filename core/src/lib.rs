@@ -1,6 +1,7 @@
 pub use strum::IntoEnumIterator;
 
 pub mod actors;
+pub mod dds;
 pub mod engine;
 pub mod error;
 pub mod game;
