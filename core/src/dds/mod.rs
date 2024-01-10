@@ -92,6 +92,10 @@ impl<const N: usize> DoubleDummySolver<N> {
             // println!("Not enough tricks left!");
             return false;
         };
+        if Self::have_enough_quick_tricks_for_target(state, target) {
+            // println!("Enough quick tricks for target!");
+            return true;
+        };
         if Self::only_one_trick_left_to_play(state) {
             // println!("Checking last trick!");
             return Self::we_win_last_trick(state);
@@ -107,6 +111,14 @@ impl<const N: usize> DoubleDummySolver<N> {
             }
         }
         false
+    }
+
+    fn have_enough_quick_tricks_for_target(state: &DdsState<N>, target: usize) -> bool {
+        target <= state.tricks_won_by_axis(state.next_to_play()) + Self::quick_tricks_for_player(state)
+    }
+
+    fn quick_tricks_for_player(_state: &DdsState<N>) -> usize {
+        0
     }
 
     fn only_one_trick_left_to_play(state: &mut DdsState<{ N }>) -> bool {
