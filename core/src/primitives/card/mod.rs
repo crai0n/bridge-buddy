@@ -33,6 +33,10 @@ impl Card {
         let chars = string.chars().collect::<Vec<char>>();
         chars.try_into().or(Err(BBError::UnknownCard(string.into())))
     }
+
+    pub fn touches(&self, other: &Card) -> bool {
+        self.suit == other.suit && self.denomination.touches(&other.denomination)
+    }
 }
 
 #[cfg(test)]

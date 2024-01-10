@@ -1,35 +1,36 @@
 use crate::error::BBError;
 use crate::primitives::Card;
+use std::cmp::Ordering;
 use strum::{Display, EnumIter};
 
 #[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
 pub enum Rank {
     #[strum(serialize = "2")]
-    Two,
+    Two = 2,
     #[strum(serialize = "3")]
-    Three,
+    Three = 3,
     #[strum(serialize = "4")]
-    Four,
+    Four = 4,
     #[strum(serialize = "5")]
-    Five,
+    Five = 5,
     #[strum(serialize = "6")]
-    Six,
+    Six = 6,
     #[strum(serialize = "7")]
-    Seven,
+    Seven = 7,
     #[strum(serialize = "8")]
-    Eight,
+    Eight = 8,
     #[strum(serialize = "9")]
-    Nine,
+    Nine = 9,
     #[strum(serialize = "T")]
-    Ten,
+    Ten = 10,
     #[strum(serialize = "J")]
-    Jack,
+    Jack = 11,
     #[strum(serialize = "Q")]
-    Queen,
+    Queen = 12,
     #[strum(serialize = "K")]
-    King,
+    King = 13,
     #[strum(serialize = "A")]
-    Ace,
+    Ace = 14,
 }
 
 impl From<Card> for Rank {
@@ -60,6 +61,14 @@ impl Rank {
             '3' => Ok(Rank::Three),
             '2' => Ok(Rank::Two),
             c => Err(BBError::UnknownRank(c.into())),
+        }
+    }
+
+    pub fn touches(&self, other: &Denomination) -> bool {
+        match self.cmp(other) {
+            Ordering::Less => *other as usize - *self as usize == 1,
+            Ordering::Equal => *self as usize - *other as usize == 1,
+            Ordering::Greater => false,
         }
     }
 }
