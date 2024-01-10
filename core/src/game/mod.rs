@@ -48,7 +48,7 @@ impl GameState {
         }
     }
 
-    pub fn hand_of(&self, player: Seat) -> Result<Hand, BBError> {
+    pub fn hand_of(&self, player: Seat) -> Result<Hand<13>, BBError> {
         match &self {
             GameState::Bidding(state) => state.hand_of(player),
             GameState::OpeningLead(state) => state.hand_of(player),
@@ -199,7 +199,7 @@ mod test {
     #[test]
     fn init() {
         let mut rng = thread_rng();
-        let deal = Deal::from_rng(&mut rng);
+        let deal: Deal<13> = Deal::from_rng(&mut rng);
         let game = GameState::new_from_board(deal.board);
         assert!(matches!(game, GameState::Bidding(_)))
     }
@@ -207,7 +207,7 @@ mod test {
     #[test]
     fn game_without_card_play() {
         let seed = 9000u64;
-        let deal = Deal::from_u64_seed(seed);
+        let deal: Deal<13> = Deal::from_u64_seed(seed);
         let mut game = GameState::new_from_board(deal.board);
 
         let bids = ["p", "p", "p", "p"];

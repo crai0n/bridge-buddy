@@ -25,7 +25,7 @@ pub struct NewGameEvent {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DiscloseHandEvent {
     pub seat: Seat,
-    pub hand: Hand,
+    pub hand: Hand<13>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -35,12 +35,12 @@ pub struct BiddingEndedEvent {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DummyUncoveredEvent {
-    pub dummy: Hand,
+    pub dummy: Hand<13>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct GameEndedEvent {
-    pub deal: Deal,
+    pub deal: Deal<13>,
     pub result: GameResult,
     pub score: ScorePoints,
 }

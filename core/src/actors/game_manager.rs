@@ -12,13 +12,13 @@ use itertools::Itertools;
 use strum::IntoEnumIterator;
 
 pub struct GameManager {
-    deal: Deal,
+    deal: Deal<13>,
     game: Option<GameState>,
     history: Vec<GameEvent>,
 }
 
 impl GameManager {
-    pub fn new_from_deal(deal: Deal) -> Self {
+    pub fn new_from_deal(deal: Deal<13>) -> Self {
         GameManager {
             deal,
             game: None,

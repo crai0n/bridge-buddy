@@ -9,11 +9,11 @@ use strum::IntoEnumIterator;
 pub struct ForumDPlus2015Evaluator {}
 
 impl ForumDPlus2015Evaluator {
-    pub fn hcp(hand: &Hand) -> f64 {
+    pub fn hcp(hand: &Hand<13>) -> f64 {
         Self::hcp_for_cards(&mut hand.cards())
     }
 
-    pub fn hcp_in(suit: Suit, hand: &Hand) -> f64 {
+    pub fn hcp_in(suit: Suit, hand: &Hand<13>) -> f64 {
         Self::hcp_for_cards(&mut hand.cards_in(suit))
     }
 
@@ -33,7 +33,7 @@ impl ForumDPlus2015Evaluator {
         }
     }
 
-    pub fn adjustment_aces_and_tens(hand: &Hand) -> f64 {
+    pub fn adjustment_aces_and_tens(hand: &Hand<13>) -> f64 {
         let tens = hand.cards().filter(|&&x| x.denomination == Ten).count();
         let aces = hand.cards().filter(|&&x| x.denomination == Ace).count();
         match (tens, aces) {
@@ -45,7 +45,7 @@ impl ForumDPlus2015Evaluator {
         }
     }
 
-    pub fn adjustment_unguarded_honors(hand: &Hand) -> f64 {
+    pub fn adjustment_unguarded_honors(hand: &Hand<13>) -> f64 {
         let mut acc = 0.0;
         for suit in Suit::iter() {
             let cards_vec = hand.cards_in(suit).rev().map(|x| x.denomination).collect_vec();
@@ -61,7 +61,7 @@ impl ForumDPlus2015Evaluator {
         acc
     }
 
-    pub fn suit_quality(hand: &Hand, suit: Suit) -> SuitQuality {
+    pub fn suit_quality(hand: &Hand<13>, suit: Suit) -> SuitQuality {
         let cards = hand.cards_in(suit).map(|c| c.denomination).rev().collect_vec();
 
         if Self::is_standing_suit(&cards) {
@@ -87,7 +87,7 @@ impl ForumDPlus2015Evaluator {
         SuitQuality::Weak // less than acceptable
     }
 
-    fn is_acceptable_suit(hand: &Hand, suit: Suit) -> bool {
+    fn is_acceptable_suit(hand: &Hand<13>, suit: Suit) -> bool {
         // at least 3 HCP
         Self::hcp_in(suit, hand) >= 3.0
     }
@@ -125,7 +125,7 @@ impl ForumDPlus2015Evaluator {
         Denomination::iter().rev().take(l).filter(|d| cards.contains(d)).count()
     }
 
-    pub fn length_points(hand: &Hand, trump_suit: Option<Suit>, long_suits_shown_by_opponents: &[Suit]) -> f64 {
+    pub fn length_points(hand: &Hand<13>, trump_suit: Option<Suit>, long_suits_shown_by_opponents: &[Suit]) -> f64 {
         let mut acc = 0.0;
         //in each suit that contains at least 3 HCP, is not the trump suit, and for which no opponent has shown 5+ cards, count 1 point for each card past the fourth.
         for suit in Suit::iter() {
@@ -142,7 +142,7 @@ impl ForumDPlus2015Evaluator {
         acc
     }
 
-    pub fn side_suit_distribution_points(hand: &Hand, trump_suit: Suit) -> f64 {
+    pub fn side_suit_distribution_points(hand: &Hand<13>, trump_suit: Suit) -> f64 {
         let mut acc = 0.0;
         for suit in Suit::iter() {
             if trump_suit == suit {
@@ -159,7 +159,7 @@ impl ForumDPlus2015Evaluator {
     }
 
     pub fn trump_distribution_points(
-        hand: &Hand,
+        hand: &Hand<13>,
         trump_suit: Suit,
         partner_promised: u8,
         promised_to_partner: u8,
@@ -232,7 +232,7 @@ impl ForumDPlus2015Evaluator {
     //
     // There are different opinions on how exactly Playing Tricks are counted. The difference mostly stems from disagreements about the value of Jack and Ten, especially for suits with 4-6 cards.
     // For now, we implement a basic approach, where we only evaluate at most the first three cards of the suit.
-    pub fn playing_trick_count(hand: &Hand) -> f64 {
+    pub fn playing_trick_count(hand: &Hand<13>) -> f64 {
         let mut acc = 0.0;
         for suit in Suit::iter() {
             let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
@@ -308,7 +308,7 @@ impl ForumDPlus2015Evaluator {
     // There are different opinions on how exactly Losing Tricks are counted. The difference mostly stems from disagreements about the value of Jack and Ten, especially for suits with 4-6 cards.
     // For now, we implement a basic approach, never counting more than 3 losers per suit. From these, one loser is deducted for each of the Ace, King and Queen.
     // This means that Qxx is valued the same as Axx though, which should be refined todo!
-    pub fn losing_trick_count(hand: &Hand) -> f64 {
+    pub fn losing_trick_count(hand: &Hand<13>) -> f64 {
         let mut acc = 0.0;
         for suit in Suit::iter() {
             let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
@@ -350,7 +350,7 @@ impl ForumDPlus2015Evaluator {
         }
     }
 
-    pub fn first_round_control_in(suit: Suit, hand: &Hand, trump: Option<Suit>) -> bool {
+    pub fn first_round_control_in(suit: Suit, hand: &Hand<13>, trump: Option<Suit>) -> bool {
         let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
         if card_vec.contains(&Ace) {
             return true;
@@ -362,7 +362,7 @@ impl ForumDPlus2015Evaluator {
         false
     }
 
-    pub fn second_round_control_in(suit: Suit, hand: &Hand, trump: Option<Suit>) -> bool {
+    pub fn second_round_control_in(suit: Suit, hand: &Hand<13>, trump: Option<Suit>) -> bool {
         let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
         if card_vec.len() >= 2 && card_vec.contains(&King) {
             return true; // Kx
@@ -379,7 +379,7 @@ impl ForumDPlus2015Evaluator {
         }
     }
 
-    pub fn honor_in(suit: Suit, hand: &Hand) -> bool {
+    pub fn honor_in(suit: Suit, hand: &Hand<13>) -> bool {
         let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
         Denomination::iter()
             .rev()
@@ -389,7 +389,7 @@ impl ForumDPlus2015Evaluator {
             >= 1
     }
 
-    pub fn stops(suit: Suit, hand: &Hand, is_declarer: bool) -> bool {
+    pub fn stops(suit: Suit, hand: &Hand<13>, is_declarer: bool) -> bool {
         let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
         match card_vec.len() {
             0 => false,
@@ -437,7 +437,7 @@ impl ForumDPlus2015Evaluator {
         }
     }
 
-    pub fn rule_of_twenty(hand: &Hand) -> bool {
+    pub fn rule_of_twenty(hand: &Hand<13>) -> bool {
         Suit::iter()
             .map(|x| hand.length_in(x))
             .sorted()
@@ -448,7 +448,7 @@ impl ForumDPlus2015Evaluator {
             >= 20.0
     }
 
-    pub fn rule_of_fifteen(hand: &Hand) -> bool {
+    pub fn rule_of_fifteen(hand: &Hand<13>) -> bool {
         hand.length_in(Suit::Spades) as f64 + Self::hcp(hand) >= 15.0
     }
 }

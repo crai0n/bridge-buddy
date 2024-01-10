@@ -15,18 +15,18 @@ pub mod turn_rank;
 pub mod vulnerability;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct Deal {
+pub struct Deal<const N: usize> {
     pub board: Board,
-    pub hands: [Hand; 4],
+    pub hands: [Hand<N>; 4],
 }
 
-impl Deal {
+impl<const N: usize> Deal<N> {
     pub fn from_u64_seed(seed: u64) -> Self {
         let mut rng = ChaCha8Rng::seed_from_u64(seed);
         Self::from_rng(&mut rng)
     }
 
-    pub fn new() -> Deal {
+    pub fn new() -> Deal<N> {
         let mut rng = thread_rng();
         Self::from_rng(&mut rng)
     }
@@ -47,8 +47,8 @@ impl Deal {
         Deal { board, hands }
     }
 
-    fn hands_from_rng(rng: &mut impl Rng) -> [Hand; 4] {
-        let deck = Deck::shuffled_from_rng(rng);
+    fn hands_from_rng(rng: &mut impl Rng) -> [Hand<N>; 4] {
+        let deck = Deck::<N>::shuffled_from_rng(rng);
         deck.deal()
     }
 
@@ -60,12 +60,12 @@ impl Deal {
         self.board.dealer()
     }
 
-    pub fn hand_of(&self, position: Seat) -> &Hand {
+    pub fn hand_of(&self, position: Seat) -> &Hand<N> {
         &self.hands[position as usize]
     }
 }
 
-impl Default for Deal {
+impl<const N: usize> Default for Deal<N> {
     fn default() -> Self {
         Deal::new()
     }
@@ -84,7 +84,7 @@ mod tests {
     #[test_case( 5u64,   7, "C5", "SA"; "Test E")]
     fn determinism(seed: u64, board_number: usize, lowest_card: &str, highest_card: &str) {
         // let mut rng = ChaCha8Rng::seed_from_u64(seed);
-        let deal = Deal::from_u64_seed(seed);
+        let deal = Deal::<13>::from_u64_seed(seed);
         assert_eq!(deal.board.number(), board_number);
         assert_eq!(
             deal.hands.first().unwrap().cards().next().unwrap(),

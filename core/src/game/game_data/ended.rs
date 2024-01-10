@@ -17,7 +17,7 @@ pub struct Ended {
 }
 
 impl GameData<Ended> {
-    pub fn hand_of(&self, player: Seat) -> Result<Hand, BBError> {
+    pub fn hand_of(&self, player: Seat) -> Result<Hand<13>, BBError> {
         self.inner.hands.hand_of(player)
     }
 

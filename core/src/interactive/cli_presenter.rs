@@ -116,7 +116,7 @@ impl CliPresenter {
         println!();
     }
 
-    pub fn display_starting_hand_for_user(hand: Hand) {
+    pub fn display_starting_hand_for_user(hand: Hand<13>) {
         println!("Your hand:");
         Self::display_hand_for_user(hand.cards().copied().collect_vec().as_slice())
     }

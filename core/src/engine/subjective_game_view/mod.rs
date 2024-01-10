@@ -49,7 +49,7 @@ impl<'a> SubjectiveGameStateView<'a> {
         }
     }
 
-    pub fn my_starting_hand(&self) -> Result<Hand, BBError> {
+    pub fn my_starting_hand(&self) -> Result<Hand<13>, BBError> {
         match self {
             Self::Bidding(data) => data.my_starting_hand(),
             Self::OpeningLead(data) => data.my_starting_hand(),
@@ -133,7 +133,7 @@ impl<'a> SubjectiveGameDataView<'a, Bidding> {
         self.game_data.inner.bid_manager.validate_bid(bid)
     }
 
-    pub fn my_starting_hand(&self) -> Result<Hand, BBError> {
+    pub fn my_starting_hand(&self) -> Result<Hand<13>, BBError> {
         self.game_data.hand_of(self.seat)
     }
 
@@ -177,7 +177,7 @@ impl<'a> SubjectiveGameDataView<'a, OpeningLead> {
         }
     }
 
-    pub fn my_starting_hand(&self) -> Result<Hand, BBError> {
+    pub fn my_starting_hand(&self) -> Result<Hand<13>, BBError> {
         self.game_data.hand_of(self.seat)
     }
 
@@ -222,7 +222,7 @@ impl<'a> SubjectiveGameDataView<'a, WaitingForDummy> {
         }
     }
 
-    pub fn my_starting_hand(&self) -> Result<Hand, BBError> {
+    pub fn my_starting_hand(&self) -> Result<Hand<13>, BBError> {
         self.game_data.hand_of(self.seat)
     }
 
@@ -263,7 +263,7 @@ impl<'a> SubjectiveGameDataView<'a, CardPlay> {
         self.game_data.inner.trick_manager.suit_to_follow()
     }
 
-    pub fn my_starting_hand(&self) -> Result<Hand, BBError> {
+    pub fn my_starting_hand(&self) -> Result<Hand<13>, BBError> {
         self.game_data.hand_of(self.seat)
     }
 
@@ -277,7 +277,7 @@ impl<'a> SubjectiveGameDataView<'a, CardPlay> {
         self.game_data.validate_play_card_event(card_play_event)
     }
 
-    pub fn dummys_starting_hand(&self) -> Result<Hand, BBError> {
+    pub fn dummys_starting_hand(&self) -> Result<Hand<13>, BBError> {
         self.game_data.hand_of(self.game_data.declarer().partner())
     }
 
@@ -323,7 +323,7 @@ impl<'a> SubjectiveGameDataView<'a, Ended> {
         }
     }
 
-    pub fn my_starting_hand(&self) -> Result<Hand, BBError> {
+    pub fn my_starting_hand(&self) -> Result<Hand<13>, BBError> {
         self.game_data.hand_of(self.seat)
     }
 
