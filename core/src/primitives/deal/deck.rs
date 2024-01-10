@@ -6,7 +6,7 @@ use rand::{thread_rng, Rng};
 use strum::IntoEnumIterator;
 
 pub struct Deck<const N: usize> {
-    cards: [[Card; N]; 4],
+    cards: Vec<Card>,
 }
 
 impl<const N: usize> Deck<N> {
@@ -19,7 +19,6 @@ impl<const N: usize> Deck<N> {
         );
 
         cards.sort_unstable();
-        let cards = Self::array_of_arrays_from_vec(cards);
 
         Deck { cards }
     }
@@ -37,36 +36,22 @@ impl<const N: usize> Deck<N> {
     }
 
     pub fn sort(&mut self) {
-        let mut cards = self.cards.iter().flatten().copied().collect_vec();
-        cards.sort_unstable();
-
-        self.cards = Self::array_of_arrays_from_vec(cards);
-    }
-
-    fn array_of_arrays_from_vec(vec: Vec<Card>) -> [[Card; N]; 4] {
-        vec.chunks(N)
-            .map(|hand| <[_; N]>::try_from(hand).unwrap())
-            .collect_vec()
-            .try_into()
-            .unwrap()
+        self.cards.sort_unstable();
     }
 
     fn shuffle_with_rng(&mut self, rng: &mut impl Rng) {
-        let mut cards = self.cards.iter().flatten().copied().collect_vec();
-        cards.shuffle(rng);
-
-        self.cards = Self::array_of_arrays_from_vec(cards);
+        self.cards.shuffle(rng);
     }
 
-    pub fn cards(&self) -> Vec<Card> {
-        self.cards.iter().flatten().copied().collect_vec()
+    pub fn cards(&self) -> &[Card] {
+        &self.cards
     }
 }
 
 impl<const N: usize> Deck<N> {
     pub fn deal(&self) -> [Hand<N>; 4] {
         self.cards
-            .iter()
+            .chunks(N)
             .map(|x| Hand::<N>::from_cards(x).unwrap())
             .collect::<Vec<Hand<N>>>()
             .try_into()
