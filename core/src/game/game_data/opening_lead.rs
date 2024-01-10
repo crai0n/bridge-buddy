@@ -24,7 +24,7 @@ impl NextToPlay for GameData<OpeningLead> {
 }
 
 impl GameData<OpeningLead> {
-    pub fn hand_of(&self, player: Seat) -> Result<Hand, BBError> {
+    pub fn hand_of(&self, player: Seat) -> Result<Hand<13>, BBError> {
         self.inner.hand_manager.hand_of(player)
     }
 

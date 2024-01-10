@@ -32,7 +32,7 @@ impl GameData<WaitingForDummy> {
         self.inner.contract.declarer
     }
 
-    pub fn hand_of(&self, player: Seat) -> Result<Hand, BBError> {
+    pub fn hand_of(&self, player: Seat) -> Result<Hand<13>, BBError> {
         self.inner.hand_manager.hand_of(player)
     }
 

@@ -35,7 +35,7 @@ impl<'a> Table<'a> {
         self.new_game_from_deal(deal)
     }
 
-    pub fn new_game_from_deal(&mut self, deal: Deal) -> Result<(), BBError> {
+    pub fn new_game_from_deal(&mut self, deal: Deal<13>) -> Result<(), BBError> {
         self.game_manager = Some(GameManager::new_from_deal(deal));
         Ok(())
     }

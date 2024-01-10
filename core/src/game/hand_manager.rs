@@ -17,7 +17,7 @@ impl HandManager {
         }
     }
 
-    pub fn register_known_hand(&mut self, hand: Hand, player: Seat) -> Result<(), BBError> {
+    pub fn register_known_hand(&mut self, hand: Hand<13>, player: Seat) -> Result<(), BBError> {
         for &card in hand.cards() {
             self.register_known_card(card, player)?;
         }
@@ -110,7 +110,7 @@ impl HandManager {
         self.count_known_cards_of(player) == 13
     }
 
-    pub fn hand_of(&self, player: Seat) -> Result<Hand, BBError> {
+    pub fn hand_of(&self, player: Seat) -> Result<Hand<13>, BBError> {
         let cards = self.known_cards_of(player);
         if cards.len() == 13 {
             Hand::from_cards(&cards)

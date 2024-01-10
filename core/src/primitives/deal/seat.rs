@@ -46,8 +46,9 @@ impl ops::Add<usize> for Seat {
         }
     }
 }
+
 impl Seat {
-    pub fn turn_rank_on_deal(&self, deal: &Deal) -> TurnRank {
+    pub fn turn_rank_on_deal<const N: usize>(&self, deal: &Deal<N>) -> TurnRank {
         self.turn_rank_on_board(&deal.board)
     }
 

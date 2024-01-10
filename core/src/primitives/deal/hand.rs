@@ -5,11 +5,11 @@ use std::str::FromStr;
 use strum::IntoEnumIterator;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Hand {
-    cards: [Card; 13],
+pub struct Hand<const N: usize> {
+    cards: [Card; N],
 }
 
-impl std::fmt::Display for Hand {
+impl<const N: usize> std::fmt::Display for Hand<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         for suit in Suit::iter().rev() {
             // Spades, then Hearts, ...
@@ -23,23 +23,23 @@ impl std::fmt::Display for Hand {
     }
 }
 
-impl FromStr for Hand {
+impl<const N: usize> FromStr for Hand<N> {
     type Err = BBError;
 
-    fn from_str(string: &str) -> Result<Hand, Self::Err> {
+    fn from_str(string: &str) -> Result<Hand<N>, Self::Err> {
         let mut cards: Vec<Card> = vec![];
 
         let separate_suits = string.trim().split(['\n', ',']);
         for cards_in_suit in separate_suits {
-            let (suit_symbol, denominations) = Hand::split_at_colon(cards_in_suit)?;
-            let suit_cards = Hand::create_cards_for_suit(suit_symbol, denominations)?;
+            let (suit_symbol, denominations) = Hand::<N>::split_at_colon(cards_in_suit)?;
+            let suit_cards = Hand::<N>::read_cards_for_suit(suit_symbol, denominations)?;
             cards.extend_from_slice(&suit_cards);
         }
         Hand::from_cards(&cards)
     }
 }
 
-impl Hand {
+impl<const N: usize> Hand<N> {
     fn split_at_colon(string: &str) -> Result<(&str, &str), BBError> {
         string.split_once(':').ok_or(BBError::ParseError(
             string.into(),
@@ -47,7 +47,7 @@ impl Hand {
         ))
     }
 
-    fn create_cards_for_suit(suit_symbol: &str, denominations: &str) -> Result<Vec<Card>, BBError> {
+    fn read_cards_for_suit(suit_symbol: &str, denominations: &str) -> Result<Vec<Card>, BBError> {
         let mut suit_cards = vec![];
         let suit = Suit::from_str(suit_symbol)?;
         for denomination_char in denominations.trim().chars() {
@@ -62,14 +62,14 @@ impl Hand {
         Ok(Hand { cards })
     }
 
-    fn sanitize_cards(cards: &[Card]) -> Result<[Card; 13], BBError> {
-        let mut cards: [Card; 13] = cards.try_into().or(Err(BBError::CardCount))?;
+    fn sanitize_cards(cards: &[Card]) -> Result<[Card; N], BBError> {
+        let mut cards: [Card; N] = cards.try_into().or(Err(BBError::CardCount))?;
         cards.sort_unstable();
         Hand::check_for_duplicates(&cards)?;
         Ok(cards)
     }
 
-    fn check_for_duplicates(&cards: &[Card; 13]) -> Result<(), BBError> {
+    fn check_for_duplicates(&cards: &[Card; N]) -> Result<(), BBError> {
         for i in 0..cards.len() - 1 {
             if cards[i] == cards[i + 1] {
                 return Err(BBError::Duplicate(cards[i]));
@@ -93,8 +93,10 @@ impl Hand {
     pub fn length_in(&self, suit: Suit) -> u8 {
         self.cards_in(suit).count() as u8
     }
+}
 
-    pub fn hand_type(&self) -> HandType {
+impl Hand<13> {
+    pub fn hand_type(&self) -> crate::primitives::deal::hand::HandType {
         let mut suit_lengths = Suit::iter().map(|s| (s, self.length_in(s))).collect::<Vec<_>>();
 
         suit_lengths.sort_unstable_by(Hand::descending_length_and_suit_value);
@@ -150,14 +152,15 @@ mod tests {
     #[test_case("H:, ♠:9J7A2T6K8Q, ♦: AK, C: A", ["cA", "dA", "dK", "sA", "sK", "sQ", "sJ", "sT", "s9", "s8", "s7", "s6", "s2"]; "single-suited")]
     #[test_case("H:8JK, ♠:9J2T6, ♦: AJ36, C: 4", ["c4", "dA", "dJ", "d3", "d6", "s9", "sJ", "s2", "sT", "s6", "h8", "hJ", "hK"]; "balanced")]
     fn hand_from_str(string: &str, cards: [&str; 13]) {
-        let hand1 = Hand::from_cards(&cards.iter().map(|c| Card::from_str(c).unwrap()).collect::<Vec<Card>>()).unwrap();
-        let hand2 = Hand::from_str(string).unwrap();
+        let hand1 =
+            Hand::<13>::from_cards(&cards.iter().map(|c| Card::from_str(c).unwrap()).collect::<Vec<Card>>()).unwrap();
+        let hand2 = Hand::<13>::from_str(string).unwrap();
         assert_eq!(hand1, hand2);
     }
 
     #[test_case("H:8JK, ♠:9J2T6, ♦: AJ36, C: 4", ["c4", "dA", "dJ", "d3", "d6", "s9", "sJ", "s2", "sT", "s6", "h8", "hJ", "hK"]; "balanced")]
     fn cards(string: &str, cards: [&str; 13]) {
-        let hand = Hand::from_str(string).unwrap();
+        let hand = Hand::<13>::from_str(string).unwrap();
         let mut cards = cards.iter().map(|c| Card::from_str(c).unwrap()).collect::<Vec<Card>>();
         cards.sort_unstable();
         assert!(hand.cards().eq(cards.iter()));
@@ -167,7 +170,7 @@ mod tests {
     #[test_case("H:8JK, ♠:9J2T6, ♦: AJ36, C: 4", Clubs, &["c4"]; "1 club")]
     #[test_case("H:, ♠:9J7A2T6K8Q, ♦: AK, C: A", Hearts, &[]; "no hearts")]
     fn cards_in(string: &str, suit: Suit, cards: &[&str]) {
-        let hand = Hand::from_str(string).unwrap();
+        let hand = Hand::<13>::from_str(string).unwrap();
         let mut cards = cards.iter().map(|c| Card::from_str(c).unwrap()).collect::<Vec<Card>>();
         cards.sort_unstable();
         assert!(hand.cards_in(suit).eq(cards.iter()));
@@ -175,7 +178,8 @@ mod tests {
 
     #[test_case(&["cA", "dA", "dK", "sA", "sK", "sQ", "sJ", "sT", "s9", "s8", "s7", "s6", "s2"]; "one club")]
     fn from_cards_is_sorted(cards: &[&str]) {
-        let hand = Hand::from_cards(&cards.iter().map(|c| Card::from_str(c).unwrap()).collect::<Vec<Card>>()).unwrap();
+        let hand =
+            Hand::<13>::from_cards(&cards.iter().map(|c| Card::from_str(c).unwrap()).collect::<Vec<Card>>()).unwrap();
         assert_eq!(
             hand.cards().nth(1).unwrap(),
             &Card {
@@ -187,7 +191,8 @@ mod tests {
 
     #[test_case(["cA", "dA", "dK", "sA", "sK", "sQ", "sJ", "sT", "s9", "s8", "s7", "s6", "s2"], 10, 0, 2, 1; "10-0-0-2")]
     fn suit_count(cards: [&str; 13], spades: usize, hearts: usize, diamonds: usize, clubs: usize) {
-        let hand = Hand::from_cards(&cards.iter().map(|c| Card::from_str(c).unwrap()).collect::<Vec<Card>>()).unwrap();
+        let hand =
+            Hand::<13>::from_cards(&cards.iter().map(|c| Card::from_str(c).unwrap()).collect::<Vec<Card>>()).unwrap();
         assert_eq!(hand.cards_in(Spades).count(), spades);
         assert_eq!(hand.cards_in(Hearts).count(), hearts);
         assert_eq!(hand.cards_in(Diamonds).count(), diamonds);
@@ -212,7 +217,8 @@ mod tests {
 
     #[test_case(["cA", "dA", "dK", "sA", "sK", "sQ", "sJ", "sT", "s9", "s8", "s7", "s6", "s2"], "dA", "dQ"; "diamond Ace but not diamond Queen")]
     fn contains(cards: [&str; 13], this: &str, not: &str) {
-        let hand = Hand::from_cards(&cards.iter().map(|c| Card::from_str(c).unwrap()).collect::<Vec<Card>>()).unwrap();
+        let hand =
+            Hand::<13>::from_cards(&cards.iter().map(|c| Card::from_str(c).unwrap()).collect::<Vec<Card>>()).unwrap();
         let this = Card::from_str(this).unwrap();
         let not = Card::from_str(not).unwrap();
         assert!(!hand.contains(&not));
@@ -221,13 +227,13 @@ mod tests {
 
     #[test_case("♠: AKQJT98762\n♥: \n♦: AK\n♣: A\n")]
     fn round_trip(input: &str) {
-        let hand = Hand::from_str(input).unwrap();
+        let hand = Hand::<13>::from_str(input).unwrap();
         assert_eq!(format!("{}", hand), input);
     }
 
     #[test_case("d:23456789TJQK2", "D2"; "diamonds two")]
     fn find_duplicates(input: &str, card: &str) {
-        let hand = Hand::from_str(input);
+        let hand = Hand::<13>::from_str(input);
         assert_eq!(hand, Err(BBError::Duplicate(Card::from_str(card).unwrap())));
     }
 }

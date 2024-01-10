@@ -1,28 +1,32 @@
-use crate::primitives::card::{Card, Denomination, Suit};
-use crate::primitives::Hand;
+use crate::primitives::card::Denomination;
+use crate::primitives::{Card, Hand, Suit};
 use itertools::Itertools;
 use rand::prelude::*;
+use rand::{thread_rng, Rng};
 use strum::IntoEnumIterator;
 
-pub struct Deck {
-    cards: Vec<Card>,
+pub struct Deck<const N: usize> {
+    cards: [[Card; N]; 4],
 }
 
-impl Deck {
-    const NUM_CARDS: usize = 52;
+impl<const N: usize> Deck<N> {
     pub fn new() -> Self {
-        let cards = Vec::<Card>::from_iter(
+        assert!(N <= 13, "Cannot create Decks with more than thirteen cards per suit!");
+        let mut cards = Vec::<Card>::from_iter(
             Suit::iter()
-                .cartesian_product(Denomination::iter())
+                .cartesian_product(Denomination::iter().rev().take(N))
                 .map(|(suit, denomination)| Card { suit, denomination }),
         );
-        assert_eq!(cards.len(), Self::NUM_CARDS);
+
+        cards.sort_unstable();
+        let cards = Self::array_of_arrays_from_vec(cards);
+
         Deck { cards }
     }
 
     pub fn shuffled() -> Self {
         let mut deck = Self::new();
-        deck.shuffle();
+        deck.shuffle_with_rng(&mut thread_rng());
         deck
     }
 
@@ -33,28 +37,44 @@ impl Deck {
     }
 
     pub fn sort(&mut self) {
-        self.cards.sort_unstable()
+        let mut cards = self.cards.iter().flatten().copied().collect_vec();
+        cards.sort_unstable();
+
+        self.cards = Self::array_of_arrays_from_vec(cards);
     }
 
-    pub fn shuffle(&mut self) {
-        self.shuffle_with_rng(&mut thread_rng())
+    fn array_of_arrays_from_vec(vec: Vec<Card>) -> [[Card; N]; 4] {
+        vec.chunks(N)
+            .map(|hand| <[_; N]>::try_from(hand).unwrap())
+            .collect_vec()
+            .try_into()
+            .unwrap()
     }
 
-    pub fn shuffle_with_rng(&mut self, rng: &mut impl Rng) {
-        self.cards.shuffle(rng)
+    fn shuffle_with_rng(&mut self, rng: &mut impl Rng) {
+        let mut cards = self.cards.iter().flatten().copied().collect_vec();
+        cards.shuffle(rng);
+
+        self.cards = Self::array_of_arrays_from_vec(cards);
     }
 
-    pub fn deal(&self) -> [Hand; 4] {
+    pub fn cards(&self) -> Vec<Card> {
+        self.cards.iter().flatten().copied().collect_vec()
+    }
+}
+
+impl<const N: usize> Deck<N> {
+    pub fn deal(&self) -> [Hand<N>; 4] {
         self.cards
-            .chunks(Self::NUM_CARDS / 4)
-            .map(|x| Hand::from_cards(x).unwrap())
-            .collect::<Vec<Hand>>()
+            .iter()
+            .map(|x| Hand::<N>::from_cards(x).unwrap())
+            .collect::<Vec<Hand<N>>>()
             .try_into()
             .unwrap()
     }
 }
 
-impl Default for Deck {
+impl<const N: usize> Default for Deck<N> {
     fn default() -> Self {
         Deck::new()
     }
@@ -71,9 +91,10 @@ mod test {
 
     #[test]
     fn sorted() {
-        let deck = Deck::default();
-        let first = deck.cards.first().unwrap();
-        let last = deck.cards.last().unwrap();
+        let deck = Deck::<13>::new();
+        let cards = deck.cards();
+        let first = cards.first().unwrap();
+        let last = cards.last().unwrap();
         assert_eq!(first, &Card::from_str("C2").unwrap());
         assert_eq!(last, &Card::from_str("SA").unwrap());
     }
@@ -85,8 +106,8 @@ mod test {
     #[test_case(  5u64, "H6", "CQ"; "Six of Hearts and Queen of Clubs")]
     fn determinism(seed: u64, first: &str, last: &str) {
         let mut rng = ChaCha8Rng::seed_from_u64(seed);
-        let deck = Deck::shuffled_from_rng(&mut rng);
-        assert_eq!(deck.cards.first().unwrap(), &Card::from_str(first).unwrap());
-        assert_eq!(deck.cards.last().unwrap(), &Card::from_str(last).unwrap());
+        let deck = Deck::<13>::shuffled_from_rng(&mut rng);
+        assert_eq!(deck.cards().first().unwrap(), &Card::from_str(first).unwrap());
+        assert_eq!(deck.cards().last().unwrap(), &Card::from_str(last).unwrap());
     }
 }
