@@ -28,6 +28,7 @@ impl CardTracker {
         for &card in hand.cards() {
             tracker.add_card(card)
         }
+
         tracker
     }
 
@@ -93,29 +94,29 @@ impl CardTracker {
     }
 
     pub fn relative_rank(&self, card: Card) -> RelativeRank {
-        let mut rank_discriminant = card.denomination as u16;
+        let rank_discriminant = card.denomination as u16;
         let suit_state = self.suit_state(card.suit);
-        let mut interesting_bit = 1u16 << (rank_discriminant + 1);
-
-        while suit_state & interesting_bit != 0 {
-            interesting_bit <<= 1;
-            rank_discriminant += 1;
-        }
-        RelativeRank::from(rank_discriminant)
+        let only_bits_above = suit_state >> (rank_discriminant + 1);
+        RelativeRank::from(rank_discriminant + only_bits_above.count_ones() as u16)
     }
 
     pub fn absolute_card(&self, relative_rank: RelativeRank, suit: Suit) -> Card {
-        let mut rank_discriminant = relative_rank as u16;
+        let rank_discriminant = relative_rank as u16;
         let suit_state = self.suit_state(suit);
-        let mut interesting_bit = 1u16 << rank_discriminant;
 
-        while suit_state & interesting_bit != 0 {
-            interesting_bit >>= 1;
-            rank_discriminant -= 1;
+        let zeros = rank_discriminant - suit_state.count_ones() as u16;
+
+        let mut indicator = suit_state;
+
+        for _ in 0..zeros {
+            indicator |= 1 << indicator.trailing_ones();
         }
+
+        let denomination_discriminant = indicator.trailing_ones() as u16;
+
         Card {
             suit,
-            denomination: Denomination::from(rank_discriminant),
+            denomination: Denomination::from(denomination_discriminant),
         }
     }
 }
@@ -138,10 +139,10 @@ mod test {
     }
 
     #[test_case("D2", &[], RelativeRank::Thirteenth)]
-    #[test_case("S2", &["S3"], RelativeRank::Twelveth)]
+    #[test_case("S2", &["S3", "S5"], RelativeRank::Eleventh)]
     #[test_case("D2", &["C3"], RelativeRank::Thirteenth)]
     #[test_case("S3", &["D3", "S4", "S5", "S6", "D7", "D9", "C8"], RelativeRank::Ninth)]
-    #[test_case("D2", &["D3", "D4", "D5", "D6", "D7", "D9", "C8"], RelativeRank::Eigth)]
+    #[test_case("D2", &["D3", "D4", "D5", "D6", "D7", "D9", "DT", "DK", "DA"], RelativeRank::Fourth)]
     fn relative_rank(card: &str, cards: &[&str], expected: RelativeRank) {
         let mut tracker = CardTracker::empty();
 
@@ -160,6 +161,8 @@ mod test {
     #[test_case("D2", &["C3"])]
     #[test_case("S3", &["D3", "S4", "S5", "S6", "D7", "D9", "C8"])]
     #[test_case("D2", &["D3", "D4", "D5", "D6", "D7", "D9", "C8"])]
+    #[test_case("D2", &["D3", "D4", "D5", "D6", "D7", "D9", "DT", "DK", "DA"])]
+    #[test_case("D8", &["D3", "D4", "D5", "D6", "D7", "D9", "DT", "DK", "DA"])]
     fn absolute_card(card: &str, cards: &[&str]) {
         let mut tracker = CardTracker::empty();
 
