@@ -4,10 +4,10 @@ use crate::primitives::{Card, Deal, Suit};
 use double_dummy_result::DoubleDummyResult;
 use strum::IntoEnumIterator;
 
+pub mod card_tracker;
 pub mod dds_state;
 pub mod dds_trick_manager;
 mod double_dummy_result;
-pub mod played_cards_tracker;
 mod relative_rank;
 
 pub struct DoubleDummySolver<const N: usize> {}

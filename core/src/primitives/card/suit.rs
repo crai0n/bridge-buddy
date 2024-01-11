@@ -14,6 +14,17 @@ pub enum Suit {
     Spades = 3,
 }
 
+impl From<u16> for Suit {
+    fn from(value: u16) -> Self {
+        match value {
+            0 => Suit::Clubs,
+            1 => Suit::Diamonds,
+            2 => Suit::Hearts,
+            3.. => Suit::Spades,
+        }
+    }
+}
+
 impl Suit {
     pub fn from_char(char: char) -> Result<Suit, BBError> {
         match char {

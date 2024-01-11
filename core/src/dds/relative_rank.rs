@@ -1,4 +1,4 @@
-#[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
+#[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Copy, Clone)]
 pub enum RelativeRank {
     Thirteenth = 0,
     Twelveth,
