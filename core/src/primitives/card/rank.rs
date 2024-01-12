@@ -65,10 +65,11 @@ impl Rank {
     }
 
     pub fn touches(&self, other: &Denomination) -> bool {
+        // println!("testing {} and {}", self, other);
         match self.cmp(other) {
             Ordering::Less => *other as usize - *self as usize == 1,
-            Ordering::Equal => *self as usize - *other as usize == 1,
-            Ordering::Greater => false,
+            Ordering::Greater => *self as usize - *other as usize == 1,
+            Ordering::Equal => false,
         }
     }
 }
@@ -213,5 +214,15 @@ mod tests {
     #[test_case(Card { suit: Suit::Spades, rank: King}, Rank::King; "King of Spades is a King")]
     fn from_card(card: Card, expected: Rank) {
         assert_eq!(expected, card.into())
+    }
+
+    #[test_case("A", "K", true)]
+    #[test_case("K", "A", true)]
+    #[test_case("Q", "J", true)]
+    #[test_case("Q", "T", false)]
+    fn touches(one: &str, other: &str, expected: bool) {
+        let one = Denomination::from_str(one).unwrap();
+        let other = Denomination::from_str(other).unwrap();
+        assert_eq!(one.touches(&other), expected);
     }
 }

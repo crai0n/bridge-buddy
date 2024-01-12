@@ -1,4 +1,6 @@
-#[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Copy, Clone)]
+use strum::EnumIter;
+
+#[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Copy, Clone, EnumIter)]
 pub enum RelativeRank {
     Thirteenth = 0,
     Twelveth,

@@ -13,6 +13,16 @@ impl CardTracker {
         Self { tracking_field: 0u64 }
     }
 
+    pub fn from_field(tracking_field: u64) -> Self {
+        Self { tracking_field }
+    }
+
+    pub fn union(&self, other: &Self) -> Self {
+        Self {
+            tracking_field: self.tracking_field | other.tracking_field,
+        }
+    }
+
     pub fn from_cards(cards: &[Card]) -> Self {
         let mut tracker = Self::empty();
 
@@ -87,6 +97,16 @@ impl CardTracker {
             interesting_bit <<= 1;
         }
         vec
+    }
+
+    pub fn tops_of_sequences_field(&self) -> u64 {
+        // this gives artifacts: it marks the top of a sequence of
+        // println!("Trying to find tops of sequences!");
+        // println!("    field: {:0>64b}", self.tracking_field);
+
+        let field = self.tracking_field;
+
+        !(field >> 1) & field
     }
 
     pub fn suit_state(&self, suit: Suit) -> u16 {
