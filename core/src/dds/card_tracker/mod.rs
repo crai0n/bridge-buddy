@@ -100,10 +100,6 @@ impl CardTracker {
     }
 
     pub fn tops_of_sequences_field(&self) -> u64 {
-        // this gives artifacts: it marks the top of a sequence of
-        // println!("Trying to find tops of sequences!");
-        // println!("    field: {:0>64b}", self.tracking_field);
-
         let field = self.tracking_field;
 
         !(field >> 1) & field

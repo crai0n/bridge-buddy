@@ -5,7 +5,6 @@ use crate::primitives::{Card, Hand, Suit};
 use itertools::Itertools;
 
 pub struct DdsState<const N: usize> {
-    hands: [Hand<N>; 4],
     trick_manager: DdsTrickManager<N>,
     played_cards_tracker: CardTracker,
     remaining_cards_tracker: [CardTracker; 4],
@@ -22,7 +21,6 @@ impl<const N: usize> DdsState<N> {
 
         Self {
             trick_manager: DdsTrickManager::new(opening_leader, trumps),
-            hands,
             played_cards_tracker: CardTracker::empty(),
             remaining_cards_tracker,
         }
@@ -58,10 +56,6 @@ impl<const N: usize> DdsState<N> {
         }
     }
 
-    pub fn starting_hand_of(&self, player: Seat) -> Hand<N> {
-        self.hands[player as usize]
-    }
-
     pub fn remaining_cards_of(&self, player: Seat) -> Vec<Card> {
         self.remaining_cards_tracker[player as usize].all_contained_cards()
     }
@@ -86,10 +80,14 @@ impl<const N: usize> DdsState<N> {
             .union(&self.remaining_cards_tracker[player as usize]);
 
         let all_tops_field = full_tracker.tops_of_sequences_field(); // this gives artifacts. it marks cards that I do not own (in case I dont have cards touching a sequence of played cards
-        let my_tops_field = self.remaining_cards_tracker[player as usize].tops_of_sequences_field();
-        let pl_tops_field = self.played_cards_tracker.tops_of_sequences_field();
+        let my_tops_field = self.remaining_cards_tracker[player as usize].tops_of_sequences_field(); // all tops of my sequences
+        let pl_tops_field = self.played_cards_tracker.tops_of_sequences_field(); // all tops of played sequences
 
         let unique_field = (all_tops_field | my_tops_field) & (!pl_tops_field);
+
+        let unique_field2 = my_tops_field & !pl_tops_field; // all tops of my sequences
+
+        assert_eq!(unique_field, unique_field2);
 
         let unique_tracker = CardTracker::from_field(unique_field);
 
@@ -130,5 +128,64 @@ impl<const N: usize> DdsState<N> {
 
     pub fn all_played_cards(&self) -> Vec<Card> {
         self.played_cards_tracker.all_contained_cards()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::dds::card_tracker::CardTracker;
+    use crate::dds::dds_state::DdsState;
+    use crate::dds::dds_trick_manager::DdsTrickManager;
+    use crate::primitives::card::Denomination;
+    use crate::primitives::deal::Seat;
+    use crate::primitives::{Card, Suit};
+    use itertools::Itertools;
+    use test_case::test_case;
+
+    #[test_case("JT5", "KQ8743", "J5")] // 0001100001000, 0110001100110, 0001000001000
+    #[test_case("JT52", "KQ8743", "J5")] // 0001100001001, 0110001100110, 0001000001000
+    #[test_case("JT9643", "AK52", "J6")] // 0001110010110, 1100000001001, 0001000010000
+    fn available_moves(my_cards: &str, played_cards: &str, expected: &str) {
+        let my_cards = my_cards
+            .chars()
+            .map(|c| Denomination::from_char(c).unwrap())
+            .map(|d| Card {
+                denomination: d,
+                suit: Suit::Spades,
+            })
+            .collect_vec();
+        let played_cards = played_cards
+            .chars()
+            .map(|c| Denomination::from_char(c).unwrap())
+            .map(|d| Card {
+                denomination: d,
+                suit: Suit::Spades,
+            })
+            .collect_vec();
+        let mut expected = expected
+            .chars()
+            .map(|c| Denomination::from_char(c).unwrap())
+            .map(|d| Card {
+                denomination: d,
+                suit: Suit::Spades,
+            })
+            .collect_vec();
+
+        let state: DdsState<13> = DdsState {
+            trick_manager: DdsTrickManager::new(Seat::North, None),
+            played_cards_tracker: CardTracker::from_cards(&played_cards),
+            remaining_cards_tracker: [
+                CardTracker::from_cards(&my_cards),
+                CardTracker::empty(),
+                CardTracker::empty(),
+                CardTracker::empty(),
+            ],
+        };
+
+        let moves = state.indistinguishable_moves_for(Seat::North);
+
+        expected.sort_unstable();
+
+        assert_eq!(expected, moves)
     }
 }
