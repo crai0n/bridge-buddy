@@ -183,27 +183,7 @@ impl<const N: usize> DoubleDummySolver<N> {
     }
 
     fn generate_moves(state: &DdsState<N>) -> Vec<Card> {
-        let available_cards = state.available_cards_of(state.next_to_play());
-
-        let mut relevant_cards = state.played_cards();
-        relevant_cards.extend_from_slice(&available_cards);
-
-        let mut moves = Vec::with_capacity(available_cards.len());
-
-        for card in available_cards.iter().rev() {
-            let mut equivalent = card;
-
-            // if we have touching cards in our hand or already played, this is not a new move
-            while let Some(other) = relevant_cards.iter().find(|other| other.touches(equivalent)) {
-                // this can be optimized when relevant_cards is sorted correctly
-                equivalent = other;
-            }
-            if !moves.contains(equivalent) {
-                moves.push(*card)
-            }
-        }
-
-        moves
+        state.available_indistinguishable_moves_for(state.next_to_play())
     }
 }
 
