@@ -3,8 +3,8 @@ use crate::primitives::Suit;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RelativeCard {
-    suit: Suit,
-    rank: RelativeRank,
+    pub suit: Suit,
+    pub rank: RelativeRank,
 }
 
 impl std::fmt::Display for RelativeCard {
