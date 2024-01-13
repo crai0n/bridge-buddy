@@ -1,4 +1,4 @@
-use crate::dds::card_tracker::CardTracker;
+use crate::dds::card_tracker::{CardTracker, RelativeTracker};
 use crate::dds::dds_trick_manager::DdsTrickManager;
 use crate::dds::relative_card::RelativeCard;
 use crate::dds::relative_rank::RelativeRank;
@@ -9,8 +9,8 @@ use itertools::Itertools;
 
 pub struct DdsState<const N: usize> {
     trick_manager: DdsTrickManager<N>,
-    played_cards_tracker: CardTracker,
-    remaining_cards_tracker: [CardTracker; 4],
+    played_cards: CardTracker,
+    remaining_cards: [CardTracker; 4],
 }
 
 impl<const N: usize> DdsState<N> {
@@ -24,22 +24,25 @@ impl<const N: usize> DdsState<N> {
 
         Self {
             trick_manager: DdsTrickManager::new(opening_leader, trumps),
-            played_cards_tracker: CardTracker::empty(),
-            remaining_cards_tracker,
+            played_cards: CardTracker::empty(),
+            remaining_cards: remaining_cards_tracker,
         }
     }
 
     pub fn play(&mut self, card: Card) {
         // println!("{} played {}", self.next_to_play(), card);
-        self.remaining_cards_tracker[self.next_to_play() as usize].remove_card(card);
-        self.played_cards_tracker.add_card(card);
+        self.remaining_cards[self.next_to_play() as usize].remove_card(card);
+        self.played_cards.add_card(card);
         self.trick_manager.play(card)
     }
 
     pub fn relative_card(&self, card: Card) -> RelativeCard {
         // this is only correct if CardTracker is a played_card_tracker
         let rank_discriminant = card.denomination as u16;
-        let suit_state = self.played_cards_tracker.suit_state_field(card.suit);
+        let suit_state = self.played_cards.only_suit(card.suit).field();
+
+        let suit_state = suit_state >> (16 * card.suit as usize);
+
         let only_bits_above = suit_state >> (rank_discriminant + 1);
         let rank = RelativeRank::from(rank_discriminant + only_bits_above.count_ones() as u16);
         RelativeCard { rank, suit: card.suit }
@@ -63,20 +66,20 @@ impl<const N: usize> DdsState<N> {
 
     pub fn undo(&mut self) {
         if let Some(card) = self.trick_manager.undo() {
-            self.played_cards_tracker.remove_card(card);
-            self.remaining_cards_tracker[self.next_to_play() as usize].add_card(card);
+            self.played_cards.remove_card(card);
+            self.remaining_cards[self.next_to_play() as usize].add_card(card);
         }
     }
 
     pub fn remaining_cards_of(&self, player: Seat) -> Vec<Card> {
-        self.remaining_cards_tracker[player as usize].all_contained_cards()
+        self.remaining_cards[player as usize].all_contained_cards()
     }
 
     pub fn available_cards_of(&self, player: Seat) -> Vec<Card> {
         match self.trick_manager.suit_to_follow() {
             None => self.remaining_cards_of(player),
             Some(suit) => {
-                let suit_cards = self.remaining_cards_tracker[player as usize].contained_cards_in_suit(suit);
+                let suit_cards = self.remaining_cards[player as usize].contained_cards_in_suit(suit);
                 if suit_cards.is_empty() {
                     self.remaining_cards_of(player)
                 } else {
@@ -102,7 +105,7 @@ impl<const N: usize> DdsState<N> {
     }
 
     pub fn indistinguishable_moves_for(&self, player: Seat) -> Vec<Card> {
-        let rank_field = self.relative_field_for_player(player);
+        let rank_field = self.relative_cards_for_player(player).field();
 
         let mut tracking_field = !(rank_field >> 1) & rank_field; // marks only the highest of a sequence
 
@@ -122,16 +125,16 @@ impl<const N: usize> DdsState<N> {
         vec
     }
 
-    pub fn all_played_cards(&self) -> Vec<Card> {
-        self.played_cards_tracker.all_contained_cards()
+    pub fn played_cards(&self) -> Vec<Card> {
+        self.played_cards.all_contained_cards()
     }
 
     #[allow(dead_code)]
-    pub fn relative_suit_state_field_for_player(&self, player: Seat, suit: Suit) -> u16 {
+    fn relative_suit_state_field_for_player(&self, player: Seat, suit: Suit) -> u16 {
         let mut ranks = 0u16;
 
-        let mut absolute_field = self.remaining_cards_tracker[player as usize].suit_state_field(suit);
-        let played_field = self.played_cards_tracker.suit_state_field(suit);
+        let mut absolute_field = self.remaining_cards[player as usize].only_suit(suit).field() as u16;
+        let played_field = self.played_cards.only_suit(suit).field() as u16;
 
         while absolute_field != 0 {
             let cursor = absolute_field & (!absolute_field + 1); // isolates lowest bit
@@ -144,10 +147,10 @@ impl<const N: usize> DdsState<N> {
         }
 
         // there is an alternative algorithm using addition:
-        let absolute_field = self.remaining_cards_tracker[player as usize].suit_state_field(suit);
+        let absolute_field = self.remaining_cards[player as usize].only_suit(suit).field();
 
-        ranks = absolute_field;
-        let mut mask = 0;
+        ranks = absolute_field as u16;
+        let mut mask = 0u16;
         for index in 0..16 {
             let cursor = 1 << index;
             mask |= cursor;
@@ -158,7 +161,7 @@ impl<const N: usize> DdsState<N> {
         }
 
         // or with a while loop:
-        ranks = absolute_field;
+        ranks = absolute_field as u16;
         let mut search_field = played_field;
         while search_field != 0 {
             let cursor = search_field & (!search_field + 1); // isolate lowest bit
@@ -173,9 +176,11 @@ impl<const N: usize> DdsState<N> {
         ranks
     }
 
-    #[allow(dead_code)]
-    fn relative_ranks64(my_field: u64, played_field: u64) -> u64 {
+    fn relative_cards_for_player(&self, player: Seat) -> RelativeTracker {
         let mut ranks = 0u64;
+
+        let my_field = self.remaining_cards[player as usize].field();
+        let played_field = self.played_cards.field();
 
         for suit_index in 0..4 {
             for index in 0..16 {
@@ -189,33 +194,14 @@ impl<const N: usize> DdsState<N> {
                 }
             }
         }
-        ranks
-    }
-
-    pub fn relative_field_for_player(&self, player: Seat) -> u64 {
-        let mut ranks = 0u64;
-
-        let my_field = self.remaining_cards_tracker[player as usize].field();
-        let played_field = self.played_cards_tracker.field();
-
-        for suit_index in 0..4 {
-            for index in 0..16 {
-                let cursor = 1 << index << (suit_index * 16);
-                if my_field & cursor != 0 {
-                    let played_field = played_field >> (suit_index * 16);
-                    let shifted = (played_field as u16) >> index;
-                    let pop_count = shifted.count_ones();
-                    let rank_index = index + pop_count;
-                    ranks |= 1 << rank_index << (suit_index * 16);
-                }
-            }
-        }
-        ranks
+        RelativeTracker::from_u64(ranks)
     }
 
     pub fn absolute_card(&self, relative_card: RelativeCard) -> Card {
         let rank_discriminant = relative_card.rank as u16;
-        let suit_state = self.played_cards_tracker.suit_state_field(relative_card.suit);
+        let suit_state = self.played_cards.only_suit(relative_card.suit).field();
+
+        let suit_state = suit_state >> (16 * relative_card.suit as usize) as u16;
 
         let zeros = rank_discriminant - suit_state.count_ones() as u16;
 
@@ -279,8 +265,8 @@ mod test {
 
         let state: DdsState<13> = DdsState {
             trick_manager: DdsTrickManager::new(Seat::North, None),
-            played_cards_tracker: CardTracker::from_cards(&played_cards),
-            remaining_cards_tracker: [
+            played_cards: CardTracker::from_cards(&played_cards),
+            remaining_cards: [
                 CardTracker::from_cards(&my_cards),
                 CardTracker::empty(),
                 CardTracker::empty(),
@@ -301,9 +287,9 @@ mod test {
     fn rank_field(my_field: u16, played_field: u16, expected: u16) {
         let state: DdsState<13> = DdsState {
             trick_manager: DdsTrickManager::new(Seat::North, None),
-            played_cards_tracker: CardTracker::from_field(played_field as u64),
-            remaining_cards_tracker: [
-                CardTracker::from_field(my_field as u64),
+            played_cards: CardTracker::from_u64(played_field as u64),
+            remaining_cards: [
+                CardTracker::from_u64(my_field as u64),
                 CardTracker::empty(),
                 CardTracker::empty(),
                 CardTracker::empty(),
@@ -325,16 +311,16 @@ mod test {
     fn rank_field64(my_field: u64, played_field: u64, expected: u64) {
         let state: DdsState<13> = DdsState {
             trick_manager: DdsTrickManager::new(Seat::North, None),
-            played_cards_tracker: CardTracker::from_field(played_field),
-            remaining_cards_tracker: [
-                CardTracker::from_field(my_field),
+            played_cards: CardTracker::from_u64(played_field),
+            remaining_cards: [
+                CardTracker::from_u64(my_field),
                 CardTracker::empty(),
                 CardTracker::empty(),
                 CardTracker::empty(),
             ],
         };
 
-        assert_eq!(state.relative_field_for_player(Seat::North), expected)
+        assert_eq!(state.relative_cards_for_player(Seat::North).field(), expected)
     }
 
     #[test_case("D2", &[], RelativeCard { rank: RelativeRank::Thirteenth, suit: Suit::Diamonds})]
@@ -342,13 +328,14 @@ mod test {
     #[test_case("D2", &["C3"], RelativeCard { rank: RelativeRank::Thirteenth, suit: Suit::Diamonds})]
     #[test_case("S3", &["D3", "S4", "S5", "S6", "D7", "D9", "C8"], RelativeCard { rank: RelativeRank::Ninth, suit: Suit::Spades})]
     #[test_case("D2", &["D3", "D4", "D5", "D6", "D7", "D9", "DT", "DK", "DA"], RelativeCard { rank: RelativeRank::Fourth, suit: Suit::Diamonds})]
+    #[test_case("D8", &["D3", "D4", "D5", "D6", "D7", "D9", "DT", "DK", "DA"], RelativeCard { rank: RelativeRank::Third, suit: Suit::Diamonds})]
     fn relative_rank(card: &str, cards: &[&str], expected: RelativeCard) {
         let cards = cards.iter().map(|str| Card::from_str(str).unwrap()).collect_vec();
 
         let state: DdsState<13> = DdsState {
             trick_manager: DdsTrickManager::new(Seat::North, None),
-            played_cards_tracker: CardTracker::from_cards(&cards),
-            remaining_cards_tracker: [
+            played_cards: CardTracker::from_cards(&cards),
+            remaining_cards: [
                 CardTracker::empty(),
                 CardTracker::empty(),
                 CardTracker::empty(),
@@ -373,8 +360,8 @@ mod test {
 
         let state: DdsState<13> = DdsState {
             trick_manager: DdsTrickManager::new(Seat::North, None),
-            played_cards_tracker: CardTracker::from_cards(&cards),
-            remaining_cards_tracker: [
+            played_cards: CardTracker::from_cards(&cards),
+            remaining_cards: [
                 CardTracker::empty(),
                 CardTracker::empty(),
                 CardTracker::empty(),

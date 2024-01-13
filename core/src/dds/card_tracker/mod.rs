@@ -3,25 +3,37 @@ use crate::primitives::{Card, Hand, Suit};
 use strum::IntoEnumIterator;
 
 #[derive(Debug)]
-pub struct CardTracker {
-    tracking_field: u64,
+pub struct CardTracker(u64);
+#[derive(Debug)]
+pub struct RelativeTracker(u64);
+
+impl RelativeTracker {
+    #[allow(dead_code)]
+    pub fn from_u64(field: u64) -> Self {
+        Self(field)
+    }
+
+    pub fn field(&self) -> u64 {
+        self.0
+    }
 }
 
 impl CardTracker {
+    const SUIT_MASKS: [u64; 4] = [0xFFFF, 0xFFFF_0000, 0xFFFF_0000_0000, 0xFFFF_0000_0000_0000];
+
     pub fn empty() -> Self {
-        Self { tracking_field: 0u64 }
+        Self(0u64)
     }
 
     #[allow(dead_code)]
-    pub fn from_field(tracking_field: u64) -> Self {
-        Self { tracking_field }
+    pub fn from_u64(field: u64) -> Self {
+        Self(field)
     }
 
     #[allow(dead_code)]
     pub fn union(&self, other: &Self) -> Self {
-        Self {
-            tracking_field: self.tracking_field | other.tracking_field,
-        }
+        let new = self.0 | other.0;
+        Self(new)
     }
 
     #[allow(dead_code)]
@@ -49,16 +61,16 @@ impl CardTracker {
     }
 
     pub fn add_card(&mut self, card: Card) {
-        self.tracking_field |= Self::u64_from_card(card)
+        self.0 |= Self::u64_from_card(card)
     }
 
     pub fn remove_card(&mut self, card: Card) {
-        self.tracking_field &= !Self::u64_from_card(card)
+        self.0 &= !Self::u64_from_card(card)
     }
 
     #[allow(dead_code)]
     pub fn contains_card(&self, card: Card) -> bool {
-        self.tracking_field & Self::u64_from_card(card) != 0
+        self.0 & Self::u64_from_card(card) != 0
     }
 
     #[allow(dead_code)]
@@ -67,7 +79,7 @@ impl CardTracker {
         for suit in Suit::iter() {
             for denomination in Denomination::iter() {
                 let interesting_bit = 1 << (denomination as usize + 16 * suit as usize);
-                if self.tracking_field & interesting_bit != 0 {
+                if self.0 & interesting_bit != 0 {
                     vec.push(Card { denomination, suit });
                 }
             }
@@ -77,7 +89,7 @@ impl CardTracker {
 
     pub fn all_contained_cards(&self) -> Vec<Card> {
         let mut vec = vec![];
-        let mut tracking_field = self.tracking_field;
+        let mut tracking_field = self.0;
 
         while tracking_field != 0 {
             let lowest_bit = tracking_field & (!tracking_field + 1);
@@ -92,31 +104,25 @@ impl CardTracker {
     }
 
     pub fn contained_cards_in_suit(&self, suit: Suit) -> Vec<Card> {
-        let mut vec = vec![];
-        let field = self.suit_state_field(suit);
-        let mut interesting_bit = 1u16;
-        for index in 0u8..16 {
-            if field & interesting_bit != 0 {
-                let denomination = Denomination::from((index % 16) as u16);
-                vec.push(Card { suit, denomination })
-            }
-            interesting_bit <<= 1;
-        }
-        vec
+        let suit_tracker = self.only_suit(suit);
+
+        suit_tracker.all_contained_cards()
     }
 
     pub fn field(&self) -> u64 {
-        self.tracking_field
+        self.0
     }
 
-    pub fn tops_of_sequences_field(&self) -> u64 {
-        let field = self.tracking_field;
+    pub fn tops_of_sequences(&self) -> Self {
+        let field = self.0;
+        let tops = !(field >> 1) & field;
 
-        !(field >> 1) & field
+        CardTracker::from_u64(tops)
     }
 
-    pub fn suit_state_field(&self, suit: Suit) -> u16 {
-        (self.tracking_field >> (16 * suit as usize)) as u16
+    pub fn only_suit(&self, suit: Suit) -> Self {
+        let only_suit = self.0 & Self::SUIT_MASKS[suit as usize];
+        CardTracker::from_u64(only_suit)
     }
 }
 
@@ -133,7 +139,7 @@ mod test {
         let mut tracker = CardTracker::empty();
 
         tracker.add_card(Card::from_str("C2").unwrap());
-        assert_eq!(tracker.tracking_field, 1);
+        assert_eq!(tracker.0, 1);
     }
 
     #[test_case("H:AQ,C:AQJ", Suit::Hearts)]
