@@ -2,9 +2,9 @@ use crate::primitives::card::Denomination;
 use crate::primitives::{Card, Hand, Suit};
 use strum::IntoEnumIterator;
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct CardTracker(u64);
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct RelativeTracker(u64);
 
 impl RelativeTracker {

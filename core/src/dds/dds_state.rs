@@ -222,7 +222,7 @@ impl<const N: usize> DdsState<N> {
 
 #[cfg(test)]
 mod test {
-    use crate::dds::card_tracker::CardTracker;
+    use crate::dds::card_tracker::{CardTracker, RelativeTracker};
     use crate::dds::dds_state::DdsState;
     use crate::dds::dds_trick_manager::DdsTrickManager;
     use crate::dds::relative_card::RelativeCard;
@@ -296,10 +296,9 @@ mod test {
             ],
         };
 
-        assert_eq!(
-            state.relative_suit_state_field_for_player(Seat::North, Suit::Clubs),
-            expected
-        )
+        let expected = RelativeTracker::from_u64(expected as u64);
+
+        assert_eq!(state.relative_cards_for_player(Seat::North), expected)
     }
 
     #[test_case(
@@ -320,7 +319,9 @@ mod test {
             ],
         };
 
-        assert_eq!(state.relative_cards_for_player(Seat::North).field(), expected)
+        let expected = RelativeTracker::from_u64(expected);
+
+        assert_eq!(state.relative_cards_for_player(Seat::North), expected)
     }
 
     #[test_case("D2", &[], RelativeCard { rank: RelativeRank::Thirteenth, suit: Suit::Diamonds})]
