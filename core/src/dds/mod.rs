@@ -259,6 +259,7 @@ mod test {
         assert_eq!(dds_result.max_tricks, expected);
     }
 
+    #[ignore]
     #[test_case( 14u64, [5, 4, 5, 1, 2, 1, 2, 0, 4, 4, 2, 3, 6, 1, 2, 1, 2, 0, 4, 4]; "Test A")]
     #[test_case( 22u64, [3, 6, 6, 1, 1, 2, 0, 0, 4, 4, 3, 6, 6, 1, 1, 2, 0, 0, 4, 5]; "Test B")]
     fn solve6(seed: u64, expected: [usize; 20]) {

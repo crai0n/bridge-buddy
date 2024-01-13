@@ -1,6 +1,7 @@
 use crate::dds::card_tracker::CardTracker;
 use crate::dds::dds_trick_manager::DdsTrickManager;
 use crate::dds::relative_rank::RelativeRank;
+use crate::primitives::card::Denomination;
 use crate::primitives::deal::Seat;
 use crate::primitives::{Card, Hand, Suit};
 use itertools::Itertools;
@@ -32,6 +33,14 @@ impl<const N: usize> DdsState<N> {
         self.remaining_cards_tracker[self.next_to_play() as usize].remove_card(card);
         self.played_cards_tracker.add_card(card);
         self.trick_manager.play(card)
+    }
+
+    pub fn relative_rank(&self, card: Card) -> RelativeRank {
+        // this is only correct if CardTracker is a played_card_tracker
+        let rank_discriminant = card.denomination as u16;
+        let suit_state = self.played_cards_tracker.suit_state(card.suit);
+        let only_bits_above = suit_state >> (rank_discriminant + 1);
+        RelativeRank::from(rank_discriminant + only_bits_above.count_ones() as u16)
     }
 
     pub fn next_to_play(&self) -> Seat {
@@ -114,7 +123,7 @@ impl<const N: usize> DdsState<N> {
             let index = lowest_bit.ilog2();
             let suit = Suit::from((index / 16) as u16);
             let rank = RelativeRank::from((index % 16) as u16);
-            let card = self.played_cards_tracker.absolute_card(rank, suit);
+            let card = self.absolute_card(rank, suit);
             vec.push(card)
         }
 
@@ -196,6 +205,26 @@ impl<const N: usize> DdsState<N> {
         }
         ranks
     }
+
+    pub fn absolute_card(&self, relative_rank: RelativeRank, suit: Suit) -> Card {
+        let rank_discriminant = relative_rank as u16;
+        let suit_state = self.played_cards_tracker.suit_state(suit);
+
+        let zeros = rank_discriminant - suit_state.count_ones() as u16;
+
+        let mut indicator = suit_state;
+
+        for _ in 0..zeros {
+            indicator |= 1 << indicator.trailing_ones();
+        }
+
+        let denomination_discriminant = indicator.trailing_ones() as u16;
+
+        Card {
+            suit,
+            denomination: Denomination::from(denomination_discriminant),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -203,10 +232,12 @@ mod test {
     use crate::dds::card_tracker::CardTracker;
     use crate::dds::dds_state::DdsState;
     use crate::dds::dds_trick_manager::DdsTrickManager;
+    use crate::dds::relative_rank::RelativeRank;
     use crate::primitives::card::Denomination;
     use crate::primitives::deal::Seat;
     use crate::primitives::{Card, Suit};
     use itertools::Itertools;
+    use std::str::FromStr;
     use test_case::test_case;
 
     #[test_case("JT5", "KQ8743", "J5")] // 0001100001000, 0110001100110, 0001000001000
@@ -271,5 +302,58 @@ mod test {
 
     fn rank_field64(my_field: u64, played_field: u64, expected: u64) {
         assert_eq!(DdsState::<13>::relative_ranks64(my_field, played_field), expected)
+    }
+
+    #[test_case("D2", &[], RelativeRank::Thirteenth)]
+    #[test_case("S2", &["S3", "S5"], RelativeRank::Eleventh)]
+    #[test_case("D2", &["C3"], RelativeRank::Thirteenth)]
+    #[test_case("S3", &["D3", "S4", "S5", "S6", "D7", "D9", "C8"], RelativeRank::Ninth)]
+    #[test_case("D2", &["D3", "D4", "D5", "D6", "D7", "D9", "DT", "DK", "DA"], RelativeRank::Fourth)]
+    fn relative_rank(card: &str, cards: &[&str], expected: RelativeRank) {
+        let cards = cards.iter().map(|str| Card::from_str(str).unwrap()).collect_vec();
+
+        let state: DdsState<13> = DdsState {
+            trick_manager: DdsTrickManager::new(Seat::North, None),
+            played_cards_tracker: CardTracker::from_cards(&cards),
+            remaining_cards_tracker: [
+                CardTracker::empty(),
+                CardTracker::empty(),
+                CardTracker::empty(),
+                CardTracker::empty(),
+            ],
+        };
+
+        let test_card = Card::from_str(card).unwrap();
+
+        assert_eq!(state.relative_rank(test_card), expected);
+    }
+
+    #[test_case("D2", &[])]
+    #[test_case("S2", &["S3"])]
+    #[test_case("D2", &["C3"])]
+    #[test_case("S3", &["D3", "S4", "S5", "S6", "D7", "D9", "C8"])]
+    #[test_case("D2", &["D3", "D4", "D5", "D6", "D7", "D9", "C8"])]
+    #[test_case("D2", &["D3", "D4", "D5", "D6", "D7", "D9", "DT", "DK", "DA"])]
+    #[test_case("D8", &["D3", "D4", "D5", "D6", "D7", "D9", "DT", "DK", "DA"])]
+    fn absolute_card(card: &str, cards: &[&str]) {
+        let cards = cards.iter().map(|str| Card::from_str(str).unwrap()).collect_vec();
+
+        let state: DdsState<13> = DdsState {
+            trick_manager: DdsTrickManager::new(Seat::North, None),
+            played_cards_tracker: CardTracker::from_cards(&cards),
+            remaining_cards_tracker: [
+                CardTracker::empty(),
+                CardTracker::empty(),
+                CardTracker::empty(),
+                CardTracker::empty(),
+            ],
+        };
+
+        let test_card = Card::from_str(card).unwrap();
+
+        let relative_rank = state.relative_rank(test_card);
+        let suit = test_card.suit;
+
+        assert_eq!(state.absolute_card(relative_rank, suit), test_card);
     }
 }

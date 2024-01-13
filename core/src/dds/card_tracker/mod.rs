@@ -1,4 +1,3 @@
-use crate::dds::relative_rank::RelativeRank;
 use crate::primitives::card::Denomination;
 use crate::primitives::{Card, Hand, Suit};
 use strum::IntoEnumIterator;
@@ -7,6 +6,9 @@ use strum::IntoEnumIterator;
 pub struct CardTracker {
     tracking_field: u64,
 }
+
+// TODO: It would probably be nice to make a "relative" version of cardTracker, so that we can transform
+// an absolute cardtracker to a relative one by calling something like relative_ranks(played_cards:) -> CardTracker {..}
 
 impl CardTracker {
     pub fn empty() -> Self {
@@ -114,39 +116,11 @@ impl CardTracker {
     pub fn suit_state(&self, suit: Suit) -> u16 {
         (self.tracking_field >> (16 * suit as usize)) as u16
     }
-
-    pub fn relative_rank(&self, card: Card) -> RelativeRank {
-        let rank_discriminant = card.denomination as u16;
-        let suit_state = self.suit_state(card.suit);
-        let only_bits_above = suit_state >> (rank_discriminant + 1);
-        RelativeRank::from(rank_discriminant + only_bits_above.count_ones() as u16)
-    }
-
-    pub fn absolute_card(&self, relative_rank: RelativeRank, suit: Suit) -> Card {
-        let rank_discriminant = relative_rank as u16;
-        let suit_state = self.suit_state(suit);
-
-        let zeros = rank_discriminant - suit_state.count_ones() as u16;
-
-        let mut indicator = suit_state;
-
-        for _ in 0..zeros {
-            indicator |= 1 << indicator.trailing_ones();
-        }
-
-        let denomination_discriminant = indicator.trailing_ones() as u16;
-
-        Card {
-            suit,
-            denomination: Denomination::from(denomination_discriminant),
-        }
-    }
 }
 
 #[cfg(test)]
 mod test {
     use crate::dds::card_tracker::CardTracker;
-    use crate::dds::relative_rank::RelativeRank;
     use crate::primitives::{Card, Hand, Suit};
     use itertools::Itertools;
     use std::str::FromStr;
@@ -158,47 +132,6 @@ mod test {
 
         tracker.add_card(Card::from_str("C2").unwrap());
         assert_eq!(tracker.tracking_field, 1);
-    }
-
-    #[test_case("D2", &[], RelativeRank::Thirteenth)]
-    #[test_case("S2", &["S3", "S5"], RelativeRank::Eleventh)]
-    #[test_case("D2", &["C3"], RelativeRank::Thirteenth)]
-    #[test_case("S3", &["D3", "S4", "S5", "S6", "D7", "D9", "C8"], RelativeRank::Ninth)]
-    #[test_case("D2", &["D3", "D4", "D5", "D6", "D7", "D9", "DT", "DK", "DA"], RelativeRank::Fourth)]
-    fn relative_rank(card: &str, cards: &[&str], expected: RelativeRank) {
-        let mut tracker = CardTracker::empty();
-
-        let test_card = Card::from_str(card).unwrap();
-
-        for card_str in cards {
-            let card = Card::from_str(card_str).unwrap();
-            tracker.add_card(card);
-        }
-
-        assert_eq!(tracker.relative_rank(test_card), expected);
-    }
-
-    #[test_case("D2", &[])]
-    #[test_case("S2", &["S3"])]
-    #[test_case("D2", &["C3"])]
-    #[test_case("S3", &["D3", "S4", "S5", "S6", "D7", "D9", "C8"])]
-    #[test_case("D2", &["D3", "D4", "D5", "D6", "D7", "D9", "C8"])]
-    #[test_case("D2", &["D3", "D4", "D5", "D6", "D7", "D9", "DT", "DK", "DA"])]
-    #[test_case("D8", &["D3", "D4", "D5", "D6", "D7", "D9", "DT", "DK", "DA"])]
-    fn absolute_card(card: &str, cards: &[&str]) {
-        let mut tracker = CardTracker::empty();
-
-        let test_card = Card::from_str(card).unwrap();
-
-        for card_str in cards {
-            let card = Card::from_str(card_str).unwrap();
-            tracker.add_card(card);
-        }
-
-        let relative_rank = tracker.relative_rank(test_card);
-        let suit = test_card.suit;
-
-        assert_eq!(tracker.absolute_card(relative_rank, suit), test_card);
     }
 
     #[test_case("H:AQ,C:AQJ", Suit::Hearts)]
