@@ -244,8 +244,25 @@ mod test {
 
     #[test_case( 1u64, [3, 2, 4, 3, 4, 2, 2, 1, 2, 1, 3, 2, 4, 3, 4, 2, 2, 1, 2, 1]; "Test A")]
     #[test_case( 2u64, [0, 2, 1, 0, 3, 4, 3, 4, 5, 2, 1, 2, 1, 0, 3, 4, 3, 4, 5, 2]; "Test B")]
+    #[test_case( 20u64, [0, 0, 3, 0, 3, 3, 4, 1, 4, 0, 0, 0, 4, 0, 4, 3, 5, 1, 4, 1]; "Test C")]
+    #[test_case( 38u64, [1, 3, 4, 1, 0, 1, 2, 1, 3, 4, 0, 3, 4, 1, 0, 1, 2, 1, 3, 4]; "Test D")]
     fn solve5(seed: u64, expected: [usize; 20]) {
         let deal: Deal<5> = Deal::from_u64_seed(seed);
+
+        // for (seat, hand) in Seat::iter().zip(deal.hands) {
+        //     println!("{}:\n{}", seat, hand)
+        // }
+
+        let dds_result = DoubleDummySolver::solve(deal);
+
+        // println!("{}", dds_result);
+        assert_eq!(dds_result.max_tricks, expected);
+    }
+
+    #[test_case( 14u64, [5, 4, 5, 1, 2, 1, 2, 0, 4, 4, 2, 3, 6, 1, 2, 1, 2, 0, 4, 4]; "Test A")]
+    #[test_case( 22u64, [3, 6, 6, 1, 1, 2, 0, 0, 4, 4, 3, 6, 6, 1, 1, 2, 0, 0, 4, 5]; "Test B")]
+    fn solve6(seed: u64, expected: [usize; 20]) {
+        let deal: Deal<6> = Deal::from_u64_seed(seed);
 
         // for (seat, hand) in Seat::iter().zip(deal.hands) {
         //     println!("{}:\n{}", seat, hand)

@@ -138,14 +138,44 @@ impl<const N: usize> DdsState<N> {
     pub fn relative_ranks(my_field: u16, played_field: u16) -> u16 {
         let mut ranks = 0u16;
 
+        let mut absolute_field = my_field;
+
+        while absolute_field != 0 {
+            let cursor = absolute_field & (!absolute_field + 1); // isolates lowest bit
+            let index = cursor.ilog2(); // position of cursor
+
+            let pop_count = (played_field >> index).count_ones();
+            let rank_index = index + pop_count;
+            ranks |= 1 << rank_index; // add this card's relative rank
+            absolute_field &= !cursor; // delete lowest bit
+        }
+
+        // there is an alternative algorithm using addition:
+        ranks = my_field;
+        let mut mask = 0;
         for index in 0..16 {
             let cursor = 1 << index;
-            if my_field & cursor != 0 {
-                let pop_count = (played_field >> index).count_ones();
-                let rank_index = index + pop_count;
-                ranks |= 1 << rank_index
+            mask |= cursor;
+            if played_field & cursor != 0 {
+                let adder = ranks & mask;
+                ranks += adder;
             }
         }
+
+        // or with a while loop:
+        ranks = my_field;
+
+        let mut search_field = played_field;
+        while search_field != 0 {
+            let cursor = search_field & (!search_field + 1); // isolate lowest bit
+            search_field &= !cursor; // deletes lowest bit
+            let mask = (cursor << 1) - 1; // masks out all higher bits
+            let adder = ranks & mask;
+            ranks += adder;
+        }
+
+        //TODO: Decide on an algorithm, if possible rewrite it so that it can be adapted to create an inverse operation
+
         ranks
     }
 
