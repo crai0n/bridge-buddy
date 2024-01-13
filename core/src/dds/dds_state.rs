@@ -39,7 +39,7 @@ impl<const N: usize> DdsState<N> {
     pub fn relative_card(&self, card: Card) -> RelativeCard {
         // this is only correct if CardTracker is a played_card_tracker
         let rank_discriminant = card.denomination as u16;
-        let suit_state = self.played_cards_tracker.suit_state(card.suit);
+        let suit_state = self.played_cards_tracker.suit_state_field(card.suit);
         let only_bits_above = suit_state >> (rank_discriminant + 1);
         let rank = RelativeRank::from(rank_discriminant + only_bits_above.count_ones() as u16);
         RelativeCard { rank, suit: card.suit }
@@ -86,36 +86,25 @@ impl<const N: usize> DdsState<N> {
         }
     }
 
-    pub fn indistinguishable_moves_for(&self, player: Seat) -> Vec<Card> {
-        let full_tracker = self
-            .played_cards_tracker
-            .union(&self.remaining_cards_tracker[player as usize]);
-
-        let all_tops_field = full_tracker.tops_of_sequences_field(); // this gives artifacts. it marks cards that I do not own (in case I dont have cards touching a sequence of played cards
-        let my_tops_field = self.remaining_cards_tracker[player as usize].tops_of_sequences_field(); // all tops of my sequences
-        let pl_tops_field = self.played_cards_tracker.tops_of_sequences_field(); // all tops of played sequences
-
-        let unique_field = (all_tops_field | my_tops_field) & (!pl_tops_field);
-
-        let unique_field2 = my_tops_field & !pl_tops_field; // all tops of my sequences
-
-        assert_eq!(unique_field, unique_field2);
-
-        let unique_tracker = CardTracker::from_field(unique_field);
-
-        let moves = unique_tracker.all_contained_cards();
-
-        println!("new method found the following moves {:?}", moves);
-        moves
+    pub fn available_indistinguishable_moves_for(&self, player: Seat) -> Vec<Card> {
+        let vec = self.indistinguishable_moves_for(player);
+        match self.trick_manager.suit_to_follow() {
+            None => vec,
+            Some(suit) => {
+                let filtered = vec.iter().filter(|x| x.suit == suit).copied().collect_vec();
+                if filtered.is_empty() {
+                    vec
+                } else {
+                    filtered
+                }
+            }
+        }
     }
 
-    pub fn available_indistinguishable_moves_for(&self, player: Seat) -> Vec<Card> {
-        let my_field = self.remaining_cards_tracker[player as usize].field();
-        let played_field = self.played_cards_tracker.field();
-        let rank_field = Self::relative_ranks64(my_field, played_field);
+    pub fn indistinguishable_moves_for(&self, player: Seat) -> Vec<Card> {
+        let rank_field = self.relative_field_for_player(player);
 
-        let rank_tracker = CardTracker::from_field(rank_field);
-        let mut tracking_field = rank_tracker.tops_of_sequences_field();
+        let mut tracking_field = !(rank_field >> 1) & rank_field; // marks only the highest of a sequence
 
         let mut vec = vec![];
 
@@ -130,27 +119,19 @@ impl<const N: usize> DdsState<N> {
             vec.push(card)
         }
 
-        match self.trick_manager.suit_to_follow() {
-            None => vec,
-            Some(suit) => {
-                let filtered = vec.iter().filter(|x| x.suit == suit).copied().collect_vec();
-                if filtered.is_empty() {
-                    vec
-                } else {
-                    filtered
-                }
-            }
-        }
+        vec
     }
 
     pub fn all_played_cards(&self) -> Vec<Card> {
         self.played_cards_tracker.all_contained_cards()
     }
 
-    pub fn relative_ranks(my_field: u16, played_field: u16) -> u16 {
+    #[allow(dead_code)]
+    pub fn relative_suit_state_field_for_player(&self, player: Seat, suit: Suit) -> u16 {
         let mut ranks = 0u16;
 
-        let mut absolute_field = my_field;
+        let mut absolute_field = self.remaining_cards_tracker[player as usize].suit_state_field(suit);
+        let played_field = self.played_cards_tracker.suit_state_field(suit);
 
         while absolute_field != 0 {
             let cursor = absolute_field & (!absolute_field + 1); // isolates lowest bit
@@ -163,7 +144,9 @@ impl<const N: usize> DdsState<N> {
         }
 
         // there is an alternative algorithm using addition:
-        ranks = my_field;
+        let absolute_field = self.remaining_cards_tracker[player as usize].suit_state_field(suit);
+
+        ranks = absolute_field;
         let mut mask = 0;
         for index in 0..16 {
             let cursor = 1 << index;
@@ -175,8 +158,7 @@ impl<const N: usize> DdsState<N> {
         }
 
         // or with a while loop:
-        ranks = my_field;
-
+        ranks = absolute_field;
         let mut search_field = played_field;
         while search_field != 0 {
             let cursor = search_field & (!search_field + 1); // isolate lowest bit
@@ -191,8 +173,30 @@ impl<const N: usize> DdsState<N> {
         ranks
     }
 
-    pub fn relative_ranks64(my_field: u64, played_field: u64) -> u64 {
+    #[allow(dead_code)]
+    fn relative_ranks64(my_field: u64, played_field: u64) -> u64 {
         let mut ranks = 0u64;
+
+        for suit_index in 0..4 {
+            for index in 0..16 {
+                let cursor = 1 << index << (suit_index * 16);
+                if my_field & cursor != 0 {
+                    let played_field = played_field >> (suit_index * 16);
+                    let shifted = (played_field as u16) >> index;
+                    let pop_count = shifted.count_ones();
+                    let rank_index = index + pop_count;
+                    ranks |= 1 << rank_index << (suit_index * 16);
+                }
+            }
+        }
+        ranks
+    }
+
+    pub fn relative_field_for_player(&self, player: Seat) -> u64 {
+        let mut ranks = 0u64;
+
+        let my_field = self.remaining_cards_tracker[player as usize].field();
+        let played_field = self.played_cards_tracker.field();
 
         for suit_index in 0..4 {
             for index in 0..16 {
@@ -211,7 +215,7 @@ impl<const N: usize> DdsState<N> {
 
     pub fn absolute_card(&self, relative_card: RelativeCard) -> Card {
         let rank_discriminant = relative_card.rank as u16;
-        let suit_state = self.played_cards_tracker.suit_state(relative_card.suit);
+        let suit_state = self.played_cards_tracker.suit_state_field(relative_card.suit);
 
         let zeros = rank_discriminant - suit_state.count_ones() as u16;
 
@@ -295,7 +299,21 @@ mod test {
     #[test_case(0b0000_0011_0000_1001, 0b0000_1100_0110_0110, 0b0000_1100_1100_0000)]
     #[test_case(0b0000_0011_1001_0110, 0b0001_1000_0000_1001, 0b0000_1110_0111_0000)]
     fn rank_field(my_field: u16, played_field: u16, expected: u16) {
-        assert_eq!(DdsState::<13>::relative_ranks(my_field, played_field), expected)
+        let state: DdsState<13> = DdsState {
+            trick_manager: DdsTrickManager::new(Seat::North, None),
+            played_cards_tracker: CardTracker::from_field(played_field as u64),
+            remaining_cards_tracker: [
+                CardTracker::from_field(my_field as u64),
+                CardTracker::empty(),
+                CardTracker::empty(),
+                CardTracker::empty(),
+            ],
+        };
+
+        assert_eq!(
+            state.relative_suit_state_field_for_player(Seat::North, Suit::Clubs),
+            expected
+        )
     }
 
     #[test_case(
@@ -305,7 +323,18 @@ mod test {
     )]
 
     fn rank_field64(my_field: u64, played_field: u64, expected: u64) {
-        assert_eq!(DdsState::<13>::relative_ranks64(my_field, played_field), expected)
+        let state: DdsState<13> = DdsState {
+            trick_manager: DdsTrickManager::new(Seat::North, None),
+            played_cards_tracker: CardTracker::from_field(played_field),
+            remaining_cards_tracker: [
+                CardTracker::from_field(my_field),
+                CardTracker::empty(),
+                CardTracker::empty(),
+                CardTracker::empty(),
+            ],
+        };
+
+        assert_eq!(state.relative_field_for_player(Seat::North), expected)
     }
 
     #[test_case("D2", &[], RelativeCard { rank: RelativeRank::Thirteenth, suit: Suit::Diamonds})]

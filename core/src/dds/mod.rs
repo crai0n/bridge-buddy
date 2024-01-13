@@ -4,7 +4,7 @@ use crate::primitives::{Card, Deal, Suit};
 use double_dummy_result::DoubleDummyResult;
 use strum::IntoEnumIterator;
 
-pub mod card_tracker;
+mod card_tracker;
 pub mod dds_state;
 pub mod dds_trick_manager;
 mod double_dummy_result;
