@@ -8,7 +8,8 @@ pub mod card_tracker;
 pub mod dds_state;
 pub mod dds_trick_manager;
 mod double_dummy_result;
-mod relative_rank;
+pub mod relative_card;
+pub mod relative_rank;
 
 pub struct DoubleDummySolver<const N: usize> {}
 
