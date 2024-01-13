@@ -2,9 +2,9 @@ use crate::primitives::card::Denomination;
 use crate::primitives::{Card, Hand, Suit};
 use strum::IntoEnumIterator;
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct CardTracker(u64);
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct RelativeTracker(u64);
 
 impl RelativeTracker {
@@ -113,14 +113,14 @@ impl CardTracker {
         self.0
     }
 
-    pub fn tops_of_sequences(&self) -> Self {
+    pub fn only_tops_of_sequences(self) -> Self {
         let field = self.0;
         let tops = !(field >> 1) & field;
 
         CardTracker::from_u64(tops)
     }
 
-    pub fn only_suit(&self, suit: Suit) -> Self {
+    pub fn only_suit(self, suit: Suit) -> Self {
         let only_suit = self.0 & Self::SUIT_MASKS[suit as usize];
         CardTracker::from_u64(only_suit)
     }
