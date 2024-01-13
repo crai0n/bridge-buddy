@@ -106,7 +106,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         let available_moves = Self::generate_moves(state);
 
         for candidate_move in available_moves {
-            // println!("trying card {} for {}!", test_move, state.next_to_play());
+            // println!("trying card {} for {}!", candidate_move, state.next_to_play());
             let move_achieves_target = Self::apply_move_and_recurse(state, target, candidate_move);
             if move_achieves_target {
                 return true;
@@ -319,13 +319,13 @@ mod test {
             hands: [north_hand, east_hand, south_hand, west_hand],
         };
 
-        for (seat, hand) in Seat::iter().zip(deal.hands) {
-            println!("{}:\n{}", seat, hand)
-        }
+        // for (seat, hand) in Seat::iter().zip(deal.hands) {
+        //     println!("{}:\n{}", seat, hand)
+        // }
 
         let dds_result = DoubleDummySolver::calculate_max_tricks_for_declarer_with_trumps(deal, declarer, trumps);
 
-        println!("{}", dds_result);
+        // println!("{}", dds_result);
         assert_eq!(dds_result, expected);
     }
 }

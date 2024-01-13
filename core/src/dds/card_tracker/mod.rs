@@ -73,15 +73,17 @@ impl CardTracker {
 
     pub fn all_contained_cards(&self) -> Vec<Card> {
         let mut vec = vec![];
-        let mut interesting_bit = 1u64;
-        for index in 0u8..64 {
-            if self.tracking_field & interesting_bit != 0 {
-                let suit = Suit::from((index / 16) as u16);
-                let denomination = Denomination::from((index % 16) as u16);
-                vec.push(Card { suit, denomination })
-            }
-            interesting_bit <<= 1;
+        let mut tracking_field = self.tracking_field;
+
+        while tracking_field != 0 {
+            let lowest_bit = tracking_field & (!tracking_field + 1);
+            tracking_field &= !lowest_bit;
+            let index = lowest_bit.ilog2();
+            let suit = Suit::from((index / 16) as u16);
+            let denomination = Denomination::from((index % 16) as u16);
+            vec.push(Card { suit, denomination })
         }
+
         vec
     }
 
@@ -97,6 +99,10 @@ impl CardTracker {
             interesting_bit <<= 1;
         }
         vec
+    }
+
+    pub fn field(&self) -> u64 {
+        self.tracking_field
     }
 
     pub fn tops_of_sequences_field(&self) -> u64 {

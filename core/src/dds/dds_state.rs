@@ -1,5 +1,6 @@
 use crate::dds::card_tracker::CardTracker;
 use crate::dds::dds_trick_manager::DdsTrickManager;
+use crate::dds::relative_rank::RelativeRank;
 use crate::primitives::deal::Seat;
 use crate::primitives::{Card, Hand, Suit};
 use itertools::Itertools;
@@ -98,29 +99,33 @@ impl<const N: usize> DdsState<N> {
     }
 
     pub fn available_indistinguishable_moves_for(&self, player: Seat) -> Vec<Card> {
-        let full_tracker = self
-            .played_cards_tracker
-            .union(&self.remaining_cards_tracker[player as usize]);
+        let my_field = self.remaining_cards_tracker[player as usize].field();
+        let played_field = self.played_cards_tracker.field();
+        let rank_field = Self::relative_ranks64(my_field, played_field);
 
-        let all_tops_field = full_tracker.tops_of_sequences_field(); // this gives artifacts. it marks cards that I do not own (in case I dont have cards touching a sequence of played cards
-        let my_tops_field = self.remaining_cards_tracker[player as usize].tops_of_sequences_field();
-        let pl_tops_field = self.played_cards_tracker.tops_of_sequences_field();
+        let rank_tracker = CardTracker::from_field(rank_field);
+        let mut tracking_field = rank_tracker.tops_of_sequences_field();
 
-        let unique_field = (all_tops_field | my_tops_field) & (!pl_tops_field);
+        let mut vec = vec![];
 
-        let unique_tracker = CardTracker::from_field(unique_field);
+        while tracking_field != 0 {
+            let lowest_bit = tracking_field & (!tracking_field + 1);
+            tracking_field &= !lowest_bit;
+            let index = lowest_bit.ilog2();
+            let suit = Suit::from((index / 16) as u16);
+            let rank = RelativeRank::from((index % 16) as u16);
+            let card = self.played_cards_tracker.absolute_card(rank, suit);
+            vec.push(card)
+        }
 
         match self.trick_manager.suit_to_follow() {
-            None => unique_tracker.all_contained_cards(),
+            None => vec,
             Some(suit) => {
-                // println!("Looking only for cards in {}", suit);
-                let suit_cards = unique_tracker.contained_cards_in_suit(suit);
-                if suit_cards.is_empty() {
-                    // println!("Found no cards in {}", suit);
-                    unique_tracker.all_contained_cards()
+                let filtered = vec.iter().filter(|x| x.suit == suit).copied().collect_vec();
+                if filtered.is_empty() {
+                    vec
                 } else {
-                    // println!("Found these cards: {:?}", suit_cards);
-                    suit_cards
+                    filtered
                 }
             }
         }
@@ -128,6 +133,38 @@ impl<const N: usize> DdsState<N> {
 
     pub fn all_played_cards(&self) -> Vec<Card> {
         self.played_cards_tracker.all_contained_cards()
+    }
+
+    pub fn relative_ranks(my_field: u16, played_field: u16) -> u16 {
+        let mut ranks = 0u16;
+
+        for index in 0..16 {
+            let cursor = 1 << index;
+            if my_field & cursor != 0 {
+                let pop_count = (played_field >> index).count_ones();
+                let rank_index = index + pop_count;
+                ranks |= 1 << rank_index
+            }
+        }
+        ranks
+    }
+
+    pub fn relative_ranks64(my_field: u64, played_field: u64) -> u64 {
+        let mut ranks = 0u64;
+
+        for suit_index in 0..4 {
+            for index in 0..16 {
+                let cursor = 1 << index << (suit_index * 16);
+                if my_field & cursor != 0 {
+                    let played_field = played_field >> (suit_index * 16);
+                    let shifted = (played_field as u16) >> index;
+                    let pop_count = shifted.count_ones();
+                    let rank_index = index + pop_count;
+                    ranks |= 1 << rank_index << (suit_index * 16);
+                }
+            }
+        }
+        ranks
     }
 }
 
@@ -182,10 +219,27 @@ mod test {
             ],
         };
 
-        let moves = state.indistinguishable_moves_for(Seat::North);
+        let moves = state.available_indistinguishable_moves_for(Seat::North);
 
         expected.sort_unstable();
 
         assert_eq!(expected, moves)
+    }
+
+    #[test_case(0b0000_0011_0000_1000, 0b0000_1100_0110_0110, 0b0000_1100_1000_0000)]
+    #[test_case(0b0000_0011_0000_1001, 0b0000_1100_0110_0110, 0b0000_1100_1100_0000)]
+    #[test_case(0b0000_0011_1001_0110, 0b0001_1000_0000_1001, 0b0000_1110_0111_0000)]
+    fn rank_field(my_field: u16, played_field: u16, expected: u16) {
+        assert_eq!(DdsState::<13>::relative_ranks(my_field, played_field), expected)
+    }
+
+    #[test_case(
+        0b0000_0011_1001_0110_0000_0011_0000_1001_0000_0011_0000_1000,
+        0b0001_1000_0000_1001_0000_1100_0110_0110_0000_1100_0110_0110,
+        0b0000_1110_0111_0000_0000_1100_1100_0000_0000_1100_1000_0000
+    )]
+
+    fn rank_field64(my_field: u64, played_field: u64, expected: u64) {
+        assert_eq!(DdsState::<13>::relative_ranks64(my_field, played_field), expected)
     }
 }
