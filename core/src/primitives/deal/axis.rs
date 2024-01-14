@@ -10,6 +10,13 @@ impl Axis {
     pub fn has_player(&self, player: Seat) -> bool {
         player.is_on_axis(self)
     }
+
+    pub fn players(&self) -> [Seat; 2] {
+        match self {
+            Axis::NorthSouth => [Seat::North, Seat::South],
+            Axis::EastWest => [Seat::East, Seat::West],
+        }
+    }
 }
 
 impl From<Seat> for Axis {

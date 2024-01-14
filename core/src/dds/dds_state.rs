@@ -6,6 +6,8 @@ use crate::primitives::card::Denomination;
 use crate::primitives::deal::Seat;
 use crate::primitives::{Card, Hand, Suit};
 use itertools::Itertools;
+#[allow(unused_imports)]
+use std::cmp::{max, min, Ordering};
 
 pub struct DdsState<const N: usize> {
     trick_manager: DdsTrickManager<N>,
@@ -14,6 +16,10 @@ pub struct DdsState<const N: usize> {
 }
 
 impl<const N: usize> DdsState<N> {
+    pub fn player_is_leading(&self) -> bool {
+        self.trick_manager.suit_to_follow().is_none()
+    }
+
     pub fn new(hands: [Hand<N>; 4], opening_leader: Seat, trumps: Option<Suit>) -> Self {
         let remaining_cards_tracker: [CardTracker; 4] = hands
             .iter()
@@ -36,8 +42,12 @@ impl<const N: usize> DdsState<N> {
         self.trick_manager.play(card)
     }
 
-    pub fn relative_card(&self, card: Card) -> RelativeCard {
-        // this is only correct if CardTracker is a played_card_tracker
+    fn trumps(&self) -> Option<Suit> {
+        self.trick_manager.trumps()
+    }
+
+    #[allow(dead_code)]
+    fn relative_card(&self, card: Card) -> RelativeCard {
         let rank_discriminant = card.denomination as u16;
         let suit_state = self.played_cards.only_suit(card.suit).field();
 
@@ -72,14 +82,14 @@ impl<const N: usize> DdsState<N> {
     }
 
     pub fn remaining_cards_of(&self, player: Seat) -> Vec<Card> {
-        self.remaining_cards[player as usize].all_contained_cards()
+        self.remaining_cards_for_player(player).all_contained_cards()
     }
 
     pub fn available_cards_of(&self, player: Seat) -> Vec<Card> {
         match self.trick_manager.suit_to_follow() {
             None => self.remaining_cards_of(player),
             Some(suit) => {
-                let suit_cards = self.remaining_cards[player as usize].contained_cards_in_suit(suit);
+                let suit_cards = self.remaining_cards_for_player(player).contained_cards_in_suit(suit);
                 if suit_cards.is_empty() {
                     self.remaining_cards_of(player)
                 } else {
@@ -133,7 +143,7 @@ impl<const N: usize> DdsState<N> {
     fn relative_suit_state_field_for_player(&self, player: Seat, suit: Suit) -> u16 {
         let mut ranks = 0u16;
 
-        let mut absolute_field = self.remaining_cards[player as usize].only_suit(suit).field() as u16;
+        let mut absolute_field = self.remaining_cards_for_player(player).only_suit(suit).field() as u16;
         let played_field = self.played_cards.only_suit(suit).field() as u16;
 
         while absolute_field != 0 {
@@ -147,7 +157,7 @@ impl<const N: usize> DdsState<N> {
         }
 
         // there is an alternative algorithm using addition:
-        let absolute_field = self.remaining_cards[player as usize].only_suit(suit).field();
+        let absolute_field = self.remaining_cards_for_player(player).only_suit(suit).field();
 
         ranks = absolute_field as u16;
         let mut mask = 0u16;
@@ -177,24 +187,8 @@ impl<const N: usize> DdsState<N> {
     }
 
     fn relative_cards_for_player(&self, player: Seat) -> RelativeTracker {
-        let mut ranks = 0u64;
-
-        let my_field = self.remaining_cards[player as usize].field();
-        let played_field = self.played_cards.field();
-
-        for suit_index in 0..4 {
-            for index in 0..16 {
-                let cursor = 1 << index << (suit_index * 16);
-                if my_field & cursor != 0 {
-                    let played_field = played_field >> (suit_index * 16);
-                    let shifted = (played_field as u16) >> index;
-                    let pop_count = shifted.count_ones();
-                    let rank_index = index + pop_count;
-                    ranks |= 1 << rank_index << (suit_index * 16);
-                }
-            }
-        }
-        RelativeTracker::from_u64(ranks)
+        self.remaining_cards_for_player(player)
+            .relative_cards_given_played_cards(&self.played_cards)
     }
 
     pub fn absolute_card(&self, relative_card: RelativeCard) -> Card {
@@ -217,6 +211,111 @@ impl<const N: usize> DdsState<N> {
             suit: relative_card.suit,
             denomination: Denomination::from(denomination_discriminant),
         }
+    }
+
+    pub fn quick_tricks_for_player(&self, player: Seat) -> u8 {
+        // Quick tricks are the tricks that an axis can take without losing the lead.
+        // For this, we need to look at both hands combined
+        let players = [player, player.partner()];
+        let cards = players.map(|x| self.remaining_cards_for_player(x));
+
+        let my_quick_tricks = cards[0]
+            .relative_cards_given_played_cards(&self.played_cards)
+            .quick_tricks_per_suit();
+
+        // TODO: we need to make sure that we have entries into partners hand in any case, trumps or not!
+        // check for communication between hands
+        // communication exists if we have a card in a suit for which partner has a quick trick
+        // assumption: Communication exists, if there is a low card in our hand and a quick trick in partners hand in the same suit
+        // let partners_quick_tricks = cards[1]
+        //             .relative_cards_given_played_cards(&self.played_cards)
+        //             .quick_tricks_per_suit();
+        // let communications =
+        //
+        //
+        // let combined_cards = cards[0].union(&cards[1]);
+        // // In a perfect world, we would get to use all our high cards
+        // let max_quick_tricks = combined_cards
+        //     .relative_cards_given_played_cards(&self.played_cards)
+        //     .quick_tricks_per_suit();
+        // // but we can never make more tricks in a suit than we have cards in the longest hand
+        // let cards_per_suit = players.map(|x| self.remaining_cards_for_player(x).cards_per_suit());
+        // let max_cards_per_suit = [0, 1, 2, 3].map(|i| max(cards_per_suit[0][i], cards_per_suit[1][i]));
+        // let higher_bounds = [0, 1, 2, 3].map(|i| min(max_quick_tricks[i], max_cards_per_suit[i]));
+        //
+
+        let higher_bounds = my_quick_tricks;
+        // println!("I have at most {:?} quick tricks.", higher_bounds);
+
+        // To reach this maximum number of quick tricks we need to make sure that opponents cannot ruff.
+        let final_quick_tricks = match self.trumps() {
+            None => {
+                // count all quick tricks,
+                higher_bounds.iter().sum()
+            }
+            Some(trump_suit) => {
+                // there is a trump suit.
+
+                // first count only trump quick-tricks
+                higher_bounds[trump_suit as usize]
+
+                // TODO: We can make more quick tricks if opponents run out of trumps
+                // let opponents = [player + 1, player + 3];
+                // let opponents_cards_per_suit = opponents.map(|x| self.remaining_cards_for_player(x).cards_per_suit());
+                // let opponents_max_trump_cards = [0, 1, 2, 3].map(|i| max(cards_per_suit[0][i], cards_per_suit[1][i]));
+
+                // let trump_quick_tricks = higher_bounds[trump_suit as usize];
+                // match opponents_cards_per_suit.map(|array| array[trump_suit as usize].cmp(&trump_quick_tricks)) {
+                //     [Ordering::Greater, Ordering::Greater] => {
+                //         // both opponents have trumps left
+                //
+                //         let min_opponents_suit_length =
+                //             [0, 1, 2, 3].map(|i| min(opponents_cards_per_suit[0][i], opponents_cards_per_suit[1][i]));
+                //
+                //         // only count quick tricks until one opponent can ruff
+                //         let quick_tricks = [0, 1, 2, 3].map(|i| min(min_opponents_suit_length[i], higher_bounds[i]));
+                //         // this never under-counts trump tricks because both opponents have more trumps than we do.
+                //
+                //         quick_tricks.iter().sum()
+                //     }
+                //     [Ordering::Greater, _] => {
+                //         // Left-Hand Opponent has trumps left
+                //         // Right-Hand Opponent cannot ruff anymore
+                //         let lho_suit_lengths = opponents_cards_per_suit[0];
+                //
+                //         // only count quick tricks until one opponent can ruff
+                //         let quick_tricks = [0, 1, 2, 3].map(|i| min(lho_suit_lengths[i], higher_bounds[i]));
+                //         // this never under-counts trump tricks because lho has more trumps than we do.
+                //
+                //         quick_tricks.iter().sum()
+                //     }
+                //     [_, Ordering::Greater] => {
+                //         // Left-Hand Opponent cannot ruff anymore
+                //         // Right-Hand Opponent has trumps left
+                //         let rho_suit_lengths = opponents_cards_per_suit[1];
+                //
+                //         // only count quick tricks until one opponent can ruff
+                //         let quick_tricks = [0, 1, 2, 3].map(|i| min(rho_suit_lengths[i], higher_bounds[i]));
+                //         // this never under-counts trump tricks because rho has more trumps than we do.
+                //
+                //         quick_tricks.iter().sum()
+                //     }
+                //     _ => {
+                //         // Opponents have no trumps left
+                //         // we can play our side-suit high cards safely
+                //         higher_bounds.iter().sum()
+                //     }
+                // }
+            }
+        };
+
+        // println!("I have {} quick tricks.", final_quick_tricks);
+
+        final_quick_tricks
+    }
+
+    fn remaining_cards_for_player(&self, player: Seat) -> CardTracker {
+        self.remaining_cards[player as usize]
     }
 }
 

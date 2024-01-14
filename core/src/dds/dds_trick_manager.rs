@@ -23,6 +23,10 @@ impl<const N: usize> DdsTrickManager<N> {
         }
     }
 
+    pub fn trumps(&self) -> Option<Suit> {
+        self.trumps
+    }
+
     pub fn suit_to_follow(&self) -> Option<Suit> {
         let cards = self.cards_in_current_trick();
         cards.first().map(|card| card.suit)

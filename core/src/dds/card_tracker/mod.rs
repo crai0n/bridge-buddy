@@ -7,6 +7,8 @@ pub struct CardTracker(u64);
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct RelativeTracker(u64);
 
+const SUIT_MASKS: [u64; 4] = [0xFFFF, 0xFFFF_0000, 0xFFFF_0000_0000, 0xFFFF_0000_0000_0000];
+
 impl RelativeTracker {
     #[allow(dead_code)]
     pub fn from_u64(field: u64) -> Self {
@@ -16,13 +18,67 @@ impl RelativeTracker {
     pub fn field(&self) -> u64 {
         self.0
     }
+
+    #[allow(dead_code)]
+    pub fn count_quick_tricks(&self) -> u8 {
+        let mut field = self.0;
+
+        field <<= 3; // make Ace the leading bit
+
+        let mut quick_tricks = 0;
+
+        for _ in 0..4 {
+            quick_tricks += field.leading_ones() as u8;
+            (field, _) = field.overflowing_shl(16);
+        }
+
+        quick_tricks
+    }
+
+    #[allow(dead_code)]
+    pub fn count_quick_tricks_in_suit(&self, suit: Suit) -> u8 {
+        let mut field = self.0;
+
+        (field, _) = field.overflowing_shl(16 * (4 - suit as u32)); // move suit to leading position
+
+        field <<= 3; // make Ace the leading bit
+
+        field.leading_ones() as u8
+    }
+
+    #[allow(dead_code)]
+    pub fn quick_tricks_per_suit(&self) -> [u8; 4] {
+        [0, 1, 2, 3].map(|i| {
+            let (field, _) = self.0.overflowing_shl(3 + 16 * (3 - i));
+            field.leading_ones() as u8
+        })
+    }
 }
 
 impl CardTracker {
-    const SUIT_MASKS: [u64; 4] = [0xFFFF, 0xFFFF_0000, 0xFFFF_0000_0000, 0xFFFF_0000_0000_0000];
-
     pub fn empty() -> Self {
         Self(0u64)
+    }
+
+    pub fn relative_cards_given_played_cards(self, played: &CardTracker) -> RelativeTracker {
+        let my_field = self.0;
+        let played_field = played.field();
+
+        let mut ranks = 0u64;
+
+        for suit_index in 0..4 {
+            for index in 0..16 {
+                let cursor = 1 << index << (suit_index * 16);
+                if my_field & cursor != 0 {
+                    let played_field = played_field >> (suit_index * 16);
+                    let shifted = (played_field as u16) >> index;
+                    let pop_count = shifted.count_ones();
+                    let rank_index = index + pop_count;
+                    ranks |= 1 << rank_index << (suit_index * 16);
+                }
+            }
+        }
+        RelativeTracker::from_u64(ranks)
     }
 
     #[allow(dead_code)]
@@ -54,6 +110,16 @@ impl CardTracker {
         }
 
         tracker
+    }
+
+    #[allow(dead_code)]
+    pub fn count_cards_in_suit(&self, suit: Suit) -> u8 {
+        let field = self.field() & SUIT_MASKS[suit as usize];
+        field.count_ones() as u8
+    }
+
+    pub fn cards_per_suit(&self) -> [u8; 4] {
+        [0, 1, 2, 3].map(|i| (self.0 & SUIT_MASKS[i]).count_ones() as u8)
     }
 
     const fn u64_from_card(card: Card) -> u64 {
@@ -121,7 +187,7 @@ impl CardTracker {
     }
 
     pub fn only_suit(self, suit: Suit) -> Self {
-        let only_suit = self.0 & Self::SUIT_MASKS[suit as usize];
+        let only_suit = self.0 & SUIT_MASKS[suit as usize];
         CardTracker::from_u64(only_suit)
     }
 }

@@ -117,11 +117,18 @@ impl<const N: usize> DoubleDummySolver<N> {
     }
 
     fn have_enough_quick_tricks_for_target(state: &DdsState<N>, target: usize) -> bool {
-        target <= state.tricks_won_by_axis(state.next_to_play()) + Self::quick_tricks_for_player(state)
+        if state.player_is_leading() {
+            // println!("We are leading to this trick, so check quick tricks");
+            let total_with_quick_tricks =
+                state.tricks_won_by_axis(state.next_to_play()) + Self::quick_tricks_for_current_player(state) as usize;
+            target <= total_with_quick_tricks
+        } else {
+            false
+        }
     }
 
-    fn quick_tricks_for_player(_state: &DdsState<N>) -> usize {
-        0
+    fn quick_tricks_for_current_player(state: &DdsState<N>) -> u8 {
+        state.quick_tricks_for_player(state.next_to_play())
     }
 
     fn only_one_trick_left_to_play(state: &mut DdsState<{ N }>) -> bool {
@@ -218,12 +225,12 @@ mod test {
     fn solve2(seed: u64, expected: [usize; 20]) {
         let deal: Deal<2> = Deal::from_u64_seed(seed);
 
-        // for (seat, hand) in Seat::iter().zip(deal.hands) {
-        //     println!("{}:\n{}", seat, hand)
-        // }
+        for (seat, hand) in Seat::iter().zip(deal.hands) {
+            println!("{}:\n{}", seat, hand)
+        }
 
         let dds_result = DoubleDummySolver::solve(deal);
-        // println!("{}", dds_result);
+        println!("{}", dds_result);
         assert_eq!(dds_result.max_tricks, expected);
     }
 
