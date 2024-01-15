@@ -2,6 +2,7 @@ use crate::primitives::card::Denomination;
 
 pub struct SuitTracker(u16);
 
+#[allow(dead_code)]
 impl SuitTracker {
     pub fn empty() -> Self {
         Self(0u16)

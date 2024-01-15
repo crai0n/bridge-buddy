@@ -41,24 +41,30 @@ impl CardTracker {
     }
 
     pub fn relative_cards_given_played_cards(self, played: &CardTracker) -> RelativeTracker {
-        let my_field = self.field();
-        let played_field = played.field();
+        let fields = SUIT_ARRAY.map(|suit| {
+            let absolute = *self.suit_state(suit);
+            let played = *played.suit_state(suit);
 
-        let mut ranks = 0u64;
+            Self::relative_ranks_given_played_denominations(absolute, played)
+        });
 
-        for suit_index in 0..4 {
-            for index in 0..16 {
-                let cursor = 1 << index << (suit_index * 16);
-                if my_field & cursor != 0 {
-                    let played_field = played_field >> (suit_index * 16);
-                    let shifted = (played_field as u16) >> index;
-                    let pop_count = shifted.count_ones();
-                    let rank_index = index + pop_count;
-                    ranks |= 1 << rank_index << (suit_index * 16);
-                }
+        RelativeTracker::from_u16s(fields)
+    }
+
+    fn relative_ranks_given_played_denominations(absolute: u16, played: u16) -> u16 {
+        let mut ranks = 0u16;
+
+        for index in 0..16 {
+            let cursor = 1 << index;
+            if absolute & cursor != 0 {
+                let shifted = played >> index;
+                let pop_count = shifted.count_ones();
+                let rank_index = index + pop_count;
+                ranks |= 1 << rank_index;
             }
         }
-        RelativeTracker::from_u64(ranks)
+
+        ranks
     }
 
     #[allow(dead_code)]

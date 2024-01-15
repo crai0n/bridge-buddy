@@ -17,12 +17,14 @@ impl RelativeTracker {
         Self(field)
     }
 
+    #[allow(dead_code)]
     pub fn field(&self) -> u64 {
         SUIT_ARRAY.iter().fold(0u64, |total, suit| {
             total | (*self.suit_state(*suit) as u64) << (*suit as usize * 16)
         })
     }
 
+    #[allow(dead_code)]
     pub fn count_high_cards(&self) -> u8 {
         Suit::iter().fold(0, |high_cards, suit| high_cards + self.count_high_cards_in_suit(suit))
     }
@@ -41,27 +43,45 @@ impl RelativeTracker {
         &self.0[suit as usize]
     }
 
+    #[allow(dead_code)]
     pub fn suit_state_mut(&mut self, suit: Suit) -> &mut u16 {
         &mut self.0[suit as usize]
     }
 
-    pub fn absolute_cards_given_played_cards(self, played: &CardTracker) -> RelativeTracker {
-        let mut ranks = 0u64;
+    pub fn only_tops_of_sequences(self) -> Self {
+        let tops = self.0.map(|field| !(field >> 1) & field);
 
-        for suit in Suit::iter() {
-            let my_field = self.suit_state(suit);
-            let played_field = played.suit_state(suit);
+        Self::from_u16s(tops)
+    }
 
-            for index in 0..16 {
-                let cursor = 1 << index;
-                if my_field & cursor != 0 {
-                    let shifted = played_field >> index;
-                    let pop_count = shifted.count_ones();
-                    let rank_index = index + pop_count;
-                    ranks |= 1 << rank_index
+    #[allow(dead_code)]
+    pub fn absolute_cards_given_played_cards(&self, played: &CardTracker) -> CardTracker {
+        let fields = SUIT_ARRAY.map(|suit| {
+            let relative = *self.suit_state(suit);
+            let played = *played.suit_state(suit);
+
+            Self::absolute_denominations_given_played_denominations(relative, played)
+        });
+
+        CardTracker::from_u16s(fields)
+    }
+
+    fn absolute_denominations_given_played_denominations(relative: u16, played: u16) -> u16 {
+        let mut abs = 0u16;
+
+        let mut index = 0;
+
+        while index < 16 {
+            if played & (1 << index) == 0 {
+                let shifted = played >> index;
+                let pop_count = shifted.count_ones();
+
+                if relative & (1 << (index + pop_count)) != 0 {
+                    abs |= 1 << index
                 }
             }
+            index += 1;
         }
-        RelativeTracker::from_u64(ranks)
+        abs
     }
 }

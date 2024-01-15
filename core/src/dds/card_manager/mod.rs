@@ -1,12 +1,12 @@
 pub mod card_tracker;
 mod relative_tracker;
+mod suit_tracker;
 
 use crate::dds::card_manager::card_tracker::CardTracker;
 use crate::dds::relative_card::RelativeCard;
-use crate::dds::relative_rank::RelativeRank;
 use crate::primitives::card::Denomination;
 use crate::primitives::deal::Seat;
-use crate::primitives::{Card, Hand, Suit};
+use crate::primitives::{Card, Hand};
 use itertools::Itertools;
 use relative_tracker::RelativeTracker;
 
@@ -49,24 +49,13 @@ impl CardManager {
     }
 
     pub fn non_equivalent_moves_for(&self, player: Seat) -> Vec<Card> {
-        let rank_field = self.relative_cards_for_player(player).field();
+        let ranks = self.relative_cards_for_player(player);
 
-        let mut tracking_field = !(rank_field >> 1) & rank_field; // marks only the highest of a sequence
+        let tops = ranks.only_tops_of_sequences(); // marks only the highest of a sequence
 
-        let mut vec = vec![];
+        let absolute = tops.absolute_cards_given_played_cards(&self.played_cards);
 
-        while tracking_field != 0 {
-            let lowest_bit = tracking_field & (!tracking_field + 1);
-            tracking_field &= !lowest_bit;
-            let index = lowest_bit.ilog2();
-            let suit = Suit::from((index / 16) as u16);
-            let rank = RelativeRank::from((index % 16) as u16);
-            let rel_card = RelativeCard { rank, suit };
-            let card = self.absolute_card(rel_card);
-            vec.push(card)
-        }
-
-        vec
+        absolute.all_contained_cards()
     }
 
     pub fn played_cards(&self) -> CardTracker {
@@ -78,6 +67,7 @@ impl CardManager {
             .relative_cards_given_played_cards(&self.played_cards)
     }
 
+    #[allow(dead_code)]
     pub fn absolute_card(&self, relative_card: RelativeCard) -> Card {
         let rank_discriminant = relative_card.rank as u16;
         let suit_state = *self.played_cards.suit_state(relative_card.suit);
