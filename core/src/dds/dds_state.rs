@@ -6,12 +6,12 @@ use itertools::Itertools;
 #[allow(unused_imports)]
 use std::cmp::{max, min, Ordering};
 
-pub struct DdsState<const N: usize> {
+pub struct DdsRunner<const N: usize> {
     trick_manager: DdsTrickManager<N>,
     card_manager: CardManager,
 }
 
-impl<const N: usize> DdsState<N> {
+impl<const N: usize> DdsRunner<N> {
     pub fn new(hands: [Hand<N>; 4], opening_leader: Seat, trumps: Option<Suit>) -> Self {
         Self {
             trick_manager: DdsTrickManager::new(opening_leader, trumps),
@@ -27,12 +27,12 @@ impl<const N: usize> DdsState<N> {
         self.trick_manager.tricks_left()
     }
 
-    pub fn last_trick_winner(&self) -> Option<Seat> {
-        self.trick_manager.last_trick_winner()
-    }
-
     pub fn tricks_won_by_axis(&self, player: Seat) -> usize {
         self.trick_manager.tricks_won_by_axis(player)
+    }
+
+    pub fn last_trick_winner(&self) -> Option<Seat> {
+        self.trick_manager.last_trick_winner()
     }
 
     pub fn player_is_leading(&self) -> bool {
@@ -86,7 +86,7 @@ impl<const N: usize> DdsState<N> {
         let cards = players.map(|x| self.card_manager.remaining_cards_for_player(x));
 
         let my_quick_tricks = cards[0]
-            .relative_cards_given_played_cards(&self.card_manager.played_cards)
+            .relative_cards_given_played_cards(&self.card_manager.played_cards())
             .count_high_cards_per_suit();
 
         // TODO: we need to make sure that we have entries into partners hand in any case, trumps or not!
@@ -183,9 +183,9 @@ impl<const N: usize> DdsState<N> {
 
 #[cfg(test)]
 mod test {
+    use crate::dds::card_manager::card_tracker::CardTracker;
     use crate::dds::card_manager::CardManager;
-    use crate::dds::card_tracker::CardTracker;
-    use crate::dds::dds_state::DdsState;
+    use crate::dds::dds_state::DdsRunner;
     use crate::dds::dds_trick_manager::DdsTrickManager;
     use crate::primitives::card::Denomination;
     use crate::primitives::deal::Seat;
@@ -222,7 +222,7 @@ mod test {
             })
             .collect_vec();
 
-        let state: DdsState<13> = DdsState {
+        let state: DdsRunner<13> = DdsRunner {
             trick_manager: DdsTrickManager::new(Seat::North, None),
             card_manager: CardManager {
                 played_cards: CardTracker::from_cards(&played_cards),

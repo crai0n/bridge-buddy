@@ -1,11 +1,10 @@
-use crate::dds::dds_state::DdsState;
+use crate::dds::dds_state::DdsRunner;
 use crate::primitives::deal::Seat;
 use crate::primitives::{Card, Deal, Suit};
 use double_dummy_result::DoubleDummyResult;
 use strum::IntoEnumIterator;
 
 mod card_manager;
-mod card_tracker;
 pub mod dds_state;
 pub mod dds_trick_manager;
 mod double_dummy_result;
@@ -78,11 +77,11 @@ impl<const N: usize> DoubleDummySolver<N> {
 
     fn defenders_can_achieve_target(deal: Deal<N>, declarer: Seat, trumps: Option<Suit>, target: usize) -> bool {
         let opening_leader = declarer + 1;
-        let mut start_state = DdsState::new(deal.hands, opening_leader, trumps);
+        let mut start_state = DdsRunner::new(deal.hands, opening_leader, trumps);
         Self::can_achieve_target(&mut start_state, target)
     }
 
-    fn can_achieve_target(state: &mut DdsState<N>, target: usize) -> bool {
+    fn can_achieve_target(state: &mut DdsRunner<N>, target: usize) -> bool {
         // println!("Now checking target {} for player {}", target, state.next_to_play());
         // println!(
         //     "{:?} has won {} tricks",
@@ -119,7 +118,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         false
     }
 
-    fn have_enough_quick_tricks_for_target(state: &DdsState<N>, target: usize) -> bool {
+    fn have_enough_quick_tricks_for_target(state: &DdsRunner<N>, target: usize) -> bool {
         if state.player_is_leading() {
             // println!("We are leading to this trick, so check quick tricks");
             let total_with_quick_tricks =
@@ -130,23 +129,23 @@ impl<const N: usize> DoubleDummySolver<N> {
         }
     }
 
-    fn quick_tricks_for_current_player(state: &DdsState<N>) -> u8 {
+    fn quick_tricks_for_current_player(state: &DdsRunner<N>) -> u8 {
         state.quick_tricks_for_player(state.next_to_play())
     }
 
-    fn only_one_trick_left_to_play(state: &mut DdsState<{ N }>) -> bool {
+    fn only_one_trick_left_to_play(state: &mut DdsRunner<{ N }>) -> bool {
         state.tricks_left() == 1
     }
 
-    fn not_enough_tricks_left_to_achieve_target(state: &mut DdsState<{ N }>, target: usize) -> bool {
+    fn not_enough_tricks_left_to_achieve_target(state: &mut DdsRunner<{ N }>, target: usize) -> bool {
         target > state.tricks_left() + state.tricks_won_by_axis(state.next_to_play())
     }
 
-    fn already_enough_tricks_for_target(state: &mut DdsState<{ N }>, target: usize) -> bool {
+    fn already_enough_tricks_for_target(state: &mut DdsRunner<{ N }>, target: usize) -> bool {
         target <= state.tricks_won_by_axis(state.next_to_play())
     }
 
-    fn apply_move_and_recurse(state: &mut DdsState<{ N }>, target: usize, test_move: Card) -> bool {
+    fn apply_move_and_recurse(state: &mut DdsRunner<{ N }>, target: usize, test_move: Card) -> bool {
         let current_player = state.next_to_play();
         state.play(test_move);
         let new_player = state.next_to_play();
@@ -159,7 +158,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         we_can_achieve_target
     }
 
-    fn we_win_last_trick(state: &mut DdsState<N>) -> bool {
+    fn we_win_last_trick(state: &mut DdsRunner<N>) -> bool {
         let lead = state.next_to_play();
 
         Self::play_last_trick(state);
@@ -179,7 +178,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         result
     }
 
-    fn play_last_trick(state: &mut DdsState<N>) {
+    fn play_last_trick(state: &mut DdsRunner<N>) {
         for _ in 0..4 {
             let last_card_of_player = *state.valid_moves_for(state.next_to_play()).first().unwrap();
 
@@ -187,13 +186,13 @@ impl<const N: usize> DoubleDummySolver<N> {
         }
     }
 
-    fn undo_last_trick(state: &mut DdsState<N>) {
+    fn undo_last_trick(state: &mut DdsRunner<N>) {
         for _ in 0..4 {
             state.undo();
         }
     }
 
-    fn generate_moves(state: &DdsState<N>) -> Vec<Card> {
+    fn generate_moves(state: &DdsRunner<N>) -> Vec<Card> {
         state.valid_non_equivalent_moves_for(state.next_to_play())
     }
 }

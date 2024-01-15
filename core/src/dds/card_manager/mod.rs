@@ -1,10 +1,14 @@
-use crate::dds::card_tracker::{CardTracker, RelativeTracker};
+pub mod card_tracker;
+mod relative_tracker;
+
+use crate::dds::card_manager::card_tracker::CardTracker;
 use crate::dds::relative_card::RelativeCard;
 use crate::dds::relative_rank::RelativeRank;
 use crate::primitives::card::Denomination;
 use crate::primitives::deal::Seat;
 use crate::primitives::{Card, Hand, Suit};
 use itertools::Itertools;
+use relative_tracker::RelativeTracker;
 
 pub struct CardManager {
     pub remaining_cards: [CardTracker; 4],
@@ -65,9 +69,8 @@ impl CardManager {
         vec
     }
 
-    #[allow(dead_code)]
-    pub fn played_cards(&self) -> Vec<Card> {
-        self.played_cards.all_contained_cards()
+    pub fn played_cards(&self) -> CardTracker {
+        self.played_cards
     }
 
     pub fn relative_cards_for_player(&self, player: Seat) -> RelativeTracker {
@@ -77,9 +80,7 @@ impl CardManager {
 
     pub fn absolute_card(&self, relative_card: RelativeCard) -> Card {
         let rank_discriminant = relative_card.rank as u16;
-        let suit_state = self.played_cards.only_suit(relative_card.suit).field();
-
-        let suit_state = suit_state >> (16 * relative_card.suit as usize) as u16;
+        let suit_state = *self.played_cards.suit_state(relative_card.suit);
 
         let zeros = rank_discriminant - suit_state.count_ones() as u16;
 
@@ -96,59 +97,13 @@ impl CardManager {
             denomination: Denomination::from(denomination_discriminant),
         }
     }
-
-    #[allow(dead_code)]
-    fn relative_suit_state_field_for_player(&self, player: Seat, suit: Suit) -> u16 {
-        let mut ranks = 0u16;
-
-        let mut absolute_field = self.remaining_cards_for_player(player).only_suit(suit).field() as u16;
-        let played_field = self.played_cards.only_suit(suit).field() as u16;
-
-        while absolute_field != 0 {
-            let cursor = absolute_field & (!absolute_field + 1); // isolates lowest bit
-            let index = cursor.ilog2(); // position of cursor
-
-            let pop_count = (played_field >> index).count_ones();
-            let rank_index = index + pop_count;
-            ranks |= 1 << rank_index; // add this card's relative rank
-            absolute_field &= !cursor; // delete lowest bit
-        }
-
-        // there is an alternative algorithm using addition:
-        let absolute_field = self.remaining_cards_for_player(player).only_suit(suit).field();
-
-        ranks = absolute_field as u16;
-        let mut mask = 0u16;
-        for index in 0..16 {
-            let cursor = 1 << index;
-            mask |= cursor;
-            if played_field & cursor != 0 {
-                let adder = ranks & mask;
-                ranks += adder;
-            }
-        }
-
-        // or with a while loop:
-        ranks = absolute_field as u16;
-        let mut search_field = played_field;
-        while search_field != 0 {
-            let cursor = search_field & (!search_field + 1); // isolate lowest bit
-            search_field &= !cursor; // deletes lowest bit
-            let mask = (cursor << 1) - 1; // masks out all higher bits
-            let adder = ranks & mask;
-            ranks += adder;
-        }
-
-        //TODO: Decide on an algorithm, if possible rewrite it so that it can be adapted to create an inverse operation
-
-        ranks
-    }
 }
 
 #[cfg(test)]
 mod test {
+    use crate::dds::card_manager::card_tracker::CardTracker;
+    use crate::dds::card_manager::relative_tracker::RelativeTracker;
     use crate::dds::card_manager::CardManager;
-    use crate::dds::card_tracker::{CardTracker, RelativeTracker};
     use crate::primitives::deal::Seat;
     use test_case::test_case;
 
