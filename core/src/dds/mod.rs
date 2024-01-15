@@ -4,6 +4,7 @@ use crate::primitives::{Card, Deal, Suit};
 use double_dummy_result::DoubleDummyResult;
 use strum::IntoEnumIterator;
 
+mod card_manager;
 mod card_tracker;
 pub mod dds_state;
 pub mod dds_trick_manager;
@@ -14,6 +15,8 @@ pub mod relative_rank;
 pub struct DoubleDummySolver<const N: usize> {}
 
 impl<const N: usize> DoubleDummySolver<N> {
+    const CHECK_QUICK_TRICKS: bool = true;
+
     pub fn solve(deal: Deal<N>) -> DoubleDummyResult {
         let mut result_vec = Vec::new();
 
@@ -95,7 +98,7 @@ impl<const N: usize> DoubleDummySolver<N> {
             // println!("Not enough tricks left!");
             return false;
         };
-        if Self::have_enough_quick_tricks_for_target(state, target) {
+        if Self::CHECK_QUICK_TRICKS && Self::have_enough_quick_tricks_for_target(state, target) {
             // println!("Enough quick tricks for target!");
             return true;
         };
@@ -178,7 +181,7 @@ impl<const N: usize> DoubleDummySolver<N> {
 
     fn play_last_trick(state: &mut DdsState<N>) {
         for _ in 0..4 {
-            let last_card_of_player = *state.available_cards_of(state.next_to_play()).first().unwrap();
+            let last_card_of_player = *state.valid_moves_for(state.next_to_play()).first().unwrap();
 
             state.play(last_card_of_player);
         }
@@ -191,7 +194,7 @@ impl<const N: usize> DoubleDummySolver<N> {
     }
 
     fn generate_moves(state: &DdsState<N>) -> Vec<Card> {
-        state.available_indistinguishable_moves_for(state.next_to_play())
+        state.valid_non_equivalent_moves_for(state.next_to_play())
     }
 }
 

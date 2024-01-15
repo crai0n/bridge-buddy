@@ -20,7 +20,7 @@ impl RelativeTracker {
     }
 
     #[allow(dead_code)]
-    pub fn count_quick_tricks(&self) -> u8 {
+    pub fn count_high_cards(&self) -> u8 {
         let mut field = self.0;
 
         field <<= 3; // make Ace the leading bit
@@ -36,7 +36,7 @@ impl RelativeTracker {
     }
 
     #[allow(dead_code)]
-    pub fn count_quick_tricks_in_suit(&self, suit: Suit) -> u8 {
+    pub fn count_high_cards_in_suit(&self, suit: Suit) -> u8 {
         let mut field = self.0;
 
         (field, _) = field.overflowing_shl(16 * (4 - suit as u32)); // move suit to leading position
@@ -47,7 +47,7 @@ impl RelativeTracker {
     }
 
     #[allow(dead_code)]
-    pub fn quick_tricks_per_suit(&self) -> [u8; 4] {
+    pub fn count_high_cards_per_suit(&self) -> [u8; 4] {
         [0, 1, 2, 3].map(|i| {
             let (field, _) = self.0.overflowing_shl(3 + 16 * (3 - i));
             field.leading_ones() as u8
@@ -58,6 +58,14 @@ impl RelativeTracker {
 impl CardTracker {
     pub fn empty() -> Self {
         Self(0u64)
+    }
+
+    pub fn for_n_cards_per_suit(n: usize) -> Self {
+        let mut mask = (1u64 << (13 - n)) - 1;
+        let suits: u64 = 1 + (1 << 16) + (1 << 32) + (1 << 48);
+        mask *= suits;
+
+        Self(mask)
     }
 
     pub fn relative_cards_given_played_cards(self, played: &CardTracker) -> RelativeTracker {
@@ -206,6 +214,29 @@ mod test {
 
         tracker.add_card(Card::from_str("C2").unwrap());
         assert_eq!(tracker.0, 1);
+    }
+
+    #[test_case(
+        13,
+        0b0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000
+    )]
+    #[test_case(
+        12,
+        0b0000_0000_0000_0001_0000_0000_0000_0001_0000_0000_0000_0001_0000_0000_0000_0001
+    )]
+    #[test_case(
+        11,
+        0b0000_0000_0000_0011_0000_0000_0000_0011_0000_0000_0000_0011_0000_0000_0000_0011
+    )]
+    #[test_case(
+        10,
+        0b0000_0000_0000_0111_0000_0000_0000_0111_0000_0000_0000_0111_0000_0000_0000_0111
+    )]
+    #[test_case(1, 0b0000_1111_1111_1111_0000_1111_1111_1111_0000_1111_1111_1111_0000_1111_1111_1111)]
+    fn n_cards_per_suit(n: usize, expected: u64) {
+        let tracker = CardTracker::for_n_cards_per_suit(n);
+
+        assert_eq!(tracker.field(), expected);
     }
 
     #[test_case("H:AQ,C:AQJ", Suit::Hearts)]
