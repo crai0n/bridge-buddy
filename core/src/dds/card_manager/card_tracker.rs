@@ -1,4 +1,4 @@
-use crate::dds::card_manager::suit_tracker::SuitField;
+use crate::dds::card_manager::suit_field::SuitField;
 
 use crate::primitives::{Card, Hand, Suit};
 use itertools::Itertools;

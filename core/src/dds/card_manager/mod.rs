@@ -1,5 +1,5 @@
 pub mod card_tracker;
-mod suit_tracker;
+mod suit_field;
 
 use crate::dds::card_manager::card_tracker::CardTracker;
 

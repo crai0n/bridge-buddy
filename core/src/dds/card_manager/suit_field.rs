@@ -131,7 +131,7 @@ impl SuitField {
 #[cfg(test)]
 mod test {
 
-    use crate::dds::card_manager::suit_tracker::SuitField;
+    use crate::dds::card_manager::suit_field::SuitField;
     use test_case::test_case;
 
     #[test_case(0b0000_0011_0000_1000, 0b0000_1100_0110_0110, 0b0000_1100_1000_0000)]
