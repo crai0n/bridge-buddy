@@ -1,4 +1,4 @@
-use crate::primitives::contract::ContractDenomination;
+use crate::primitives::contract::Strain;
 use crate::primitives::deal::Seat;
 use crate::primitives::Suit;
 use std::fmt::{Display, Formatter};
@@ -9,19 +9,19 @@ pub struct DoubleDummyResult {
 }
 
 impl DoubleDummyResult {
-    pub fn max_tricks_for_player_in_denomination(&self, player: Seat, denomination: ContractDenomination) -> usize {
+    pub fn max_tricks_for_player_in_strain(&self, player: Seat, strain: Strain) -> usize {
         let i = match player {
             Seat::North => 0,
             Seat::East => 1,
             Seat::South => 2,
             Seat::West => 3,
         };
-        let j = match denomination {
-            ContractDenomination::Trump(Suit::Clubs) => 0,
-            ContractDenomination::Trump(Suit::Diamonds) => 1,
-            ContractDenomination::Trump(Suit::Hearts) => 2,
-            ContractDenomination::Trump(Suit::Spades) => 3,
-            ContractDenomination::NoTrump => 4,
+        let j = match strain {
+            Strain::Trump(Suit::Clubs) => 0,
+            Strain::Trump(Suit::Diamonds) => 1,
+            Strain::Trump(Suit::Hearts) => 2,
+            Strain::Trump(Suit::Spades) => 3,
+            Strain::NoTrump => 4,
         };
 
         let index = 5 * i + j;
@@ -35,8 +35,8 @@ impl Display for DoubleDummyResult {
         writeln!(f, "  NT ♠S ♥H ♦D ♣C")?;
         for seat in Seat::iter() {
             write!(f, "{} ", seat)?;
-            for denomination in 0..5 {
-                let n_str = format!("{}", self.max_tricks[5 * (seat as usize) + denomination]);
+            for strain in 0..5 {
+                let n_str = format!("{}", self.max_tricks[5 * (seat as usize) + strain]);
                 write!(f, "{:>2} ", n_str)?;
             }
             writeln!(f)?;

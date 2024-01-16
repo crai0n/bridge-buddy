@@ -90,16 +90,16 @@ impl CardTracker {
     }
 
     pub fn add_card(&mut self, card: Card) {
-        self.suit_state_mut(&card.suit).add_rank(card.denomination)
+        self.suit_state_mut(&card.suit).add_rank(card.rank)
     }
 
     pub fn remove_card(&mut self, card: Card) {
-        self.suit_state_mut(&card.suit).remove_rank(card.denomination)
+        self.suit_state_mut(&card.suit).remove_rank(card.rank)
     }
 
     #[allow(dead_code)]
     pub fn contains_card(&self, card: &Card) -> bool {
-        self.suit_state(&card.suit).contains_rank(card.denomination)
+        self.suit_state(&card.suit).contains_rank(card.rank)
     }
 
     pub fn all_contained_cards(&self) -> Vec<Card> {
@@ -108,7 +108,7 @@ impl CardTracker {
                 self.suit_state(&suit)
                     .all_contained_ranks()
                     .into_iter()
-                    .map(move |denomination| Card { suit, denomination })
+                    .map(move |rank| Card { suit, rank })
             })
             .collect_vec()
     }
@@ -117,10 +117,7 @@ impl CardTracker {
         self.suit_state(suit)
             .all_contained_ranks()
             .iter()
-            .map(|&denomination| Card {
-                suit: *suit,
-                denomination,
-            })
+            .map(|&rank| Card { suit: *suit, rank })
             .collect_vec()
     }
 
@@ -135,7 +132,7 @@ impl CardTracker {
                 self.suit_state(&suit)
                     .non_equivalent_moves(played_cards.suit_state(&suit))
                     .into_iter()
-                    .map(move |denomination| Card { suit, denomination })
+                    .map(move |rank| Card { suit, rank })
             })
             .collect_vec()
     }

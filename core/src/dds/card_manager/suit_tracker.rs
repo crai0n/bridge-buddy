@@ -1,4 +1,4 @@
-use crate::primitives::card::Denomination;
+use crate::primitives::card::Rank;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct SuitField(u16);
@@ -19,20 +19,20 @@ impl SuitField {
         Self(mask)
     }
 
-    const fn u16_from_denomination(denomination: Denomination) -> u16 {
-        1 << (denomination as usize)
+    const fn u16_from_rank(rank: Rank) -> u16 {
+        1 << (rank as usize)
     }
 
-    pub fn add_rank(&mut self, rank: Denomination) {
-        self.0 |= Self::u16_from_denomination(rank);
+    pub fn add_rank(&mut self, rank: Rank) {
+        self.0 |= Self::u16_from_rank(rank);
     }
 
-    pub fn remove_rank(&mut self, rank: Denomination) {
-        self.0 &= !Self::u16_from_denomination(rank);
+    pub fn remove_rank(&mut self, rank: Rank) {
+        self.0 &= !Self::u16_from_rank(rank);
     }
 
-    pub fn contains_rank(&self, rank: Denomination) -> bool {
-        self.0 & Self::u16_from_denomination(rank) != 0
+    pub fn contains_rank(&self, rank: Rank) -> bool {
+        self.0 & Self::u16_from_rank(rank) != 0
     }
 
     pub fn count_cards(&self) -> u8 {
@@ -45,11 +45,11 @@ impl SuitField {
     }
 
     pub fn count_high_cards_given_played_cards(&self, played: &SuitField) -> u8 {
-        let relative = self.relative_ranks_given_played_denominations(played);
+        let relative = self.relative_ranks_given_played_ranks(played);
         relative.count_high_cards()
     }
 
-    pub fn all_contained_ranks(&self) -> Vec<Denomination> {
+    pub fn all_contained_ranks(&self) -> Vec<Rank> {
         let mut vec = vec![];
 
         let mut tracking_field = self.0;
@@ -58,19 +58,19 @@ impl SuitField {
             let lowest_bit = tracking_field & (!tracking_field + 1);
             tracking_field &= !lowest_bit;
             let index = lowest_bit.ilog2();
-            let denomination = Denomination::from((index % 16) as u16);
-            vec.push(denomination)
+            let rank = Rank::from((index % 16) as u16);
+            vec.push(rank)
         }
 
         vec
     }
 
-    pub fn non_equivalent_moves(&self, played_cards: &SuitField) -> Vec<Denomination> {
-        let ranks = self.relative_ranks_given_played_denominations(played_cards);
+    pub fn non_equivalent_moves(&self, played_cards: &SuitField) -> Vec<Rank> {
+        let ranks = self.relative_ranks_given_played_ranks(played_cards);
 
         let tops = ranks.only_tops_of_sequences(); // marks only the highest of a sequence
 
-        let absolute = tops.absolute_denominations_given_played_denominations(played_cards);
+        let absolute = tops.absolute_ranks_given_played_ranks(played_cards);
 
         absolute.all_contained_ranks()
     }
@@ -80,7 +80,7 @@ impl SuitField {
         Self::from_u16(!(field >> 1) & field)
     }
 
-    fn absolute_denominations_given_played_denominations(&self, played: &Self) -> Self {
+    fn absolute_ranks_given_played_ranks(&self, played: &Self) -> Self {
         let relative = self.0;
         let played = played.0;
 
@@ -102,7 +102,7 @@ impl SuitField {
         Self(abs)
     }
 
-    fn relative_ranks_given_played_denominations(&self, played: &Self) -> Self {
+    fn relative_ranks_given_played_ranks(&self, played: &Self) -> Self {
         let absolute = self.0;
         let played = played.0;
 
@@ -144,9 +144,6 @@ mod test {
 
         let expected = SuitField::from_u16(expected);
 
-        assert_eq!(
-            card_tracker.relative_ranks_given_played_denominations(&played),
-            expected
-        )
+        assert_eq!(card_tracker.relative_ranks_given_played_ranks(&played), expected)
     }
 }

@@ -35,7 +35,7 @@ impl Card {
     }
 
     pub fn touches(&self, other: &Card) -> bool {
-        self.suit == other.suit && self.denomination.touches(&other.denomination)
+        self.suit == other.suit && self.rank.touches(&other.rank)
     }
 }
 

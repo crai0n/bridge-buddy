@@ -185,7 +185,7 @@ mod test {
     use crate::dds::card_manager::CardManager;
     use crate::dds::dds_state::DdsRunner;
     use crate::dds::dds_trick_manager::DdsTrickManager;
-    use crate::primitives::card::Denomination;
+    use crate::primitives::card::Rank;
     use crate::primitives::deal::Seat;
     use crate::primitives::{Card, Suit};
     use itertools::Itertools;
@@ -197,25 +197,25 @@ mod test {
     fn available_moves(my_cards: &str, played_cards: &str, expected: &str) {
         let my_cards = my_cards
             .chars()
-            .map(|c| Denomination::from_char(c).unwrap())
+            .map(|c| Rank::from_char(c).unwrap())
             .map(|d| Card {
-                denomination: d,
+                rank: d,
                 suit: Suit::Spades,
             })
             .collect_vec();
         let played_cards = played_cards
             .chars()
-            .map(|c| Denomination::from_char(c).unwrap())
+            .map(|c| Rank::from_char(c).unwrap())
             .map(|d| Card {
-                denomination: d,
+                rank: d,
                 suit: Suit::Spades,
             })
             .collect_vec();
         let mut expected = expected
             .chars()
-            .map(|c| Denomination::from_char(c).unwrap())
+            .map(|c| Rank::from_char(c).unwrap())
             .map(|d| Card {
-                denomination: d,
+                rank: d,
                 suit: Suit::Spades,
             })
             .collect_vec();

@@ -103,7 +103,7 @@ impl<const N: usize> DdsTrickManager<N> {
                     winner_card = card;
                 }
             }
-            if card.suit == winner_card.suit && card.denomination > winner_card.denomination {
+            if card.suit == winner_card.suit && card.rank > winner_card.rank {
                 winner_card = card;
             }
         }
