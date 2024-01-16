@@ -290,6 +290,38 @@ mod test {
         assert_eq!(dds_result.max_tricks, expected);
     }
 
+    #[ignore]
+    #[test_case( 37u64, [1, 1, 1, 2, 4, 6, 7, 7, 5, 4, 1, 1, 1, 2, 4, 6, 7, 7, 5, 4]; "Test A")]
+    #[test_case( 82u64, [5, 4, 5, 8, 6, 2, 3, 2, 0, 2, 5, 4, 5, 8, 6, 2, 3, 2, 0, 2]; "Test B")]
+    fn solve8(seed: u64, expected: [usize; 20]) {
+        let deal: Deal<8> = Deal::from_u64_seed(seed);
+
+        // for (seat, hand) in Seat::iter().zip(deal.hands) {
+        //     println!("{}:\n{}", seat, hand)
+        // }
+
+        let dds_result = DoubleDummySolver::solve(deal);
+
+        // println!("{}", dds_result);
+        assert_eq!(dds_result.max_tricks, expected);
+    }
+
+    #[ignore]
+    #[test_case( 37u64, [2, 2, 4, 1, 4, 7, 6, 4, 8, 5, 2, 2, 4, 1, 4, 7, 6, 4, 8, 5]; "Test A")]
+    #[test_case( 82u64, [5, 4, 5, 8, 6, 2, 3, 2, 0, 2, 5, 4, 5, 8, 6, 2, 3, 2, 0, 2]; "Test B")]
+    fn solve9(seed: u64, expected: [usize; 20]) {
+        let deal: Deal<9> = Deal::from_u64_seed(seed);
+
+        // for (seat, hand) in Seat::iter().zip(deal.hands) {
+        //     println!("{}:\n{}", seat, hand)
+        // }
+
+        let dds_result = DoubleDummySolver::solve(deal);
+
+        // println!("{}", dds_result);
+        assert_eq!(dds_result.max_tricks, expected);
+    }
+
     #[test_case( "S:A", "H:A", "C:A", "D:A", [0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0]; "Test A")]
     fn solve_explicit1(north: &str, east: &str, south: &str, west: &str, expected: [usize; 20]) {
         let north_hand = Hand::<1>::from_str(north).unwrap();
