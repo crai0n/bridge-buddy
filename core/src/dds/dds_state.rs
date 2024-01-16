@@ -83,9 +83,9 @@ impl<const N: usize> DdsRunner<N> {
         // Quick tricks are the tricks that an axis can take without losing the lead.
         // For this, we need to look at both hands combined
         let players = [player, player.partner()];
-        let cards = players.map(|x| self.card_manager.remaining_cards_for_player(x));
+        let [my_cards, _partners_cards] = players.map(|x| self.card_manager.remaining_cards_for_player(x));
 
-        let my_quick_tricks = cards[0].count_high_cards_per_suit_given_played_cards(&self.card_manager.played_cards());
+        let my_quick_tricks = my_cards.count_high_cards_per_suit_given_played_cards(&self.card_manager.played_cards());
 
         // TODO: we need to make sure that we have entries into partners hand in any case, trumps or not!
         // check for communication between hands

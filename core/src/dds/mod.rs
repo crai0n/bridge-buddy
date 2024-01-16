@@ -15,6 +15,10 @@ impl<const N: usize> DoubleDummySolver<N> {
     const CHECK_QUICK_TRICKS: bool = true;
 
     pub fn solve(deal: Deal<N>) -> DoubleDummyResult {
+        for (seat, hand) in Seat::iter().zip(deal.hands) {
+            println!("{}:\n{}", seat, hand)
+        }
+
         let mut result_vec = Vec::new();
 
         for declarer in Seat::iter() {
@@ -22,9 +26,12 @@ impl<const N: usize> DoubleDummySolver<N> {
             result_vec.extend_from_slice(&result);
         }
 
-        DoubleDummyResult {
+        let dds_result = DoubleDummyResult {
             max_tricks: result_vec.try_into().unwrap(),
-        }
+        };
+
+        println!("{}", dds_result);
+        dds_result
     }
 
     fn calculate_max_tricks_for_declarer(deal: Deal<N>, declarer: Seat) -> [usize; 5] {
@@ -52,11 +59,11 @@ impl<const N: usize> DoubleDummySolver<N> {
 
         while at_least < at_most {
             let target = (at_least + at_most + 1) / 2;
-            // println!("------------------------");
-            // println!(
-            //     "Testing {} tricks for {} as declarer and {:?} as trumps.",
-            //     target, declarer, trumps
-            // );
+            println!("------------------------");
+            println!(
+                "Testing {} tricks for {} as declarer and {:?} as trumps.",
+                target, declarer, trumps
+            );
 
             if Self::declarer_can_achieve_target(deal, declarer, trumps, target) {
                 // println!("Declarer can reach their target!");
@@ -225,12 +232,12 @@ mod test {
     fn solve2(seed: u64, expected: [usize; 20]) {
         let deal: Deal<2> = Deal::from_u64_seed(seed);
 
-        for (seat, hand) in Seat::iter().zip(deal.hands) {
-            println!("{}:\n{}", seat, hand)
-        }
+        // for (seat, hand) in Seat::iter().zip(deal.hands) {
+        //     println!("{}:\n{}", seat, hand)
+        // }
 
         let dds_result = DoubleDummySolver::solve(deal);
-        println!("{}", dds_result);
+        // println!("{}", dds_result);
         assert_eq!(dds_result.max_tricks, expected);
     }
 

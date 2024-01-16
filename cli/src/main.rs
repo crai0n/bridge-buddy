@@ -1,10 +1,12 @@
 use bridge_buddy_core::actors::game_client::GameClient;
 use bridge_buddy_core::actors::table::Table;
+use bridge_buddy_core::dds::DoubleDummySolver;
 use bridge_buddy_core::engine::hand_evaluation::ForumDPlus2015Evaluator;
 use bridge_buddy_core::engine::mock_bridge_engine::MockBridgeEngine;
 use bridge_buddy_core::primitives::card::Suit;
-use bridge_buddy_core::primitives::deal::Hand;
 use bridge_buddy_core::primitives::deal::Seat::{East, North, South, West};
+use bridge_buddy_core::primitives::deal::{Hand, Seat};
+use bridge_buddy_core::primitives::Deal;
 use bridge_buddy_core::IntoEnumIterator;
 use clap::{Parser, Subcommand};
 use std::io::stdin;
@@ -27,6 +29,12 @@ enum Command {
         /// Hand to evaluate (if not given, it will be queried interactively)
         hand: Option<String>,
     },
+    Dds {
+        north: Option<String>,
+        east: Option<String>,
+        south: Option<String>,
+        west: Option<String>,
+    },
     Play,
 }
 
@@ -34,6 +42,49 @@ fn main() {
     let args = Args::parse();
 
     match args.command {
+        Command::Dds {
+            north,
+            east,
+            south,
+            west,
+        } => {
+            let hands = [&north, &east, &south, &west];
+            let hand_results: Vec<Result<Hand<13>, _>> = Seat::iter()
+                .map(|seat| match hands[seat as usize].clone() {
+                    None => {
+                        let mut hand = String::new();
+                        println!("Which cards does {} hold in clubs?", seat);
+                        hand += "♣:";
+                        stdin().read_line(&mut hand).unwrap();
+                        println!("Which cards does {} hold in diamonds?", seat);
+                        hand += "♦:";
+                        stdin().read_line(&mut hand).unwrap();
+                        println!("Which cards does {} hold in hearts?", seat);
+                        hand += "♥:";
+                        stdin().read_line(&mut hand).unwrap();
+                        println!("Which cards does {} hold in spades?", seat);
+                        hand += "♠:";
+                        stdin().read_line(&mut hand).unwrap();
+                        Hand::from_str(&hand)
+                    }
+                    Some(hand) => Hand::<13>::from_str(&hand),
+                })
+                .collect();
+            let hands: [Hand<13>; 4] = hand_results
+                .into_iter()
+                .map(|result| match result {
+                    Err(_) => {
+                        println!("Invalid Hand!");
+                        exit(1);
+                    }
+                    Ok(hand) => hand,
+                })
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap();
+            let deal = Deal::from_hands(hands);
+            DoubleDummySolver::solve(deal);
+        }
         Command::Play => {
             let mut table = Table::empty();
 
