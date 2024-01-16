@@ -85,9 +85,7 @@ impl<const N: usize> DdsRunner<N> {
         let players = [player, player.partner()];
         let cards = players.map(|x| self.card_manager.remaining_cards_for_player(x));
 
-        let my_quick_tricks = cards[0]
-            .relative_cards_given_played_cards(&self.card_manager.played_cards())
-            .count_high_cards_per_suit();
+        let my_quick_tricks = cards[0].count_high_cards_per_suit_given_played_cards(&self.card_manager.played_cards());
 
         // TODO: we need to make sure that we have entries into partners hand in any case, trumps or not!
         // check for communication between hands
