@@ -3,6 +3,8 @@ use crate::primitives::Card;
 use std::cmp::Ordering;
 use strum::{Display, EnumIter};
 
+pub const N_RANKS: usize = 13;
+
 #[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
 pub enum Rank {
     #[strum(serialize = "2")]

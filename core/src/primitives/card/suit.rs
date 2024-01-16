@@ -2,6 +2,7 @@ use crate::error::BBError;
 use crate::primitives::Card;
 use strum::{Display, EnumIter};
 
+pub const N_SUITS: usize = 4;
 #[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
 pub enum Suit {
     #[strum(serialize = "♣")]

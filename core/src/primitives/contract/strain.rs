@@ -1,6 +1,8 @@
 use crate::error::BBError;
 use crate::primitives::Suit;
 
+pub const N_STRAINS: usize = 5;
+
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy)]
 pub enum Strain {
     Trump(Suit),

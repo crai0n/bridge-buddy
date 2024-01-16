@@ -169,10 +169,11 @@ mod test {
     use itertools::Itertools;
     // use rand::Rng;
     use crate::dds::dds_trick_manager::DdsTrickManager;
+    use crate::primitives::card::N_CARDS;
     use rand::Rng;
     use std::str::FromStr;
 
-    const CARDS: [&str; 52] = [
+    const CARDS: [&str; N_CARDS] = [
         "C2", "C7", "CK", "C3", "CJ", "S6", "C4", "C8", "D4", "D6", "D7", "DJ", "C6", "S9", "C5", "C9", "D5", "D8",
         "D9", "D2", "CA", "S2", "ST", "CT", "DT", "D3", "DK", "H2", "H5", "H3", "H7", "H4", "DQ", "DA", "H6", "S3",
         "S4", "SQ", "H8", "S8", "SK", "CQ", "SJ", "SA", "S7", "HJ", "HK", "HA", "S5", "HT", "HQ", "H9",

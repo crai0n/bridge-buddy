@@ -5,6 +5,8 @@ pub use suit::Suit;
 pub mod rank;
 pub mod suit;
 
+pub const N_CARDS: usize = rank::N_RANKS * suit::N_SUITS;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Card {
     pub suit: Suit,
