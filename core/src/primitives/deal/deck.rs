@@ -1,4 +1,4 @@
-use crate::primitives::card::Denomination;
+use crate::primitives::card::Rank;
 use crate::primitives::{Card, Hand, Suit};
 use itertools::Itertools;
 use rand::prelude::*;
@@ -14,8 +14,8 @@ impl<const N: usize> Deck<N> {
         assert!(N <= 13, "Cannot create Decks with more than thirteen cards per suit!");
         let mut cards = Vec::<Card>::from_iter(
             Suit::iter()
-                .cartesian_product(Denomination::iter().rev().take(N))
-                .map(|(suit, denomination)| Card { suit, denomination }),
+                .cartesian_product(Rank::iter().rev().take(N))
+                .map(|(suit, rank)| Card { suit, rank }),
         );
 
         cards.sort_unstable();

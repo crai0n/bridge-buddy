@@ -1,7 +1,7 @@
 use crate::error::BBError;
 use crate::primitives::bid::{AuxiliaryBid, Bid, ContractBid};
 use crate::primitives::bid_line::BidLine;
-use crate::primitives::contract::{ContractDenomination, ContractLevel, ContractState};
+use crate::primitives::contract::{Level, State, Strain};
 use crate::primitives::deal::axis::Axis;
 use crate::primitives::deal::Seat;
 use crate::primitives::{Contract, Suit};
@@ -100,8 +100,8 @@ impl BidManager {
     pub fn lowest_available_contract_bid(&self) -> Option<ContractBid> {
         match self.last_contract_bid() {
             None => Some(ContractBid {
-                level: ContractLevel::One,
-                denomination: ContractDenomination::Trump(Suit::Clubs),
+                level: Level::One,
+                strain: Strain::Trump(Suit::Clubs),
             }),
             Some(bid) => bid.next().ok(),
         }
@@ -161,25 +161,25 @@ impl BidManager {
         )
     }
 
-    fn bid_matches_denomination(bid: &Bid, denomination: ContractDenomination) -> bool {
-        matches!(bid, Bid::Contract(y) if y.denomination == denomination)
+    fn bid_matches_strain(bid: &Bid, strain: Strain) -> bool {
+        matches!(bid, Bid::Contract(y) if y.strain == strain)
     }
 
     pub fn implied_contract(&self) -> Option<Contract> {
         if let Some(last_contract_bid) = self.last_contract_bid() {
-            let state = self.calculate_contract_state();
-            let denomination = last_contract_bid.denomination;
+            let state = self.calculate_state();
+            let strain = last_contract_bid.strain;
             Some(Contract {
-                declarer: self.implied_declarer(denomination),
+                declarer: self.implied_declarer(strain),
                 level: last_contract_bid.level,
-                denomination,
+                strain,
                 state,
             })
         } else {
             None
         }
     }
-    fn implied_declarer(&self, denomination: ContractDenomination) -> Seat {
+    fn implied_declarer(&self, strain: Strain) -> Seat {
         let axis = self
             .bids()
             .iter()
@@ -187,24 +187,24 @@ impl BidManager {
             .map(|x| (self.dealer + x).axis())
             .unwrap();
 
-        self.first_to_name_denomination_on_axis(denomination, axis)
+        self.first_to_name_strain_on_axis(strain, axis)
     }
 
-    fn first_to_name_denomination_on_axis(&self, denomination: ContractDenomination, axis: Axis) -> Seat {
+    fn first_to_name_strain_on_axis(&self, strain: Strain, axis: Axis) -> Seat {
         self.bids()
             .iter()
             .enumerate()
-            .position(|(i, x)| Self::bid_matches_denomination(x, denomination) && axis.has_player(self.dealer + i))
+            .position(|(i, x)| Self::bid_matches_strain(x, strain) && axis.has_player(self.dealer + i))
             .map(|x| self.dealer + x)
             .unwrap()
     }
 
-    fn calculate_contract_state(&self) -> ContractState {
+    fn calculate_state(&self) -> State {
         match self.bids().iter().rev().map_while(|x| x.access_auxiliary_bid()).max() {
-            Some(AuxiliaryBid::Pass) => ContractState::Passed,
-            Some(AuxiliaryBid::Double) => ContractState::Doubled,
-            Some(AuxiliaryBid::Redouble) => ContractState::Redoubled,
-            _ => ContractState::Passed,
+            Some(AuxiliaryBid::Pass) => State::Passed,
+            Some(AuxiliaryBid::Double) => State::Doubled,
+            Some(AuxiliaryBid::Redouble) => State::Redoubled,
+            _ => State::Passed,
         }
     }
 

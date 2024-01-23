@@ -88,7 +88,7 @@ impl From<Card> for Suit {
 mod tests {
     use super::Suit::*;
     use crate::error::BBError;
-    use crate::primitives::card::{Card, Denomination};
+    use crate::primitives::card::{Card, Rank};
     use crate::primitives::Suit;
     use std::str::FromStr;
     use strum::IntoEnumIterator;
@@ -212,7 +212,7 @@ mod tests {
         assert_eq!(suit.is_minor(), expected)
     }
 
-    #[test_case(Card { suit: Suit::Spades, denomination: Denomination::King}, Suit::Spades; "King of Spades is a Spades")]
+    #[test_case(Card { suit: Suit::Spades, rank: Rank::King}, Suit::Spades; "King of Spades is a Spades")]
     fn from_card(card: Card, expected: Suit) {
         assert_eq!(expected, card.into())
     }

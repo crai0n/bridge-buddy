@@ -1,6 +1,6 @@
-use crate::primitives::card::Denomination::*;
+use crate::primitives::card::Rank::*;
 use crate::primitives::hand_info::suit_quality::SuitQuality;
-use crate::primitives::{card::Denomination, Card, Hand, Suit};
+use crate::primitives::{card::Rank, Card, Hand, Suit};
 use itertools::Itertools;
 use std::cmp::Ordering;
 use strum::IntoEnumIterator;
@@ -24,7 +24,7 @@ impl ForumDPlus2015Evaluator {
     }
 
     const fn card_value(card: &Card) -> u8 {
-        match card.denomination {
+        match card.rank {
             Ace => 4,
             King => 3,
             Queen => 2,
@@ -34,8 +34,8 @@ impl ForumDPlus2015Evaluator {
     }
 
     pub fn adjustment_aces_and_tens(hand: &Hand<13>) -> f64 {
-        let tens = hand.cards().filter(|&&x| x.denomination == Ten).count();
-        let aces = hand.cards().filter(|&&x| x.denomination == Ace).count();
+        let tens = hand.cards().filter(|&&x| x.rank == Ten).count();
+        let aces = hand.cards().filter(|&&x| x.rank == Ace).count();
         match (tens, aces) {
             (0, 0) => -1.0,
             (0, 1) | (1, 0) => -0.5,
@@ -48,7 +48,7 @@ impl ForumDPlus2015Evaluator {
     pub fn adjustment_unguarded_honors(hand: &Hand<13>) -> f64 {
         let mut acc = 0.0;
         for suit in Suit::iter() {
-            let cards_vec = hand.cards_in(suit).rev().map(|x| x.denomination).collect_vec();
+            let cards_vec = hand.cards_in(suit).rev().map(|x| x.rank).collect_vec();
             acc += match cards_vec.len() {
                 1 if (cards_vec[0] >= Jack) => -1.0, // downgrade single honors, even single Ace
                 2 => match cards_vec[..2] {
@@ -62,7 +62,7 @@ impl ForumDPlus2015Evaluator {
     }
 
     pub fn suit_quality(hand: &Hand<13>, suit: Suit) -> SuitQuality {
-        let cards = hand.cards_in(suit).map(|c| c.denomination).rev().collect_vec();
+        let cards = hand.cards_in(suit).map(|c| c.rank).rev().collect_vec();
 
         if Self::is_standing_suit(&cards) {
             return SuitQuality::Standing;
@@ -92,7 +92,7 @@ impl ForumDPlus2015Evaluator {
         Self::hcp_in(suit, hand) >= 3.0
     }
 
-    fn is_good_suit(cards: &[Denomination]) -> bool {
+    fn is_good_suit(cards: &[Rank]) -> bool {
         // A or K with mid-values, or two of (A,K,D), or QJT
         ((cards.contains(&Ace) || cards.contains(&King))
             && (cards.contains(&Jack) || (cards.contains(&Ten) && cards.contains(&Nine))))
@@ -100,29 +100,29 @@ impl ForumDPlus2015Evaluator {
             || cards.len() >= 3 && cards[..3] == [Queen, Jack, Ten]
     }
 
-    fn is_very_good_suit(cards: &[Denomination]) -> bool {
+    fn is_very_good_suit(cards: &[Rank]) -> bool {
         // Two of (A,K,D) with mid-values, for 7-card-suits and longer, two of (A,K,D) are sufficient
         Self::count_honors_out_of_top(3, cards) >= 2
             && (cards.contains(&Jack) || (cards.contains(&Ten) && cards.contains(&Nine)) || cards.len() >= 7)
             || cards.len() >= 3 && cards[..3] == [Ace, King, Queen]
     }
 
-    fn is_almost_standing_suit(cards: &[Denomination]) -> bool {
+    fn is_almost_standing_suit(cards: &[Rank]) -> bool {
         // 4 honors of 5 (not AKQJ), for a 6-card-suit AKD is sufficient, for a 7-card-suit or longer KDB is sufficient
         Self::count_honors_out_of_top(5, cards) >= 4
             || (cards.len() >= 6 && cards[..3] == [Ace, King, Queen])
             || (cards.len() >= 7 && cards[..3] == [King, Queen, Jack])
     }
 
-    fn is_standing_suit(cards: &[Denomination]) -> bool {
+    fn is_standing_suit(cards: &[Rank]) -> bool {
         // AKQJ, for 7-card-suits and longer AKQ are sufficient
         (cards.len() >= 7 && cards[..3] == [Ace, King, Queen])
             || cards.len() >= 4 && cards[..4] == [Ace, King, Queen, Jack]
     }
 
-    fn count_honors_out_of_top(n: usize, cards: &[Denomination]) -> usize {
+    fn count_honors_out_of_top(n: usize, cards: &[Rank]) -> usize {
         let l = std::cmp::min(5, n); // there are only 5 honors
-        Denomination::iter().rev().take(l).filter(|d| cards.contains(d)).count()
+        Rank::iter().rev().take(l).filter(|d| cards.contains(d)).count()
     }
 
     pub fn length_points(hand: &Hand<13>, trump_suit: Option<Suit>, long_suits_shown_by_opponents: &[Suit]) -> f64 {
@@ -235,7 +235,7 @@ impl ForumDPlus2015Evaluator {
     pub fn playing_trick_count(hand: &Hand<13>) -> f64 {
         let mut acc = 0.0;
         for suit in Suit::iter() {
-            let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
+            let card_vec = hand.cards_in(suit).rev().map(|c| c.rank).collect_vec();
             acc += match card_vec.len() {
                 0 => 0.0,
                 l @ 1 | l @ 11..=12 => {
@@ -262,8 +262,8 @@ impl ForumDPlus2015Evaluator {
         acc
     }
 
-    const fn two_card_trick_table(den: &[Denomination; 2]) -> f64 {
-        match den {
+    const fn two_card_trick_table(rank: &[Rank; 2]) -> f64 {
+        match rank {
             // table generated using test-method below
             [Ace, King] => 2.0,
             [Ace, Queen] => 1.5,
@@ -274,8 +274,8 @@ impl ForumDPlus2015Evaluator {
         }
     }
 
-    const fn three_card_trick_table(den: &[Denomination; 3]) -> f64 {
-        match den {
+    const fn three_card_trick_table(rank: &[Rank; 3]) -> f64 {
+        match rank {
             // table generated using test-method below
             // 3 cards headed by the ace, 3 tricks max.
             // Count 1 for each of the 5 honours and subtract 0.5 for each "hole" in between, Jack and Ten together are only 1.5 points
@@ -311,7 +311,7 @@ impl ForumDPlus2015Evaluator {
     pub fn losing_trick_count(hand: &Hand<13>) -> f64 {
         let mut acc = 0.0;
         for suit in Suit::iter() {
-            let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
+            let card_vec = hand.cards_in(suit).rev().map(|c| c.rank).collect_vec();
             acc += match card_vec.len() {
                 1 | 11..=12 => match &card_vec[..1] {
                     // Singletons can only have one loser. If we have 11+ cards, only the Ace matters
@@ -340,9 +340,9 @@ impl ForumDPlus2015Evaluator {
         acc
     }
 
-    fn losers_for_midvalues(den: &[Denomination]) -> f64 {
+    fn losers_for_midvalues(rank: &[Rank]) -> f64 {
         // we already took care of Ace, King and Queen, disregard now, only look at midvalues
-        if den.contains(&Jack) || den.contains(&Ten) && den.contains(&Nine) {
+        if rank.contains(&Jack) || rank.contains(&Ten) && rank.contains(&Nine) {
             // Jack is enough in any case
             0.0
         } else {
@@ -351,7 +351,7 @@ impl ForumDPlus2015Evaluator {
     }
 
     pub fn first_round_control_in(suit: Suit, hand: &Hand<13>, trump: Option<Suit>) -> bool {
-        let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
+        let card_vec = hand.cards_in(suit).rev().map(|c| c.rank).collect_vec();
         if card_vec.contains(&Ace) {
             return true;
         }
@@ -363,7 +363,7 @@ impl ForumDPlus2015Evaluator {
     }
 
     pub fn second_round_control_in(suit: Suit, hand: &Hand<13>, trump: Option<Suit>) -> bool {
-        let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
+        let card_vec = hand.cards_in(suit).rev().map(|c| c.rank).collect_vec();
         if card_vec.len() >= 2 && card_vec.contains(&King) {
             return true; // Kx
         }
@@ -380,17 +380,12 @@ impl ForumDPlus2015Evaluator {
     }
 
     pub fn honor_in(suit: Suit, hand: &Hand<13>) -> bool {
-        let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
-        Denomination::iter()
-            .rev()
-            .take(5)
-            .filter(|x| card_vec.contains(x))
-            .count()
-            >= 1
+        let card_vec = hand.cards_in(suit).rev().map(|c| c.rank).collect_vec();
+        Rank::iter().rev().take(5).filter(|x| card_vec.contains(x)).count() >= 1
     }
 
     pub fn stops(suit: Suit, hand: &Hand<13>, is_declarer: bool) -> bool {
-        let card_vec = hand.cards_in(suit).rev().map(|c| c.denomination).collect_vec();
+        let card_vec = hand.cards_in(suit).rev().map(|c| c.rank).collect_vec();
         match card_vec.len() {
             0 => false,
             1 => card_vec.contains(&Ace),
@@ -401,8 +396,8 @@ impl ForumDPlus2015Evaluator {
         }
     }
 
-    const fn two_card_stopper_table(den: &[Denomination; 2], is_declarer: bool) -> bool {
-        match den {
+    const fn two_card_stopper_table(ranks: &[Rank; 2], is_declarer: bool) -> bool {
+        match ranks {
             [Ace, _] => true,
             [King, Queen] => true,
             [King, _] => is_declarer,
@@ -411,8 +406,8 @@ impl ForumDPlus2015Evaluator {
         }
     }
 
-    const fn three_card_stopper_table(den: &[Denomination; 3], is_declarer: bool) -> bool {
-        match den {
+    const fn three_card_stopper_table(ranks: &[Rank; 3], is_declarer: bool) -> bool {
+        match ranks {
             [Ace, _, _] => true,
             [King, Queen, _] => true,
             [King, Jack, Ten] => true,
@@ -423,8 +418,8 @@ impl ForumDPlus2015Evaluator {
         }
     }
 
-    const fn four_card_stopper_table(den: &[Denomination; 4], is_declarer: bool) -> bool {
-        match den {
+    const fn four_card_stopper_table(ranks: &[Rank; 4], is_declarer: bool) -> bool {
+        match ranks {
             [Ace, _, _, _] => true,
             [King, Queen, _, _] => true,
             [King, Jack, Ten, _] => true,

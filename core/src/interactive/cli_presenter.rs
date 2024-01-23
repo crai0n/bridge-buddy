@@ -51,7 +51,7 @@ impl CliPresenter {
         println!(
             "The final contract is {}{}{} played by {}",
             event.final_contract.level,
-            event.final_contract.denomination,
+            event.final_contract.strain,
             event.final_contract.state,
             event.final_contract.declarer
         );
@@ -110,7 +110,7 @@ impl CliPresenter {
                 print!("{}", suit);
             }
             for card in suited_cards {
-                print!("{}", card.denomination);
+                print!("{}", card.rank);
             }
         }
         println!();
@@ -130,7 +130,7 @@ impl CliPresenter {
                         print!("{}", suit);
                     }
                     for card in suited_cards {
-                        print!("{}", card.denomination);
+                        print!("{}", card.rank);
                     }
                 }
                 println!();
@@ -140,7 +140,7 @@ impl CliPresenter {
                     let suited_cards = cards.iter().filter(|x| x.suit == suit);
                     print!("{}", suit);
                     for card in suited_cards.rev() {
-                        print!("{}", card.denomination);
+                        print!("{}", card.rank);
                     }
                     println!();
                 }
@@ -151,7 +151,7 @@ impl CliPresenter {
 
                     let mut card_string = String::new();
                     for card in suited_cards {
-                        card_string += &format!("{}", card.denomination);
+                        card_string += &format!("{}", card.rank);
                     }
                     card_string += &format!("{}", suit);
                     println!("{:>15}", card_string);

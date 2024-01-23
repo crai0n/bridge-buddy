@@ -1,7 +1,7 @@
 use strum::{Display, EnumString};
 
 #[derive(Debug, Display, EnumString, PartialOrd, Ord, PartialEq, Eq, Clone, Copy)]
-pub enum ContractState {
+pub enum State {
     #[strum(serialize = "p")]
     #[strum(serialize = "P")]
     #[strum(to_string = "")]
@@ -18,8 +18,8 @@ pub enum ContractState {
 
 #[cfg(test)]
 mod test {
-    use super::ContractState;
-    use super::ContractState::*;
+    use super::State;
+    use super::State::*;
     use std::cmp::Ordering;
     use std::cmp::Ordering::*;
     use std::str::FromStr;
@@ -34,15 +34,15 @@ mod test {
     #[test_case("xX", Redoubled; "Redoubled1")]
     #[test_case("Xx", Redoubled; "Redoubled2")]
     #[test_case("XX", Redoubled; "Redoubled3")]
-    fn from_string(input: &str, expected: ContractState) {
-        let contract = ContractState::from_str(input).unwrap();
+    fn from_string(input: &str, expected: State) {
+        let contract = State::from_str(input).unwrap();
         assert_eq!(contract, expected);
     }
     #[test_case(Passed, ""; "Passed_nothing")]
     #[test_case(Doubled, "X"; "Doubled_X")]
     #[test_case(Redoubled, "XX"; "Redoubled XX")]
-    fn serialize(contract_state: ContractState, expected: &str) {
-        let contract_str = format!("{}", contract_state);
+    fn serialize(state: State, expected: &str) {
+        let contract_str = format!("{}", state);
         assert_eq!(&contract_str, expected);
     }
 
@@ -50,7 +50,7 @@ mod test {
     #[test_case(Redoubled, Passed, Greater; "Redoubled is higher than passed")]
     #[test_case(Redoubled, Doubled, Greater; "Redoubled is higher than doubled")]
     #[test_case(Redoubled, Redoubled, Equal; "Redoubled is equal to redoubled")]
-    fn ordering(one: ContractState, other: ContractState, expected: Ordering) {
+    fn ordering(one: State, other: State, expected: Ordering) {
         let ord = one.cmp(&other);
         assert_eq!(ord, expected);
     }
