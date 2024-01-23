@@ -1,50 +1,73 @@
+use crate::dds::double_dummy_result::DoubleDummyResult;
+use crate::primitives::contract::Strain;
+use crate::primitives::deal::Seat;
+use crate::primitives::Deal;
+use enum_iterator::all;
+use std::collections::HashMap;
+use strum::IntoEnumIterator;
+
 pub struct DoubleDummySolver {
-    ab_pruning: bool,
-    transposition_table: bool,
-    partitioning: bool,
+    dds_config: DdsConfig,
+    transposition_table: HashMap<NodeIdentifier, LookupResult>,
 }
 
-// pub struct PositionNode;
-//
-// pub enum Color {
-//     Min,
-//     Max,
-// }
-
 impl DoubleDummySolver {
-    // The basic assumption of the Double Dummy Solver is that we can assign fixed "score" to each "starting position"
-    // defined by (deal + strain + declarer) under the assumption that both sides have perfect knowledge and perfect play.
+    pub fn solve_deal<const N_TRICKS: usize>(&mut self, deal: Deal<N_TRICKS>) -> DoubleDummyResult {
+        let mut result = DoubleDummyResult::new();
+        for strain in all::<Strain>() {
+            for declarer in Seat::iter() {
+                let starting_state = DdsState::new(deal, strain, declarer);
+                let defenders_tricks = self.solve_initial_position(starting_state); // defenders play first
+                result.set_tricks(declarer, strain, N_TRICKS - defenders_tricks);
+            }
+            self.transposition_table.clear() // entries are almost useless with new trump strain
+        }
+        result
+    }
+
+    // The basic assumption of the Double Dummy Solver is that there is a fixed "score", i.e. a maximum number of tricks
+    // possible for a given declarer and trump strain for each deal of the hands. This score is calculated for
+    // each "starting position" defined by deal + strain + declarer under the assumption that both sides have perfect
+    // knowledge and perfect play.
+
+    // Perfect Knowledge means that all players know all cards. Seeing two dummies (and their own hand) is enough for
+    // that, hence the name. This way, we turn bridge into a game of perfect information, which we then try to solve by
+    // methods already established in engines developed for chess, checkers and others.
 
     // Splitting every trick into 4 plys (normally half-moves, in our case quarter-moves) by the two sides, each game
     // forms a directed acyclic graph of depth 48. As there is no more choice involved in playing the last trick, the
     // result of the last trick is fixed, making ply 47 (counted from 0) "terminal" by definition. This also means
-    // that each ply brings the game as whole closer to termination and all terminal nodes are in the same generation.
+    // that each ply brings the game as a whole closer to termination and all terminal nodes are in the same generation.
+    // Compared to chess, which is basically open-ended (as long as you have pawn-moves), the game-tree is therefore
+    // comparatively small.
+
+    // Perfect Play then means that every player will always make a move that brings them "closer" to one of their
+    // subjectively optimal terminal position (which they know about because of perfect knowledge). These moves are
+    // called the "principal variation" and all other moves are "unacceptable" to the players. Using this adversarial
+    // behaviour not every final position theoretically possible given an initial position will be reached. In fact, we
+    // will only reach any one of a group of "equal" terminal positions, that each have the same score (otherwise one of
+    // the players would make a different move earlier). We can then propagate the score of these terminal positions
+    // backwards up the tree, at every node neglecting all but the "optimal" child, until we reach the initial position,
+    // this way assigning the score of these equivalent "optimal" final positions to the initial position.
 
     // We can score any terminal node by counting the number of tricks taken by declarer's side.
     // Declarer's side want to maximize this score, while defenders try to minimize this score. Because Bridge is a
-    // zero-sum game, we can also use subjective scores (#tricks taken) related by score_NS = 14 - score_EW,
-    // and make both players maximizers of their own score (cmp. Negamax).
+    // zero-sum game, we can also use subjective scores (#tricks taken) related by score_NS = N_TRICKS - score_EW,
+    // and make both players maximizers of their own score (cmp. Negamax). This way, all scores are always positive.
 
-    // Perfect Knowledge means that all players know all cards. Seeing two dummies is enough for that, hence the name.
-
-    // Perfect Play means that every player will always make a move that brings them "closer" to one of their
-    // subjectively optimal terminal position (which they know about because of perfect knowledge). These moves are
-    // called the "principal variation" and all other moves are "unacceptable" to the players. Using this adversarial
-    // behaviour we will not reach every theoretically reachable final position. In fact, we will only reach any one
-    // of a group of "equal" terminal positions, that each have the same score. We can therefore assign this score of
-    // equivalent final positions to the initial position.
-
-    // While traversing the graph, the engine will keep track of the subjectively best terminal positions reached,
+    // While traversing the graph, the engine will keep track of the subjectively best terminal positions already reached,
     // restricting the interval that covers the "true score" of the starting position further and further.
-    // The current bounds are referred to as a (lower bound, inclusive) and b (upper bound, exclusive).
+    // The current bounds are referred to as "a" (lower bound, inclusive) and "b" (upper bound, exclusive).
     // Because our scoring function is integer, we are done once b equals a+1, in other words, we run our search while
     // a + 1 < b.
 
     // We allow searching to the end of the game (unlimited depth), assuming that this can be done in reasonable time.
-    // We therefore do not need an explicit scoring function for non-terminal nodes. Instead, as the subjective score
-    // for both sides never decreases as we progress through the game, a lower bound on the score of a position
-    // of the current node is the amount of tricks already taken. An upper bound is the amount of tricks already taken
-    // plus the number of tricks remaining. Therefore, for each node we have a bounded interval covering the true score.
+    // We therefore do not need an explicit depth parameter or a real scoring function for non-terminal nodes.
+
+    // Instead, as the subjective score for both sides never decreases as we progress through the game, a lower bound on
+    // the score of a position of the current node is the amount of tricks already taken. An upper bound is the amount
+    // of tricks already taken plus the number of tricks remaining. Therefore, for each node we have a bounded interval
+    // covering the true score.
 
     // These two estimates can both be improved upon by calculating "quick tricks" and "losing tricks", which are
     // related, but somewhat opposite concepts:
@@ -82,7 +105,7 @@ impl DoubleDummySolver {
     // A single fail high is enough to stop searching the subtree.
     // All-nodes: If we fail low (s<alpha), we must search all sibling nodes (Try to find a better reply). If all
     // siblings fail low, the parent node fails high.
-    // PV-nodes: If alpha<=s<beta, we found a move that "looks good", as it improves our lower bound.
+    // PV-nodes: If alpha<=s<beta, we found a move that "looks good", as it keeps or improves our lower bound.
     // We continue searching the childs of this node.
 
     // To prune a subtree, we do not have to evaluate the terminal node of the tree. Whenever the estimates given above
@@ -102,7 +125,7 @@ impl DoubleDummySolver {
     // We now search every alternative move from the leaf to the root using this "zero-sized" window. As our first try
     // most likely was the best move, we will find refutations for most alternatives we try, proving them to be worse
     // than our initial guess. If we however find a better move (i.e. a move that has no refutation and that evaluates
-    // to s<alpha), we have to start the process all over again, from this node downwards, to get new estimates for
+    // to s>alpha), we have to start the process all over again, from this node downwards, to get new estimates for
     // alpha and beta.
 
     // Example 2:
@@ -146,19 +169,200 @@ impl DoubleDummySolver {
     //        test(4) -> if success return 4, else return 3,
     //        test(2) -> if success return 2, else return 1,
 
-    // A minor complication is that plies (half-moves) are not strictly alternating (If the last player to a trick or their partner
-    // wins, the same side makes two consecutive moves.
-    // Therefore we always check whose turn it is and rearrange the arguments only if turn-side changes.
+    // This approach can be refined by making use of our quick-tricks- and losing-tricks-estimation. Using these, we
+    // will sometimes "overshoot" our estimate. If quick-tricks bring us to a score higher than our estimate, we
+    // do not need to test this value again, but can immediately improve our lower bound to this score.
+    // By the same logic, if we "undershoot" our estimate in all cases (never even getting close to our estimate), our
+    // upper bound can be lowered to the highest score found (as long as we really exhausted all possible moves).
 
-    // pub fn negaMax(node: PositionNode, depth: usize, color: Color) {
-    //     if last_trick() {
-    //         return Self::evaluate_last_trick(node);
+    // let mut a = 0, mut b = N_TRICKS+1;
+    // while a + 1 < b {
+    //     let estimate = (a + b)/2;
+    //     let score = score_starting_position(estimate);
+    //     if score >= a {
+    //         a = score;
+    //     } else {
+    //         b = score
     //     }
-    //     let mut value = 0;
-    //     for
     // }
-    //
-    // pub fn evaluate_terminal_node(node: PositionNode) {
-    //     unimplemented!()
-    // }
+    // return a;
+
+    // As these estimates are also the first to run at the beginning of a node-evaluation, we can quickly triangulate the range of
+    // possible tricks, before delving deeper than the opening lead.
+
+    fn solve_initial_position<const N_TRICKS: usize>(&self, state: DdsState) -> usize {
+        let mut a = self.calculate_quick_tricks(state);
+        let mut b = N_TRICKS + 1 - self.calculate_losing_tricks(state);
+        while b > a + 1 {
+            let estimate = (a + b) / 2;
+            let score = self.score_node(state, estimate);
+            if score >= estimate {
+                a = score
+            } else {
+                b = score + 1
+            }
+        }
+        a
+    }
+
+    fn try_lookup_node(&self, state: DdsState) -> Option<LookupResult> {
+        let node_id = NodeIdentifier::from_state(state);
+        self.transposition_table.get(node_id)
+    }
+
+    pub fn score_node(&self, state: DdsState, alpha: usize) -> usize {
+        // check if we've seen node before
+        if let Some(lookup_result) = self.try_lookup_node(state, alpha) {
+            match lookup_result {
+                LookupResult::Exact(score) => return score,
+                LookupResult::Bounded(lower, upper) => {
+                    if lower >= alpha {
+                        return lower;
+                    } else if upper < alpha {
+                        return upper;
+                    }
+                }
+            }
+        }
+
+        // no more choice in the last trick, so we can score this node
+        if state.tricks_left() == 1 {
+            return self.score_terminal_node(state, alpha);
+        }
+
+        // try to return early by establishing bounds on the possible score
+        if let Some(score) = self.try_early_node_score(state, alpha) {
+            return score;
+        }
+
+        // try to calculate score by scoring child nodes (negamax)
+        let candidate_moves = self.generate_candidate_moves(state);
+        let mut high_bound = 0usize;
+        for candidate in candidate_moves {
+            let candidate_score = self.score_candidate(candidate, state, alpha);
+            if candidate_score >= alpha {
+                // early return, cause we found a move that fulfills our guess
+                return candidate_score;
+            } else if candidate_score > high_bound {
+                // if all candidates score low, we need the "best of the worst"
+                high_bound = candidate_score
+            }
+        }
+        return high_bound;
+    }
+
+    pub fn generate_candidate_moves(&self, state: DdsState) -> Vec<Move> {}
+
+    pub fn score_terminal_node(&self, _state: &mut DdsState) -> usize {
+        unimplemented!()
+    }
+
+    fn try_early_node_score(&self, state: DdsState, alpha: usize) -> Option<usize> {
+        // lower bound on score
+        let taken_tricks: usize = state.count_tricks_taken_by_players_side();
+        if taken_tricks >= alpha {
+            // early return (futility pruning)
+            return Some(taken_tricks);
+        }
+
+        // upper bound on score
+        let max_tricks = taken_tricks + state.tricks_left();
+        if max_tricks < alpha {
+            // early return (futility pruning)
+            return Some(max_tricks);
+        }
+
+        // improvements on lower bound using quick tricks
+        let quick_tricks = self.calculate_quick_tricks(state);
+        let min_tricks = taken_tricks + quick_tricks;
+        if min_tricks >= alpha {
+            // early return
+            return Some(min_tricks);
+        }
+
+        // improvement on upper bound using lost tricks
+        let losing_tricks = self.calculate_losing_tricks(state);
+        let max_tricks = max_tricks - losing_tricks;
+        if max_tricks < alpha {
+            // early return
+            return Some(max_tricks);
+        }
+
+        None
+    }
+
+    fn calculate_quick_tricks(&self, state: DdsState) -> usize {
+        0
+    }
+
+    fn calculate_losing_tricks(&self, state: DdsState) -> usize {
+        0
+    }
+
+    fn score_candidate(&self, candidate: Move, state: DdsState, alpha: usize) -> usize {
+        let our_axis = state.next_to_play().axis();
+        state.apply_move(candidate);
+
+        // A minor complication is that plies (half-moves) are not strictly alternating (If the last player to a trick
+        // or their partner wins, the same side makes two consecutive moves. Therefore we always check whose turn it is
+        // and rearrange the arguments only if turn-side changes.
+        let candidate_score = if state.next_to_play().axis() == our_axis {
+            self.score_node(state, alpha)
+        } else {
+            N_TRICKS - self.score_node(state, N_TRICKS + 1 - alpha)
+        };
+        state.undo_move();
+
+        candidate_score
+    }
 }
+
+pub struct Move {
+    card: Card,
+    priority: usize,
+}
+
+pub struct DdsConfig {
+    ab_pruning: bool,
+    transposition_table: bool,
+    partitioning: bool,
+    fail_soft: bool,
+}
+
+pub enum Bound {
+    AtLeast(usize),
+    LessThan(usize),
+}
+
+pub struct Interval {
+    lower: usize,
+    upper: usize,
+}
+
+pub struct NodeIdentifier {
+    relative_remaining_cards: [Vec<Cards>; 4],
+    trumps: Option<Suit>,
+}
+
+pub enum LookupResult {
+    Exact(usize),
+    Bounded(usize, usize),
+}
+// pub struct PositionNode;
+//
+// pub enum Color {
+//     Min,
+//     Max,
+// }
+
+// pub fn negaMax(node: PositionNode, depth: usize, color: Color) {
+//     if last_trick() {
+//         return Self::evaluate_last_trick(node);
+//     }
+//     let mut value = 0;
+//     for
+// }
+//
+// pub fn evaluate_terminal_node(node: PositionNode) {
+//     unimplemented!()
+// }

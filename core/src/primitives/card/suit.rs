@@ -1,9 +1,10 @@
 use crate::error::BBError;
 use crate::primitives::Card;
+use enum_iterator::Sequence;
 use strum::{Display, EnumIter};
 
 pub const N_SUITS: usize = 4;
-#[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
+#[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter, Sequence)]
 pub enum Suit {
     #[strum(serialize = "♣")]
     Clubs = 0,

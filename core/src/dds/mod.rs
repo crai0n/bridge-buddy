@@ -8,8 +8,11 @@ pub mod card_manager;
 pub mod dds_state;
 pub mod dds_trick_manager;
 mod double_dummy_result;
+mod double_dummy_solver;
 
 pub struct DoubleDummySolver<const N: usize> {}
+
+
 
 impl<const N: usize> DoubleDummySolver<N> {
     const CHECK_QUICK_TRICKS: bool = true;
@@ -86,6 +89,15 @@ impl<const N: usize> DoubleDummySolver<N> {
         Self::can_achieve_target(&mut start_state, target)
     }
 
+    // This is essentially a nega-scout algorithm with alpha=beta=target
+    // Starting from minimax, using min(a,b) = -max(-b,-a), creates negamax
+    // the score of a position is simply the number of tricks taken for the playing side.
+    // This means that the score never decreases as we progress through the game
+    //
+    // As we always want to evaluate the exact result, the depth of the
+    // search is implicitly set to (number of tricks - 1) as there is no
+    // more freedom of choice at the last trick
+    //
     fn can_achieve_target(state: &mut DdsRunner<N>, target: usize) -> bool {
         // println!("Now checking target {} for player {}", target, state.next_to_play());
         // println!(

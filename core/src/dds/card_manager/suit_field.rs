@@ -1,4 +1,8 @@
+use crate::primitives::card::rank::N_RANKS;
 use crate::primitives::card::Rank;
+use crate::primitives::deal::Seat;
+use std::ops::BitXor;
+use strum::IntoEnumIterator;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct SuitField(u16);
@@ -126,12 +130,61 @@ impl SuitField {
         let new = self.0 | other.0;
         Self(new)
     }
+
+    #[allow(dead_code)]
+    pub fn highest_rank(&self) -> Option<Rank> {
+        Rank::iter().rev().find(|&rank| self.0 & Self::u16_from_rank(rank) != 0)
+    }
+
+    #[allow(dead_code)]
+    pub fn lowest_rank(&self) -> Option<Rank> {
+        Rank::iter().find(|&rank| self.0 & Self::u16_from_rank(rank) != 0)
+    }
+
+    #[allow(dead_code)]
+    pub fn win_ranks(&self, least_win: Rank) -> Self {
+        let mask = Self::u16_from_rank(least_win) - 1;
+        let new = self.0 & !mask;
+        Self(new)
+    }
+
+    pub fn all_lower_than(rank: Rank) -> Self {
+        let mask = Self::u16_from_rank(rank) - 1;
+        Self(mask)
+    }
+
+    pub fn all_higher_than(rank: Rank) -> Self {
+        let mask = 2 * Self::u16_from_rank(rank) - 1;
+        let mask = Self::ALL_RANKS & !mask;
+        Self(mask)
+    }
+
+    pub fn lowest_relative_rank(&self) -> Option<Rank> {
+        match self.0.count_ones() {
+            0 => None,
+            i if i < 13 => Some(Rank::from(13 - i as u16)),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn win_rank_mask(&self) -> u32 {
+        let all_set = (1u32 << (N_RANKS * 2)) - 1;
+        all_set.bitxor(all_set >> self.0.count_ones())
+    }
+
+    pub const ALL_RANKS: u16 = 0b0001_1111_1111_1111;
+}
+
+pub struct HighCard {
+    rank: Rank,
+    player: Seat,
 }
 
 #[cfg(test)]
 mod test {
 
     use crate::dds::card_manager::suit_field::SuitField;
+    use crate::primitives::card::Rank;
     use test_case::test_case;
 
     #[test_case(0b0000_0011_0000_1000, 0b0000_1100_0110_0110, 0b0000_1100_1000_0000)]
@@ -145,5 +198,45 @@ mod test {
         let expected = SuitField::from_u16(expected);
 
         assert_eq!(card_tracker.relative_ranks_given_played_ranks(&played), expected)
+    }
+
+    #[test_case(0b0000_0011_0000_1000, Some(Rank::Five))]
+    #[test_case(0b0000_0000_0000_0000, None)]
+    #[test_case(0b0000_0011_1000_0000, Some(Rank::Nine))]
+    fn lowest_rank(my_field: u16, expected: Option<Rank>) {
+        let suit_field = SuitField::from_u16(my_field);
+        assert_eq!(suit_field.lowest_rank(), expected);
+    }
+
+    #[test_case(0b0000_0011_0000_1000, Some(Rank::Jack))]
+    #[test_case(0b0000_1011_0000_1000, Some(Rank::King))]
+    #[test_case(0b0000_0000_0000_1000, Some(Rank::Five))]
+    fn highest_rank(my_field: u16, expected: Option<Rank>) {
+        let suit_field = SuitField::from_u16(my_field);
+        assert_eq!(suit_field.highest_rank(), expected);
+    }
+
+    #[test_case(0b0000_0011_0000_1000, Rank::Two, 0b0000_0011_0000_1000)]
+    #[test_case(0b0000_0011_0000_1000, Rank::Three, 0b0000_0011_0000_1000)]
+    #[test_case(0b0000_0011_0000_1000, Rank::Four, 0b0000_0011_0000_1000)]
+    #[test_case(0b0000_0011_0000_1000, Rank::Five, 0b0000_0011_0000_1000)]
+    #[test_case(0b0000_0011_0000_1000, Rank::Ace, 0b0000_0000_0000_0000)]
+    fn win_ranks(my_field: u16, win_ranks: Rank, expected: u16) {
+        let suit_field = SuitField::from_u16(my_field);
+        assert_eq!(suit_field.win_ranks(win_ranks), SuitField::from_u16(expected));
+    }
+
+    #[test_case(Rank::Two, 0b0001_1111_1111_1110)]
+    #[test_case(Rank::Three, 0b0001_1111_1111_1100)]
+    #[test_case(Rank::Ace, 0b0000_0000_0000_0000)]
+    fn all_higher_than(rank: Rank, expected: u16) {
+        assert_eq!(SuitField::all_higher_than(rank), SuitField::from_u16(expected));
+    }
+
+    #[test_case(Rank::Two, 0b0000_0000_0000_0000)]
+    #[test_case(Rank::Seven, 0b0000_0000_0001_1111)]
+    #[test_case(Rank::Ace, 0b0000_1111_1111_1111)]
+    fn all_lower_than(rank: Rank, expected: u16) {
+        assert_eq!(SuitField::all_lower_than(rank), SuitField::from_u16(expected));
     }
 }
