@@ -11,7 +11,7 @@ use crate::primitives::{Card, Contract, Hand};
 #[derive(Debug, Clone)]
 pub struct OpeningLead {
     pub bids: BidLine,
-    pub trick_manager: TrickManager,
+    pub trick_manager: TrickManager<13>,
     pub hand_manager: HandManager,
     pub contract: Contract,
     pub board: Board,

@@ -12,7 +12,7 @@ use crate::primitives::{Card, Contract, Hand};
 #[derive(Debug, Clone)]
 pub struct CardPlay {
     pub bids: BidLine,
-    pub trick_manager: TrickManager,
+    pub trick_manager: TrickManager<13>,
     pub hand_manager: HandManager,
     pub contract: Contract,
     pub board: Board,
@@ -74,7 +74,7 @@ impl GameData<CardPlay> {
     }
 
     pub fn move_from_card_play_to_ended(self) -> GameData<Ended> {
-        let tricks = self.inner.trick_manager.played_tricks().into();
+        let tricks = self.inner.trick_manager.played_tricks();
 
         let result = self.calculate_game_result();
 
