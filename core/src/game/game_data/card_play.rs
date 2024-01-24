@@ -12,7 +12,7 @@ use crate::primitives::{Card, Contract, Hand};
 #[derive(Debug, Clone)]
 pub struct CardPlay {
     pub bids: BidLine,
-    pub trick_manager: TrickManager,
+    pub trick_manager: TrickManager<13>,
     pub hand_manager: HandManager,
     pub contract: Contract,
     pub board: Board,
@@ -35,7 +35,7 @@ impl GameData<CardPlay> {
 
     pub fn process_play_card_event(&mut self, card_event: CardEvent) -> Result<(), BBError> {
         self.validate_play_card_event(card_event)?;
-        self.inner.trick_manager.play(card_event.card)?;
+        self.inner.trick_manager.play(card_event.card);
         self.inner
             .hand_manager
             .process_play_card_event(card_event.card, card_event.player)?;
@@ -74,7 +74,7 @@ impl GameData<CardPlay> {
     }
 
     pub fn move_from_card_play_to_ended(self) -> GameData<Ended> {
-        let tricks = self.inner.trick_manager.played_tricks().into();
+        let tricks = self.inner.trick_manager.played_tricks();
 
         let result = self.calculate_game_result();
 

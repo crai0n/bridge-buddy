@@ -11,7 +11,7 @@ use crate::primitives::{Card, Contract, Hand};
 #[derive(Debug, Clone)]
 pub struct OpeningLead {
     pub bids: BidLine,
-    pub trick_manager: TrickManager,
+    pub trick_manager: TrickManager<13>,
     pub hand_manager: HandManager,
     pub contract: Contract,
     pub board: Board,
@@ -34,7 +34,7 @@ impl GameData<OpeningLead> {
 
     pub fn process_play_card_event(&mut self, card_event: CardEvent) -> Result<(), BBError> {
         self.validate_play_card_event(card_event)?;
-        self.inner.trick_manager.play(card_event.card)?;
+        self.inner.trick_manager.play(card_event.card);
         self.inner
             .hand_manager
             .process_play_card_event(card_event.card, card_event.player)?;
