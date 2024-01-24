@@ -1,4 +1,4 @@
-use crate::primitives::contract::{ContractDenomination, ContractLevel, ContractState};
+use crate::primitives::contract::{Level, State, Strain};
 use crate::primitives::deal::{Seat, Vulnerability};
 use crate::primitives::game_result::GameResult;
 use crate::primitives::Contract;
@@ -71,9 +71,9 @@ impl ScoreCalculator {
         let declarer_is_vulnerable = contract.declarer.is_vulnerable(vulnerability);
 
         let mut score = match contract.state {
-            ContractState::Passed => Self::score_lose_passed(undertricks, declarer_is_vulnerable),
-            ContractState::Doubled => Self::score_lose_doubled(undertricks, declarer_is_vulnerable),
-            ContractState::Redoubled => Self::score_lose_doubled(undertricks, declarer_is_vulnerable) * 2_usize,
+            State::Passed => Self::score_lose_passed(undertricks, declarer_is_vulnerable),
+            State::Doubled => Self::score_lose_doubled(undertricks, declarer_is_vulnerable),
+            State::Redoubled => Self::score_lose_doubled(undertricks, declarer_is_vulnerable) * 2_usize,
         };
         if contract.declarer == Seat::East || contract.declarer == Seat::West {
             score *= -1_isize;
@@ -135,20 +135,20 @@ impl ScoreCalculator {
 
     fn score_insult(contract: Contract) -> ScorePoints {
         match contract.state {
-            ContractState::Passed => ScorePoints(0),
-            ContractState::Doubled => Self::FOR_INSULT,
-            ContractState::Redoubled => Self::FOR_INSULT * 2_usize,
+            State::Passed => ScorePoints(0),
+            State::Doubled => Self::FOR_INSULT,
+            State::Redoubled => Self::FOR_INSULT * 2_usize,
         }
     }
 
     fn score_slam_bonus(contract: Contract, declarer_is_vulnerable: bool) -> ScorePoints {
-        if contract.level == ContractLevel::Six {
+        if contract.level == Level::Six {
             if declarer_is_vulnerable {
                 Self::SLAM_BONUS_VULNERABLE
             } else {
                 Self::SLAM_BONUS_NOT_VULNERABLE
             }
-        } else if contract.level == ContractLevel::Seven {
+        } else if contract.level == Level::Seven {
             if declarer_is_vulnerable {
                 Self::GRAND_SLAM_BONUS_VULNERABLE
             } else {
@@ -160,23 +160,21 @@ impl ScoreCalculator {
     }
 
     fn score_bid_tricks(contract: Contract) -> ScorePoints {
-        let trick_score = match contract.denomination {
-            ContractDenomination::NoTrump => {
-                Self::MAJOR_TRICK_POINTS * contract.level as isize + Self::NO_TRUMP_EXTRA_TRICK_POINTS
-            }
-            ContractDenomination::Trump(suit) if suit.is_major() => Self::MAJOR_TRICK_POINTS * contract.level as isize,
-            ContractDenomination::Trump(_) => Self::MINOR_TRICK_POINTS * contract.level as isize,
+        let trick_score = match contract.strain {
+            Strain::NoTrump => Self::MAJOR_TRICK_POINTS * contract.level as isize + Self::NO_TRUMP_EXTRA_TRICK_POINTS,
+            Strain::Trump(suit) if suit.is_major() => Self::MAJOR_TRICK_POINTS * contract.level as isize,
+            Strain::Trump(_) => Self::MINOR_TRICK_POINTS * contract.level as isize,
         };
         match contract.state {
-            ContractState::Passed => trick_score,
-            ContractState::Doubled => trick_score * 2_isize,
-            ContractState::Redoubled => trick_score * 4_isize,
+            State::Passed => trick_score,
+            State::Doubled => trick_score * 2_isize,
+            State::Redoubled => trick_score * 4_isize,
         }
     }
 
     fn score_overtricks(contract: Contract, overtricks: usize) -> ScorePoints {
-        match contract.denomination {
-            ContractDenomination::Trump(suit) if suit.is_minor() => Self::MINOR_TRICK_POINTS * overtricks,
+        match contract.strain {
+            Strain::Trump(suit) if suit.is_minor() => Self::MINOR_TRICK_POINTS * overtricks,
             _ => Self::MAJOR_TRICK_POINTS * overtricks,
         }
     }

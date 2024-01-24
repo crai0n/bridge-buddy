@@ -1,6 +1,6 @@
-pub mod contract_denomination;
-mod contract_level;
-mod contract_state;
+mod level;
+mod state;
+pub mod strain;
 
 use crate::error::BBError;
 use std::fmt::Display;
@@ -8,25 +8,21 @@ use std::str::FromStr;
 
 use crate::primitives::deal::Seat;
 use crate::primitives::Suit;
-pub use contract_denomination::ContractDenomination;
-pub use contract_level::ContractLevel;
-pub use contract_state::ContractState;
+pub use level::Level;
+pub use state::State;
+pub use strain::Strain;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Contract {
-    pub level: ContractLevel,
-    pub denomination: ContractDenomination,
-    pub state: ContractState,
+    pub level: Level,
+    pub strain: Strain,
+    pub state: State,
     pub declarer: Seat,
 }
 
 impl Display for Contract {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}{}{} by {}",
-            self.level, self.denomination, self.state, self.declarer
-        )?;
+        write!(f, "{}{}{} by {}", self.level, self.strain, self.state, self.declarer)?;
         Ok(())
     }
 }
@@ -46,29 +42,29 @@ impl FromStr for Contract {
             Err(_) => return Err(BBError::UnknownContract(s.into())),
         };
 
-        let level = match ContractLevel::from_str(&s[1..2]) {
+        let level = match Level::from_str(&s[1..2]) {
             Ok(l) => l,
             Err(_) => return Err(BBError::UnknownContract(s.into())),
         };
 
         let count_doubles = s.chars().rev().take_while(|x| *x == 'x' || *x == 'X').count();
         let state = match count_doubles {
-            0 => ContractState::Passed,
-            1 => ContractState::Doubled,
-            2 => ContractState::Redoubled,
+            0 => State::Passed,
+            1 => State::Doubled,
+            2 => State::Redoubled,
             _ => return Err(BBError::UnknownContract(s.into())),
         };
 
-        // rest of the string must be the denomination
-        let den_str = &s[2..len - count_doubles];
-        let denomination = match ContractDenomination::from_str(den_str) {
+        // rest of the string must be the strain
+        let strain_str = &s[2..len - count_doubles];
+        let strain = match Strain::from_str(strain_str) {
             Ok(d) => d,
             Err(_) => return Err(BBError::UnknownContract(s.into())),
         };
 
         Ok(Contract {
             level,
-            denomination,
+            strain,
             state,
             declarer,
         })
@@ -81,18 +77,18 @@ impl Contract {
     }
 
     pub fn trump_suit(&self) -> Option<Suit> {
-        match self.denomination {
-            ContractDenomination::NoTrump => None,
-            ContractDenomination::Trump(s) => Some(s),
+        match self.strain {
+            Strain::NoTrump => None,
+            Strain::Trump(s) => Some(s),
         }
     }
 }
 #[cfg(test)]
 mod test {
-    use super::ContractDenomination::*;
-    use super::ContractLevel::*;
-    use super::ContractState::*;
-    use super::{Contract, ContractDenomination, ContractLevel, ContractState};
+    use super::Level::*;
+    use super::State::*;
+    use super::Strain::*;
+    use super::{Contract, Level, State, Strain};
     use crate::primitives::deal::Seat;
     use crate::primitives::deal::Seat::*;
     use crate::primitives::Suit;
@@ -104,19 +100,13 @@ mod test {
     #[test_case("S2SXx", South, Two, Trump(Spades), Redoubled; "Spades")]
     #[test_case("E3d", East, Three, Trump(Diamonds), Passed; "Diamonds")]
     #[test_case("W4♥X", West, Four, Trump(Hearts), Doubled; "Hearts")]
-    fn from_str(
-        str: &str,
-        declarer: Seat,
-        level: ContractLevel,
-        denomination: ContractDenomination,
-        state: ContractState,
-    ) {
+    fn from_str(str: &str, declarer: Seat, level: Level, strain: Strain, state: State) {
         assert_eq!(
             Contract::from_str(str).unwrap(),
             Contract {
                 declarer,
                 level,
-                denomination,
+                strain,
                 state
             }
         )
@@ -125,19 +115,13 @@ mod test {
     #[test_case(North, One, Trump(Spades), Passed, "1♠ by N"; "1P")]
     #[test_case(South, Two, Trump(Hearts), Doubled, "2♥X by S"; "2cx")]
     #[test_case(West, Three, NoTrump, Redoubled, "3NTXX by W"; "3ntxx")]
-    fn serialize(
-        declarer: Seat,
-        level: ContractLevel,
-        denomination: ContractDenomination,
-        state: ContractState,
-        exp: &str,
-    ) {
+    fn serialize(declarer: Seat, level: Level, strain: Strain, state: State, exp: &str) {
         assert_eq!(
             format!(
                 "{}",
                 Contract {
                     level,
-                    denomination,
+                    strain,
                     state,
                     declarer
                 }

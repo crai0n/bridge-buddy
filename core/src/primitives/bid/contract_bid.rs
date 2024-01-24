@@ -1,12 +1,12 @@
 use crate::error::BBError;
-use crate::primitives::contract::ContractDenomination;
+use crate::primitives::contract::Strain;
 use crate::primitives::contract::*;
 use crate::primitives::Suit;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
 pub struct ContractBid {
-    pub level: ContractLevel,
-    pub denomination: ContractDenomination,
+    pub level: Level,
+    pub strain: Strain,
 }
 
 impl std::str::FromStr for ContractBid {
@@ -17,44 +17,44 @@ impl std::str::FromStr for ContractBid {
             return Err(BBError::UnknownBid(s.into()));
         }
 
-        let level = match ContractLevel::from_str(&s[..1]) {
+        let level = match Level::from_str(&s[..1]) {
             Ok(l) => l,
             Err(_) => return Err(BBError::UnknownBid(s.into())),
         };
 
-        let den_str = &s[1..];
+        let strain_str = &s[1..];
 
-        let denomination = match ContractDenomination::from_str(den_str) {
+        let strain = match Strain::from_str(strain_str) {
             Ok(d) => d,
             Err(_) => return Err(BBError::UnknownBid(s.into())),
         };
 
-        Ok(ContractBid { level, denomination })
+        Ok(ContractBid { level, strain })
     }
 }
 
 impl std::fmt::Display for ContractBid {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}{}", self.level, self.denomination)?;
+        write!(f, "{}{}", self.level, self.strain)?;
         Ok(())
     }
 }
 
 impl ContractBid {
     pub fn next(&self) -> Result<Self, BBError> {
-        match self.denomination {
-            ContractDenomination::NoTrump => Ok(ContractBid {
+        match self.strain {
+            Strain::NoTrump => Ok(ContractBid {
                 level: match self.level.next() {
                     Ok(level) => level,
                     Err(_) => Err(BBError::UnknownBid("-C".into()))?,
                 },
-                denomination: ContractDenomination::Trump(Suit::Clubs),
+                strain: Strain::Trump(Suit::Clubs),
             }),
-            ContractDenomination::Trump(suit) => Ok(ContractBid {
+            Strain::Trump(suit) => Ok(ContractBid {
                 level: self.level,
-                denomination: match suit {
-                    Suit::Spades => ContractDenomination::NoTrump,
-                    s => ContractDenomination::Trump(s.next()),
+                strain: match suit {
+                    Suit::Spades => Strain::NoTrump,
+                    s => Strain::Trump(s.next()),
                 },
             }),
         }
@@ -64,8 +64,8 @@ impl ContractBid {
 #[cfg(test)]
 mod test {
     use super::ContractBid;
-    use crate::primitives::contract::ContractDenomination::*;
-    use crate::primitives::contract::ContractLevel::*;
+    use crate::primitives::contract::Level::*;
+    use crate::primitives::contract::Strain::*;
     use crate::primitives::contract::*;
     use crate::primitives::Suit::*;
     use std::cmp::Ordering;
@@ -78,8 +78,8 @@ mod test {
     #[test_case("2S", Two, Trump(Spades); "Spades")]
     #[test_case("3d", Three, Trump(Diamonds); "Diamonds")]
     #[test_case("4♥", Four, Trump(Hearts); "Hearts")]
-    fn from_str(str: &str, level: ContractLevel, denomination: ContractDenomination) {
-        assert_eq!(ContractBid::from_str(str).unwrap(), ContractBid { level, denomination })
+    fn from_str(str: &str, level: Level, strain: Strain) {
+        assert_eq!(ContractBid::from_str(str).unwrap(), ContractBid { level, strain })
     }
 
     #[test_case(""; "Empty")]
@@ -95,8 +95,8 @@ mod test {
     #[test_case(Two, Trump(Spades), "2♠"; "Spades")]
     #[test_case(Three, Trump(Diamonds), "3♦"; "Diamonds")]
     #[test_case(Four, Trump(Hearts), "4♥"; "Hearts")]
-    fn serialize(level: ContractLevel, denomination: ContractDenomination, expected: &str) {
-        let bid = ContractBid { level, denomination };
+    fn serialize(level: Level, strain: Strain, expected: &str) {
+        let bid = ContractBid { level, strain };
         assert_eq!(format!("{}", bid), expected);
     }
 

@@ -1,19 +1,19 @@
 use crate::error::BBError;
-pub use denomination::Denomination;
+pub use rank::Rank;
 pub use suit::Suit;
 
-pub mod denomination;
+pub mod rank;
 pub mod suit;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Card {
     pub suit: Suit,
-    pub denomination: Denomination,
+    pub rank: Rank,
 }
 
 impl std::fmt::Display for Card {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}{}", self.suit, self.denomination)
+        write!(f, "{}{}", self.suit, self.rank)
     }
 }
 
@@ -23,8 +23,8 @@ impl std::str::FromStr for Card {
     fn from_str(string: &str) -> Result<Card, Self::Err> {
         let [s, d] = Self::split_string(string)?;
         let suit = Suit::from_char(s)?;
-        let denomination = Denomination::from_char(d)?;
-        Ok(Card { suit, denomination })
+        let rank = Rank::from_char(d)?;
+        Ok(Card { suit, rank })
     }
 }
 
@@ -38,7 +38,7 @@ impl Card {
 #[cfg(test)]
 mod tests {
     use super::Card;
-    use super::Denomination::*;
+    use super::Rank::*;
     use super::Suit::*;
     use super::*;
     use std::cmp::Ordering;
@@ -53,8 +53,8 @@ mod tests {
     #[test_case("c5", Clubs, Five)]
     #[test_case("dJ", Diamonds, Jack)]
     #[test_case("Hj", Hearts, Jack)]
-    fn parsing(input: &str, suit: Suit, denomination: Denomination) {
-        assert_eq!(Card::from_str(input).unwrap(), Card { suit, denomination });
+    fn parsing(input: &str, suit: Suit, rank: Rank) {
+        assert_eq!(Card::from_str(input).unwrap(), Card { suit, rank });
     }
 
     #[test_case("oQ")]
@@ -79,8 +79,8 @@ mod tests {
     #[test_case(Five, Diamonds, "♦5")]
     #[test_case(Queen, Hearts, "♥Q")]
     #[test_case(Ace, Spades, "♠A")]
-    fn display(denomination: Denomination, suit: Suit, expected: &str) {
-        let card = Card { suit, denomination };
+    fn display(rank: Rank, suit: Suit, expected: &str) {
+        let card = Card { suit, rank };
         assert_eq!(format!("{}", card), expected);
     }
 
@@ -97,14 +97,14 @@ mod tests {
     #[test_case(Spades, Four)]
     #[test_case(Hearts, Three)]
     #[test_case(Clubs, Two)]
-    fn round_trip(suit: Suit, denomination: Denomination) {
-        let card = Card { suit, denomination };
+    fn round_trip(suit: Suit, rank: Rank) {
+        let card = Card { suit, rank };
         let string = format!("{}", card);
         let new_card = Card::from_str(&string).unwrap();
         assert_eq!(card, new_card);
     }
 
-    #[test_case(Card { suit: Spades, denomination: King }, "Card { suit: Spades, denomination: King }")]
+    #[test_case(Card { suit: Spades, rank: King }, "Card { suit: Spades, rank: King }")]
     fn debug(input: Card, expected: &str) {
         assert_eq!(format!("{:?}", input), expected)
     }
@@ -113,25 +113,25 @@ mod tests {
     fn copy() {
         let mut x = Card {
             suit: Spades,
-            denomination: King,
+            rank: King,
         };
         let y = x;
         x = Card {
             suit: Hearts,
-            denomination: Queen,
+            rank: Queen,
         };
         assert_eq!(
             x,
             Card {
                 suit: Hearts,
-                denomination: Queen,
+                rank: Queen,
             }
         );
         assert_eq!(
             y,
             Card {
                 suit: Spades,
-                denomination: King,
+                rank: King,
             }
         );
     }

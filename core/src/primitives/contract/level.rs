@@ -2,7 +2,7 @@ use crate::error::BBError;
 use strum::{Display, EnumString};
 
 #[derive(Debug, Display, EnumString, PartialOrd, Ord, PartialEq, Eq, Clone, Copy)]
-pub enum ContractLevel {
+pub enum Level {
     #[strum(to_string = "1")]
     One = 1,
     #[strum(to_string = "2")]
@@ -19,42 +19,42 @@ pub enum ContractLevel {
     Seven = 7,
 }
 
-impl ContractLevel {
+impl Level {
     pub fn expected_tricks(&self) -> usize {
         *self as usize + 6
     }
 }
 
-impl ContractLevel {
+impl Level {
     pub const fn next(&self) -> Result<Self, BBError> {
         match self {
-            ContractLevel::One => Ok(ContractLevel::Two),
-            ContractLevel::Two => Ok(ContractLevel::Three),
-            ContractLevel::Three => Ok(ContractLevel::Four),
-            ContractLevel::Four => Ok(ContractLevel::Five),
-            ContractLevel::Five => Ok(ContractLevel::Six),
-            ContractLevel::Six => Ok(ContractLevel::Seven),
-            ContractLevel::Seven => Err(BBError::InvalidContract),
+            Level::One => Ok(Level::Two),
+            Level::Two => Ok(Level::Three),
+            Level::Three => Ok(Level::Four),
+            Level::Four => Ok(Level::Five),
+            Level::Five => Ok(Level::Six),
+            Level::Six => Ok(Level::Seven),
+            Level::Seven => Err(BBError::InvalidContract),
         }
     }
 
     pub const fn previous(&self) -> Result<Self, BBError> {
         match self {
-            ContractLevel::One => Err(BBError::InvalidContract),
-            ContractLevel::Two => Ok(ContractLevel::One),
-            ContractLevel::Three => Ok(ContractLevel::Two),
-            ContractLevel::Four => Ok(ContractLevel::Three),
-            ContractLevel::Five => Ok(ContractLevel::Four),
-            ContractLevel::Six => Ok(ContractLevel::Five),
-            ContractLevel::Seven => Ok(ContractLevel::Six),
+            Level::One => Err(BBError::InvalidContract),
+            Level::Two => Ok(Level::One),
+            Level::Three => Ok(Level::Two),
+            Level::Four => Ok(Level::Three),
+            Level::Five => Ok(Level::Four),
+            Level::Six => Ok(Level::Five),
+            Level::Seven => Ok(Level::Six),
         }
     }
 }
 
 #[cfg(test)]
 mod test {
-    use super::ContractLevel;
-    use super::ContractLevel::*;
+    use super::Level;
+    use super::Level::*;
     use std::cmp::Ordering;
     use std::cmp::Ordering::*;
     use std::str::FromStr;
@@ -67,8 +67,8 @@ mod test {
     #[test_case("5", Five; "Five")]
     #[test_case("6", Six; "Six")]
     #[test_case("7", Seven; "Seven")]
-    fn from_string(input: &str, expected: ContractLevel) {
-        let contract = ContractLevel::from_str(input).unwrap();
+    fn from_string(input: &str, expected: Level) {
+        let contract = Level::from_str(input).unwrap();
         assert_eq!(contract, expected);
     }
 
@@ -79,8 +79,8 @@ mod test {
     #[test_case(Five, "5"; "Five_5")]
     #[test_case(Six, "6"; "Six_6")]
     #[test_case(Seven, "7"; "Seven_7")]
-    fn serialize(contract_level: ContractLevel, expected: &str) {
-        let contract_str = format!("{}", contract_level);
+    fn serialize(level: Level, expected: &str) {
+        let contract_str = format!("{}", level);
         assert_eq!(&contract_str, expected);
     }
 
@@ -89,7 +89,7 @@ mod test {
     #[test_case(Three, Three, Equal; "Three is equal to Three")]
     #[test_case(Five, One, Greater; "Five is more than Two")]
     #[test_case(Seven, Six, Greater; "Seven is more than Six")]
-    fn ordering(one: ContractLevel, other: ContractLevel, expected: Ordering) {
+    fn ordering(one: Level, other: Level, expected: Ordering) {
         let ord = one.cmp(&other);
         assert_eq!(ord, expected);
     }
@@ -101,7 +101,7 @@ mod test {
     #[test_case(Five, 11; "Five")]
     #[test_case(Six, 12; "Six")]
     #[test_case(Seven, 13; "Seven")]
-    fn expected_tricks(level: ContractLevel, expected: usize) {
+    fn expected_tricks(level: Level, expected: usize) {
         assert_eq!(level.expected_tricks(), expected);
     }
 }

@@ -93,19 +93,19 @@ impl<const N: usize> TrickManager<N> {
 
     fn winner_card(&self, cards: &[Card]) -> Card {
         let mut cards = cards.iter();
-        let mut winner_card = cards.next().unwrap();
+        let mut winning_card = cards.next().unwrap();
         for card in cards {
             if let Some(trump) = self.trumps {
-                if card.suit == trump && winner_card.suit != trump {
-                    winner_card = card;
+                if card.suit == trump && winning_card.suit != trump {
+                    winning_card = card;
                 }
             }
-            if card.suit == winner_card.suit && card.denomination > winner_card.denomination {
-                winner_card = card;
+            if card.suit == winning_card.suit && card.rank > winning_card.rank {
+                winning_card = card;
             }
         }
         // println!("The winning card is {}", winner_card);
-        *winner_card
+        *winning_card
     }
 
     pub fn tricks_won_by_player(&self, player: Seat) -> usize {

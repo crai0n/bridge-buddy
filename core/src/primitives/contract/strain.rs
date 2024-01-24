@@ -2,69 +2,69 @@ use crate::error::BBError;
 use crate::primitives::Suit;
 
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy)]
-pub enum ContractDenomination {
+pub enum Strain {
     Trump(Suit),
     NoTrump,
 }
 
-impl std::fmt::Display for ContractDenomination {
+impl std::fmt::Display for Strain {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ContractDenomination::Trump(s) => {
+            Strain::Trump(s) => {
                 write!(f, "{}", s)
             }
-            ContractDenomination::NoTrump => {
+            Strain::NoTrump => {
                 write!(f, "NT")
             }
         }
     }
 }
 
-impl std::str::FromStr for ContractDenomination {
+impl std::str::FromStr for Strain {
     type Err = BBError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.chars().count() == 1 {
             let char = s.chars().next().unwrap();
             match Suit::from_char(char) {
-                Ok(s) => Ok(ContractDenomination::Trump(s)),
+                Ok(s) => Ok(Strain::Trump(s)),
                 Err(e) => Err(e),
             }
         } else {
             match s.to_uppercase().as_ref() {
-                "SA" | "NT" => Ok(ContractDenomination::NoTrump),
-                _ => Err(BBError::UnknownContractDenomination(s.into())),
+                "SA" | "NT" => Ok(Strain::NoTrump),
+                _ => Err(BBError::UnknownStrain(s.into())),
             }
         }
     }
 }
 
-impl ContractDenomination {
+impl Strain {
     pub const fn next(&self) -> Self {
         match self {
-            ContractDenomination::Trump(suit) => match suit {
-                Suit::Spades => ContractDenomination::NoTrump,
-                s => ContractDenomination::Trump(s.next()),
+            Strain::Trump(suit) => match suit {
+                Suit::Spades => Strain::NoTrump,
+                s => Strain::Trump(s.next()),
             },
-            ContractDenomination::NoTrump => ContractDenomination::Trump(Suit::Clubs),
+            Strain::NoTrump => Strain::Trump(Suit::Clubs),
         }
     }
 
     pub const fn previous(&self) -> Self {
         match self {
-            ContractDenomination::Trump(suit) => match suit {
-                Suit::Clubs => ContractDenomination::NoTrump,
-                s => ContractDenomination::Trump(s.previous()),
+            Strain::Trump(suit) => match suit {
+                Suit::Clubs => Strain::NoTrump,
+                s => Strain::Trump(s.previous()),
             },
-            ContractDenomination::NoTrump => ContractDenomination::Trump(Suit::Spades),
+            Strain::NoTrump => Strain::Trump(Suit::Spades),
         }
     }
 }
 
 #[cfg(test)]
 mod test {
-    use super::ContractDenomination;
-    use super::ContractDenomination::*;
+    use super::Strain;
+    use super::Strain::*;
     use crate::primitives::Suit::*;
     use std::cmp::Ordering;
     use std::cmp::Ordering::*;
@@ -75,8 +75,8 @@ mod test {
     #[test_case("S", Trump(Spades); "Spades")]
     #[test_case("d", Trump(Diamonds); "Diamonds")]
     #[test_case("♥", Trump(Hearts); "Hearts")]
-    fn from_str(str: &str, den: ContractDenomination) {
-        assert_eq!(ContractDenomination::from_str(str).unwrap(), den)
+    fn from_str(str: &str, strain: Strain) {
+        assert_eq!(Strain::from_str(str).unwrap(), strain)
     }
 
     #[test_case("NP")]
@@ -85,26 +85,26 @@ mod test {
     #[test_case("K")]
     #[test_case("i")]
     fn from_str_fails(str: &str) {
-        assert!(ContractDenomination::from_str(str).is_err());
+        assert!(Strain::from_str(str).is_err());
     }
 
     #[test_case(NoTrump, Trump(Clubs))]
     #[test_case(Trump(Clubs), Trump(Diamonds))]
     #[test_case(Trump(Spades), NoTrump)]
-    fn next(input: ContractDenomination, expected: ContractDenomination) {
+    fn next(input: Strain, expected: Strain) {
         assert_eq!(input.next(), expected);
     }
 
     #[test_case(NoTrump, Trump(Clubs))]
     #[test_case(Trump(Clubs), Trump(Diamonds))]
     #[test_case(Trump(Spades), NoTrump)]
-    fn previous(expected: ContractDenomination, input: ContractDenomination) {
+    fn previous(expected: Strain, input: Strain) {
         assert_eq!(input.previous(), expected);
     }
 
     #[test_case(NoTrump, "NT"; "No Trump")]
-    fn serialize(contract_den: ContractDenomination, expected: &str) {
-        let contract_str = format!("{}", contract_den);
+    fn serialize(strain: Strain, expected: &str) {
+        let contract_str = format!("{}", strain);
         assert_eq!(&contract_str, expected);
     }
 
@@ -113,7 +113,7 @@ mod test {
     #[test_case(Trump(Hearts), Trump(Diamonds), Greater; "Hearts is higher than Diamonds")]
     #[test_case(Trump(Diamonds), Trump(Clubs), Greater; "Diamonds is higher than Clubs")]
     #[test_case(Trump(Hearts), Trump(Hearts), Equal; "Hearts is equal to Hearts")]
-    fn ordering(one: ContractDenomination, other: ContractDenomination, expected: Ordering) {
+    fn ordering(one: Strain, other: Strain, expected: Ordering) {
         let ord = one.cmp(&other);
         assert_eq!(ord, expected);
     }

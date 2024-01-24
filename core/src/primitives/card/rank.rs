@@ -3,7 +3,7 @@ use crate::primitives::Card;
 use strum::{Display, EnumIter};
 
 #[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
-pub enum Denomination {
+pub enum Rank {
     #[strum(serialize = "2")]
     Two,
     #[strum(serialize = "3")]
@@ -32,56 +32,56 @@ pub enum Denomination {
     Ace,
 }
 
-impl From<Card> for Denomination {
-    fn from(card: Card) -> Denomination {
-        card.denomination
+impl From<Card> for Rank {
+    fn from(card: Card) -> Rank {
+        card.rank
     }
 }
 
-impl Denomination {
-    pub fn from_char(char: char) -> Result<Denomination, BBError> {
+impl Rank {
+    pub fn from_char(char: char) -> Result<Rank, BBError> {
         match char {
-            'A' => Ok(Denomination::Ace),
-            'a' => Ok(Denomination::Ace),
-            'K' => Ok(Denomination::King),
-            'k' => Ok(Denomination::King),
-            'Q' => Ok(Denomination::Queen),
-            'q' => Ok(Denomination::Queen),
-            'J' => Ok(Denomination::Jack),
-            'j' => Ok(Denomination::Jack),
-            'T' => Ok(Denomination::Ten),
-            't' => Ok(Denomination::Ten),
-            '9' => Ok(Denomination::Nine),
-            '8' => Ok(Denomination::Eight),
-            '7' => Ok(Denomination::Seven),
-            '6' => Ok(Denomination::Six),
-            '5' => Ok(Denomination::Five),
-            '4' => Ok(Denomination::Four),
-            '3' => Ok(Denomination::Three),
-            '2' => Ok(Denomination::Two),
-            c => Err(BBError::UnknownDenomination(c.into())),
+            'A' => Ok(Rank::Ace),
+            'a' => Ok(Rank::Ace),
+            'K' => Ok(Rank::King),
+            'k' => Ok(Rank::King),
+            'Q' => Ok(Rank::Queen),
+            'q' => Ok(Rank::Queen),
+            'J' => Ok(Rank::Jack),
+            'j' => Ok(Rank::Jack),
+            'T' => Ok(Rank::Ten),
+            't' => Ok(Rank::Ten),
+            '9' => Ok(Rank::Nine),
+            '8' => Ok(Rank::Eight),
+            '7' => Ok(Rank::Seven),
+            '6' => Ok(Rank::Six),
+            '5' => Ok(Rank::Five),
+            '4' => Ok(Rank::Four),
+            '3' => Ok(Rank::Three),
+            '2' => Ok(Rank::Two),
+            c => Err(BBError::UnknownRank(c.into())),
         }
     }
 }
 
-impl std::str::FromStr for Denomination {
+impl std::str::FromStr for Rank {
     type Err = BBError;
 
-    fn from_str(string: &str) -> Result<Denomination, BBError> {
+    fn from_str(string: &str) -> Result<Rank, BBError> {
         let mut chars = string.trim().chars();
-        let char = chars.next().ok_or(BBError::UnknownDenomination(string.into()))?;
+        let char = chars.next().ok_or(BBError::UnknownRank(string.into()))?;
         if chars.next().is_some() {
-            return Err(BBError::UnknownDenomination(string.into()));
+            return Err(BBError::UnknownRank(string.into()));
         }
-        Denomination::from_char(char)
+        Rank::from_char(char)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::Denomination::*;
+    use super::Rank::*;
     use crate::error::BBError;
-    use crate::primitives::card::{Denomination, Suit};
+    use crate::primitives::card::{Rank, Suit};
     use crate::primitives::Card;
     use std::str::FromStr;
     use strum::IntoEnumIterator;
@@ -91,7 +91,7 @@ mod tests {
     #[test_case(Ten, Queen; "Ten and Queen")]
     #[test_case(Eight, Jack; "Eight and Jack")]
     #[test_case(Two, Ten; "Two and Ten")]
-    fn relative_ranking(lower: Denomination, higher: Denomination) {
+    fn relative_ranking(lower: Rank, higher: Rank) {
         assert!(lower < higher);
     }
 
@@ -103,8 +103,8 @@ mod tests {
     #[test_case('9', Nine; "9 is Nine")]
     #[test_case('7', Seven; "7 is Seven")]
     #[test_case('3', Three; "3 is Three")]
-    fn parsing_char(input: char, expected: Denomination) {
-        assert_eq!(Denomination::from_char(input).unwrap(), expected);
+    fn parsing_char(input: char, expected: Rank) {
+        assert_eq!(Rank::from_char(input).unwrap(), expected);
     }
 
     #[test_case("A", Ace; "A is Ace")]
@@ -115,25 +115,22 @@ mod tests {
     #[test_case("9", Nine; "9 is Nine")]
     #[test_case("7", Seven; "7 is Seven")]
     #[test_case("3", Three; "3 is Three")]
-    fn parsing_str(input: &str, expected: Denomination) {
-        assert_eq!(Denomination::from_str(input).unwrap(), expected);
+    fn parsing_str(input: &str, expected: Rank) {
+        assert_eq!(Rank::from_str(input).unwrap(), expected);
     }
 
     #[test_case(""; "Empty string")]
     #[test_case(".k"; "additional char")]
     #[test_case("jk"; "two chars")]
     fn parsing_multi_char_str_fails(input: &str) {
-        assert!(Denomination::from_str(input).is_err());
+        assert!(Rank::from_str(input).is_err());
     }
 
     #[test_case("h"; "suit hearts")]
     #[test_case("b"; "german jack")]
     #[test_case("l"; "unknown letter")]
     fn parsing_unknown_str_fails(input: &str) {
-        assert_eq!(
-            Denomination::from_str(input),
-            Err(BBError::UnknownDenomination(input.into()))
-        );
+        assert_eq!(Rank::from_str(input), Err(BBError::UnknownRank(input.into())));
     }
 
     #[test_case(Ace, "A")]
@@ -149,8 +146,8 @@ mod tests {
     #[test_case(Four, "4")]
     #[test_case(Three, "3")]
     #[test_case(Two, "2")]
-    fn display(denomination: Denomination, expected: &str) {
-        assert_eq!(format!("{}", denomination), expected);
+    fn display(rank: Rank, expected: &str) {
+        assert_eq!(format!("{}", rank), expected);
     }
 
     #[test_case(Ace)]
@@ -166,11 +163,11 @@ mod tests {
     #[test_case(Four)]
     #[test_case(Three)]
     #[test_case(Two)]
-    fn round_trip(denomination: Denomination) {
-        let string = format!("{}", denomination);
-        let den_char = string.chars().next().unwrap();
-        let new_denomination = Denomination::from_char(den_char).unwrap();
-        assert_eq!(denomination, new_denomination);
+    fn round_trip(rank: Rank) {
+        let string = format!("{}", rank);
+        let rank_char = string.chars().next().unwrap();
+        let new_rank = Rank::from_char(rank_char).unwrap();
+        assert_eq!(rank, new_rank);
     }
 
     #[test_case('.')]
@@ -179,10 +176,7 @@ mod tests {
     #[test_case('s')]
     #[test_case('d')]
     fn fail_misc_characters(input: char) {
-        assert_eq!(
-            Denomination::from_char(input).unwrap_err(),
-            BBError::UnknownDenomination(input.into())
-        )
+        assert_eq!(Rank::from_char(input).unwrap_err(), BBError::UnknownRank(input.into()))
     }
 
     #[test]
@@ -197,7 +191,7 @@ mod tests {
     #[test]
     fn iteration() {
         assert_eq!(
-            Denomination::iter().collect::<Vec<Denomination>>(),
+            Rank::iter().collect::<Vec<Rank>>(),
             vec![Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King, Ace]
         )
     }
@@ -207,8 +201,8 @@ mod tests {
         assert_eq!(format!("{:?}", Jack), "Jack")
     }
 
-    #[test_case(Card { suit: Suit::Spades, denomination: King}, Denomination::King; "King of Spades is a King")]
-    fn from_card(card: Card, expected: Denomination) {
+    #[test_case(Card { suit: Suit::Spades, rank: King}, Rank::King; "King of Spades is a King")]
+    fn from_card(card: Card, expected: Rank) {
         assert_eq!(expected, card.into())
     }
 }

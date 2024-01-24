@@ -1,5 +1,5 @@
 use crate::error::BBError;
-use crate::primitives::{card::Denomination, Card, Suit};
+use crate::primitives::{card::Rank, Card, Suit};
 use std::cmp::Ordering;
 use std::str::FromStr;
 use strum::IntoEnumIterator;
@@ -15,7 +15,7 @@ impl<const N: usize> std::fmt::Display for Hand<N> {
             // Spades, then Hearts, ...
             write!(f, "{}: ", suit)?;
             for card in self.cards_in(suit).rev() {
-                write!(f, "{}", card.denomination)?;
+                write!(f, "{}", card.rank)?;
             }
             writeln!(f)?;
         }
@@ -31,8 +31,8 @@ impl<const N: usize> FromStr for Hand<N> {
 
         let separate_suits = string.trim().split(['\n', ',']);
         for cards_in_suit in separate_suits {
-            let (suit_symbol, denominations) = Hand::<N>::split_at_colon(cards_in_suit)?;
-            let suit_cards = Hand::<N>::read_cards_for_suit(suit_symbol, denominations)?;
+            let (suit_symbol, ranks) = Hand::<N>::split_at_colon(cards_in_suit)?;
+            let suit_cards = Hand::<N>::read_cards_for_suit(suit_symbol, ranks)?;
             cards.extend_from_slice(&suit_cards);
         }
         Hand::from_cards(&cards)
@@ -47,12 +47,12 @@ impl<const N: usize> Hand<N> {
         ))
     }
 
-    fn read_cards_for_suit(suit_symbol: &str, denominations: &str) -> Result<Vec<Card>, BBError> {
+    fn read_cards_for_suit(suit_symbol: &str, ranks: &str) -> Result<Vec<Card>, BBError> {
         let mut suit_cards = vec![];
         let suit = Suit::from_str(suit_symbol)?;
-        for denomination_char in denominations.trim().chars() {
-            let denomination = Denomination::from_char(denomination_char)?;
-            suit_cards.push(Card { denomination, suit });
+        for rank_char in ranks.trim().chars() {
+            let rank = Rank::from_char(rank_char)?;
+            suit_cards.push(Card { rank, suit });
         }
         Ok(suit_cards)
     }
@@ -143,7 +143,7 @@ impl std::fmt::Display for HandType {
 mod tests {
     use super::{Hand, HandType};
     use crate::error::BBError;
-    use crate::primitives::card::Denomination::*;
+    use crate::primitives::card::Rank::*;
     use crate::primitives::Suit::*;
     use crate::primitives::{Card, Suit};
     use std::str::FromStr;
@@ -184,7 +184,7 @@ mod tests {
             hand.cards().nth(1).unwrap(),
             &Card {
                 suit: Diamonds,
-                denomination: King,
+                rank: King,
             }
         );
     }

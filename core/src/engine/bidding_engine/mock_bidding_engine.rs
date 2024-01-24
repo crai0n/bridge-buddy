@@ -2,7 +2,7 @@ use crate::engine::bidding_engine::SelectBid;
 use crate::engine::subjective_game_view::SubjectiveGameDataView;
 use crate::game::game_data::Bidding;
 use crate::primitives::bid::{AuxiliaryBid, Bid, ContractBid};
-use crate::primitives::contract::{ContractDenomination, ContractLevel};
+use crate::primitives::contract::{Level, Strain};
 use crate::primitives::Suit;
 use rand::Rng;
 use std::cmp::Ordering;
@@ -18,24 +18,24 @@ impl MockBiddingEngine {
         let mut rng = rand::thread_rng();
         let x: usize = rng.gen_range(0..35);
         let level = match x / 5 {
-            0 => ContractLevel::One,
-            1 => ContractLevel::Two,
-            2 => ContractLevel::Three,
-            3 => ContractLevel::Four,
-            4 => ContractLevel::Five,
-            5 => ContractLevel::Six,
-            6 => ContractLevel::Seven,
+            0 => Level::One,
+            1 => Level::Two,
+            2 => Level::Three,
+            3 => Level::Four,
+            4 => Level::Five,
+            5 => Level::Six,
+            6 => Level::Seven,
             _ => unreachable!(),
         };
-        let denomination = match x % 5 {
-            0 => ContractDenomination::Trump(Suit::Clubs),
-            1 => ContractDenomination::Trump(Suit::Diamonds),
-            2 => ContractDenomination::Trump(Suit::Hearts),
-            3 => ContractDenomination::Trump(Suit::Spades),
-            4 => ContractDenomination::NoTrump,
+        let strain = match x % 5 {
+            0 => Strain::Trump(Suit::Clubs),
+            1 => Strain::Trump(Suit::Diamonds),
+            2 => Strain::Trump(Suit::Hearts),
+            3 => Strain::Trump(Suit::Spades),
+            4 => Strain::NoTrump,
             _ => unreachable!(),
         };
-        ContractBid { level, denomination }
+        ContractBid { level, strain }
     }
 
     fn find_bid(&self, data: SubjectiveGameDataView<Bidding>) -> Bid {

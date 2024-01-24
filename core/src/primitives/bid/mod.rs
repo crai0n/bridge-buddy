@@ -57,8 +57,8 @@ impl Bid {
 mod test {
     use super::AuxiliaryBid::*;
     use super::{AuxiliaryBid, ContractBid};
-    use crate::primitives::contract::ContractDenomination::*;
-    use crate::primitives::contract::ContractLevel::*;
+    use crate::primitives::contract::Level::*;
+    use crate::primitives::contract::Strain::*;
     use crate::primitives::Suit::*;
 
     use super::Bid;
@@ -72,11 +72,11 @@ mod test {
     #[test_case("X", Auxiliary(Double); "x is Double")]
     #[test_case("x", Auxiliary(Double); "x_Double")]
     #[test_case("XX", Auxiliary(Redouble); "XX_Redouble")]
-    #[test_case("1NT", Contract(ContractBid { level: One, denomination: NoTrump}); "No Trump")]
-    #[test_case("2S", Contract(ContractBid { level: Two, denomination: Trump(Spades)}); "Two Spades")]
-    #[test_case("3d", Contract(ContractBid { level: Three, denomination: Trump(Diamonds)}); "Three Diamonds")]
-    #[test_case("4♥", Contract(ContractBid { level: Four, denomination: Trump(Hearts)}); "Four Hearts")]
-    #[test_case("7d", Contract(ContractBid{ level: Seven, denomination: Trump(Diamonds)}); "Diamonds")]
+    #[test_case("1NT", Contract(ContractBid { level: One, strain: NoTrump}); "No Trump")]
+    #[test_case("2S", Contract(ContractBid { level: Two, strain: Trump(Spades)}); "Two Spades")]
+    #[test_case("3d", Contract(ContractBid { level: Three, strain: Trump(Diamonds)}); "Three Diamonds")]
+    #[test_case("4♥", Contract(ContractBid { level: Four, strain: Trump(Hearts)}); "Four Hearts")]
+    #[test_case("7d", Contract(ContractBid{ level: Seven, strain: Trump(Diamonds)}); "Diamonds")]
     fn from_str(str: &str, bid: Bid) {
         assert_eq!(Bid::from_str(str).unwrap(), bid)
     }
@@ -90,10 +90,10 @@ mod test {
     #[test_case(Auxiliary(Pass), "Pass"; "Pass")]
     #[test_case(Auxiliary(Double), "X"; "Double")]
     #[test_case(Auxiliary(Redouble), "XX"; "Redouble")]
-    #[test_case(Contract(ContractBid { level: One, denomination: NoTrump}), "1NT"; "No Trump")]
-    #[test_case(Contract(ContractBid { level: Two, denomination: Trump(Spades)}), "2♠"; "Spades")]
-    #[test_case(Contract(ContractBid { level: Three, denomination: Trump(Diamonds)}), "3♦"; "Diamonds")]
-    #[test_case(Contract(ContractBid { level: Four, denomination: Trump(Hearts)}), "4♥"; "Hearts")]
+    #[test_case(Contract(ContractBid { level: One, strain: NoTrump}), "1NT"; "No Trump")]
+    #[test_case(Contract(ContractBid { level: Two, strain: Trump(Spades)}), "2♠"; "Spades")]
+    #[test_case(Contract(ContractBid { level: Three, strain: Trump(Diamonds)}), "3♦"; "Diamonds")]
+    #[test_case(Contract(ContractBid { level: Four, strain: Trump(Hearts)}), "4♥"; "Hearts")]
     fn serialize(bid: Bid, expected: &str) {
         assert_eq!(format!("{}", bid), expected);
     }
@@ -101,8 +101,8 @@ mod test {
     #[test_case(Auxiliary(Pass), Auxiliary(Pass), true; "Pass is equal to Pass")]
     #[test_case(Auxiliary(Double), Auxiliary(Redouble), false; "Double is less than Redouble")]
     #[test_case(Auxiliary(Redouble), Auxiliary(Pass), false; "Redouble is greater than Pass")]
-    #[test_case(Contract(ContractBid { level: Four, denomination: Trump(Hearts)}), Auxiliary(Redouble), false; "4H is not a Redouble")]
-    #[test_case(Contract(ContractBid { level: Four, denomination: Trump(Hearts)}), Contract(ContractBid { level: Four, denomination: Trump(Hearts)}), true; "Four hearts is four hearts")]
+    #[test_case(Contract(ContractBid { level: Four, strain: Trump(Hearts)}), Auxiliary(Redouble), false; "4H is not a Redouble")]
+    #[test_case(Contract(ContractBid { level: Four, strain: Trump(Hearts)}), Contract(ContractBid { level: Four, strain: Trump(Hearts)}), true; "Four hearts is four hearts")]
     fn equality(one: Bid, other: Bid, expected: bool) {
         assert_eq!(one.eq(&other), expected)
     }
@@ -116,12 +116,12 @@ mod test {
     }
 
     #[test_case(Auxiliary(Pass), Some(Pass); "Pass is an Auxiliary")]
-    #[test_case(Contract(ContractBid { level: Four, denomination: Trump(Hearts)}), None; "4H is not an Auxiliary")]
+    #[test_case(Contract(ContractBid { level: Four, strain: Trump(Hearts)}), None; "4H is not an Auxiliary")]
     fn access_auxiliary(bid: Bid, inner: Option<AuxiliaryBid>) {
         assert_eq!(bid.access_auxiliary_bid(), inner);
     }
     #[test_case(Auxiliary(Pass), None; "Pass is an Auxiliary")]
-    #[test_case(Contract(ContractBid { level: Four, denomination: Trump(Hearts)}), Some(ContractBid { level: Four, denomination: Trump(Hearts)}); "4H is not a Contract Bid")]
+    #[test_case(Contract(ContractBid { level: Four, strain: Trump(Hearts)}), Some(ContractBid { level: Four, strain: Trump(Hearts)}); "4H is not a Contract Bid")]
     fn access_contract(bid: Bid, inner: Option<ContractBid>) {
         assert_eq!(bid.access_contract_bid(), inner);
     }
