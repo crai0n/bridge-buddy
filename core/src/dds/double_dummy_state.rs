@@ -6,12 +6,12 @@ use itertools::Itertools;
 #[allow(unused_imports)]
 use std::cmp::{max, min, Ordering};
 
-pub struct DdsRunner<const N: usize> {
+pub struct DoubleDummyState<const N: usize> {
     trick_manager: TrickManager<N>,
     card_manager: CardManager,
 }
 
-impl<const N: usize> DdsRunner<N> {
+impl<const N: usize> DoubleDummyState<N> {
     pub fn new(hands: [Hand<N>; 4], opening_leader: Seat, trumps: Option<Suit>) -> Self {
         Self {
             trick_manager: TrickManager::new(opening_leader, trumps),
@@ -187,7 +187,7 @@ impl<const N: usize> DdsRunner<N> {
 mod test {
     use crate::dds::card_manager::card_tracker::CardTracker;
     use crate::dds::card_manager::CardManager;
-    use crate::dds::dds_state::DdsRunner;
+    use crate::dds::double_dummy_state::DoubleDummyState;
     use crate::game::trick_manager::TrickManager;
     use crate::primitives::card::Rank;
     use crate::primitives::deal::Seat;
@@ -224,7 +224,7 @@ mod test {
             })
             .collect_vec();
 
-        let state: DdsRunner<13> = DdsRunner {
+        let state: DoubleDummyState<13> = DoubleDummyState {
             trick_manager: TrickManager::new(Seat::North, None),
             card_manager: CardManager {
                 played_cards: CardTracker::from_cards(&played_cards),

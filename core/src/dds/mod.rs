@@ -1,4 +1,4 @@
-use crate::dds::dds_state::DdsRunner;
+use crate::dds::double_dummy_state::DoubleDummyState;
 use crate::primitives::contract::Strain;
 use crate::primitives::deal::Seat;
 use crate::primitives::{Card, Deal};
@@ -7,8 +7,9 @@ use enum_iterator::all;
 use strum::IntoEnumIterator;
 
 pub mod card_manager;
-pub mod dds_state;
 mod double_dummy_result;
+pub mod double_dummy_state;
+// mod transposition_table;
 // mod double_dummy_solver;
 
 pub struct DoubleDummySolver<const N: usize> {}
@@ -52,7 +53,7 @@ impl<const N: usize> DoubleDummySolver<N> {
                 _ => None,
             };
 
-            let mut start_state = DdsRunner::new(deal.hands, opening_leader, trumps);
+            let mut start_state = DoubleDummyState::new(deal.hands, opening_leader, trumps);
 
             let score = Self::score_node(&mut start_state, estimate);
             println!("Scored {} tricks for defenders", score);
@@ -65,7 +66,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         at_least
     }
 
-    fn score_node(state: &mut DdsRunner<N>, estimate: usize) -> usize {
+    fn score_node(state: &mut DoubleDummyState<N>, estimate: usize) -> usize {
         if let Some(early_score) = Self::try_early_node_score(state, estimate) {
             return early_score;
         }
@@ -100,7 +101,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         highest_score
     }
 
-    fn try_early_node_score(state: &mut DdsRunner<N>, estimate: usize) -> Option<usize> {
+    fn try_early_node_score(state: &mut DoubleDummyState<N>, estimate: usize) -> Option<usize> {
         let current_tricks = Self::current_tricks(state);
         if current_tricks >= estimate {
             // println!("Already won enough tricks!");
@@ -122,19 +123,19 @@ impl<const N: usize> DoubleDummySolver<N> {
         None
     }
 
-    fn quick_tricks_for_current_player(state: &DdsRunner<N>) -> u8 {
+    fn quick_tricks_for_current_player(state: &DoubleDummyState<N>) -> u8 {
         state.quick_tricks_for_player(state.next_to_play())
     }
 
-    fn maximum_achievable_tricks(state: &mut DdsRunner<{ N }>) -> usize {
+    fn maximum_achievable_tricks(state: &mut DoubleDummyState<{ N }>) -> usize {
         state.tricks_left() + state.tricks_won_by_axis(state.next_to_play())
     }
 
-    fn current_tricks(state: &mut DdsRunner<{ N }>) -> usize {
+    fn current_tricks(state: &mut DoubleDummyState<{ N }>) -> usize {
         state.tricks_won_by_axis(state.next_to_play())
     }
 
-    fn score_terminal_node(state: &mut DdsRunner<N>) -> usize {
+    fn score_terminal_node(state: &mut DoubleDummyState<N>) -> usize {
         let lead = state.next_to_play();
 
         Self::play_last_trick(state);
@@ -154,7 +155,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         result
     }
 
-    fn play_last_trick(state: &mut DdsRunner<N>) {
+    fn play_last_trick(state: &mut DoubleDummyState<N>) {
         for _ in 0..4 {
             let last_card_of_player = *state.valid_moves_for(state.next_to_play()).first().unwrap();
 
@@ -162,13 +163,13 @@ impl<const N: usize> DoubleDummySolver<N> {
         }
     }
 
-    fn undo_last_trick(state: &mut DdsRunner<N>) {
+    fn undo_last_trick(state: &mut DoubleDummyState<N>) {
         for _ in 0..4 {
             state.undo();
         }
     }
 
-    fn generate_moves(state: &DdsRunner<N>) -> Vec<Card> {
+    fn generate_moves(state: &DoubleDummyState<N>) -> Vec<Card> {
         state.valid_non_equivalent_moves_for(state.next_to_play())
     }
 }
