@@ -8,7 +8,6 @@ use strum::IntoEnumIterator;
 
 pub mod card_manager;
 pub mod dds_state;
-pub mod dds_trick_manager;
 mod double_dummy_result;
 // mod double_dummy_solver;
 
@@ -71,7 +70,7 @@ impl<const N: usize> DoubleDummySolver<N> {
             return early_score;
         }
 
-        if Self::only_one_trick_left_to_play(state) {
+        if state.is_last_trick() {
             return Self::score_terminal_node(state);
         }
 
@@ -125,10 +124,6 @@ impl<const N: usize> DoubleDummySolver<N> {
 
     fn quick_tricks_for_current_player(state: &DdsRunner<N>) -> u8 {
         state.quick_tricks_for_player(state.next_to_play())
-    }
-
-    fn only_one_trick_left_to_play(state: &mut DdsRunner<{ N }>) -> bool {
-        state.tricks_left() == 1
     }
 
     fn maximum_achievable_tricks(state: &mut DdsRunner<{ N }>) -> usize {

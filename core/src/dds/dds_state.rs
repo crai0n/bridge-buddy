@@ -1,5 +1,5 @@
 use crate::dds::card_manager::CardManager;
-use crate::dds::dds_trick_manager::DdsTrickManager;
+use crate::game::trick_manager::TrickManager;
 use crate::primitives::deal::Seat;
 use crate::primitives::{Card, Hand, Suit};
 use itertools::Itertools;
@@ -7,14 +7,14 @@ use itertools::Itertools;
 use std::cmp::{max, min, Ordering};
 
 pub struct DdsRunner<const N: usize> {
-    trick_manager: DdsTrickManager<N>,
+    trick_manager: TrickManager<N>,
     card_manager: CardManager,
 }
 
 impl<const N: usize> DdsRunner<N> {
     pub fn new(hands: [Hand<N>; 4], opening_leader: Seat, trumps: Option<Suit>) -> Self {
         Self {
-            trick_manager: DdsTrickManager::new(opening_leader, trumps),
+            trick_manager: TrickManager::new(opening_leader, trumps),
             card_manager: CardManager::from_hands(hands),
         }
     }
@@ -25,6 +25,10 @@ impl<const N: usize> DdsRunner<N> {
 
     pub fn tricks_left(&self) -> usize {
         self.trick_manager.tricks_left()
+    }
+
+    pub fn is_last_trick(&self) -> bool {
+        self.trick_manager.tricks_left() == 1
     }
 
     pub fn tricks_won_by_axis(&self, player: Seat) -> usize {
@@ -184,7 +188,7 @@ mod test {
     use crate::dds::card_manager::card_tracker::CardTracker;
     use crate::dds::card_manager::CardManager;
     use crate::dds::dds_state::DdsRunner;
-    use crate::dds::dds_trick_manager::DdsTrickManager;
+    use crate::game::trick_manager::TrickManager;
     use crate::primitives::card::Rank;
     use crate::primitives::deal::Seat;
     use crate::primitives::{Card, Suit};
@@ -221,7 +225,7 @@ mod test {
             .collect_vec();
 
         let state: DdsRunner<13> = DdsRunner {
-            trick_manager: DdsTrickManager::new(Seat::North, None),
+            trick_manager: TrickManager::new(Seat::North, None),
             card_manager: CardManager {
                 played_cards: CardTracker::from_cards(&played_cards),
                 remaining_cards: [

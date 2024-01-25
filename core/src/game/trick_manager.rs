@@ -46,6 +46,10 @@ impl<const N: usize> TrickManager<N> {
         }
     }
 
+    pub fn trumps(&self) -> Option<Suit> {
+        self.trumps
+    }
+
     pub fn next_to_play(&self) -> Seat {
         self.next_to_play
     }
@@ -145,7 +149,7 @@ impl<const N: usize> TrickManager<N> {
         }
     }
 
-    pub fn undo(&mut self) {
+    pub fn undo(&mut self) -> Option<Card> {
         if !self.played_cards.is_empty() {
             if self.trick_complete() {
                 self.winners.pop();
@@ -153,8 +157,8 @@ impl<const N: usize> TrickManager<N> {
             } else {
                 self.next_to_play = self.next_to_play + 3;
             }
-            self.played_cards.pop();
         }
+        self.played_cards.pop()
     }
 }
 
@@ -189,7 +193,7 @@ mod test {
             let next_to_play = manager.next_to_play();
 
             for _ in 0..undo_count {
-                manager.undo()
+                manager.undo();
             }
             for j in (0..undo_count).rev() {
                 manager.play(cards[i - j])
