@@ -8,36 +8,57 @@ pub const N_RANKS: usize = 13;
 #[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
 pub enum Rank {
     #[strum(serialize = "2")]
-    Two = 2,
+    Two = 0,
     #[strum(serialize = "3")]
-    Three = 3,
+    Three,
     #[strum(serialize = "4")]
-    Four = 4,
+    Four,
     #[strum(serialize = "5")]
-    Five = 5,
+    Five,
     #[strum(serialize = "6")]
-    Six = 6,
+    Six,
     #[strum(serialize = "7")]
-    Seven = 7,
+    Seven,
     #[strum(serialize = "8")]
-    Eight = 8,
+    Eight,
     #[strum(serialize = "9")]
-    Nine = 9,
+    Nine,
     #[strum(serialize = "T")]
-    Ten = 10,
+    Ten,
     #[strum(serialize = "J")]
-    Jack = 11,
+    Jack,
     #[strum(serialize = "Q")]
-    Queen = 12,
+    Queen,
     #[strum(serialize = "K")]
-    King = 13,
+    King,
     #[strum(serialize = "A")]
-    Ace = 14,
+    Ace,
 }
 
 impl From<Card> for Rank {
     fn from(card: Card) -> Rank {
         card.rank
+    }
+}
+
+impl From<u16> for Rank {
+    fn from(value: u16) -> Rank {
+        match value {
+            0 => Rank::Two,
+            1 => Rank::Three,
+            2 => Rank::Four,
+            3 => Rank::Five,
+            4 => Rank::Six,
+            5 => Rank::Seven,
+            6 => Rank::Eight,
+            7 => Rank::Nine,
+            8 => Rank::Ten,
+            9 => Rank::Jack,
+            10 => Rank::Queen,
+            11 => Rank::King,
+            12 => Rank::Ace,
+            _ => panic!("Not a valid rank!"),
+        }
     }
 }
 
@@ -66,7 +87,7 @@ impl Rank {
         }
     }
 
-    pub fn touches(&self, other: &Denomination) -> bool {
+    pub fn touches(&self, other: &Rank) -> bool {
         // println!("testing {} and {}", self, other);
         match self.cmp(other) {
             Ordering::Less => *other as usize - *self as usize == 1,
@@ -223,8 +244,8 @@ mod tests {
     #[test_case("Q", "J", true)]
     #[test_case("Q", "T", false)]
     fn touches(one: &str, other: &str, expected: bool) {
-        let one = Denomination::from_str(one).unwrap();
-        let other = Denomination::from_str(other).unwrap();
+        let one = Rank::from_str(one).unwrap();
+        let other = Rank::from_str(other).unwrap();
         assert_eq!(one.touches(&other), expected);
     }
 }

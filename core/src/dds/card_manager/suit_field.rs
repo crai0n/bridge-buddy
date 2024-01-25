@@ -1,6 +1,5 @@
 use crate::primitives::card::rank::N_RANKS;
 use crate::primitives::card::Rank;
-use crate::primitives::deal::Seat;
 use std::ops::BitXor;
 use strum::IntoEnumIterator;
 
@@ -175,10 +174,10 @@ impl SuitField {
     pub const ALL_RANKS: u16 = 0b0001_1111_1111_1111;
 }
 
-pub struct HighCard {
-    rank: Rank,
-    player: Seat,
-}
+// pub struct HighCard {
+//     rank: Rank,
+//     player: Seat,
+// }
 
 #[cfg(test)]
 mod test {

@@ -8,11 +8,9 @@ pub mod card_manager;
 pub mod dds_state;
 pub mod dds_trick_manager;
 mod double_dummy_result;
-mod double_dummy_solver;
+// mod double_dummy_solver;
 
 pub struct DoubleDummySolver<const N: usize> {}
-
-
 
 impl<const N: usize> DoubleDummySolver<N> {
     const CHECK_QUICK_TRICKS: bool = true;
