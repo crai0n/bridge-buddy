@@ -1,7 +1,10 @@
 use crate::dds::dds_state::DdsRunner;
+use crate::primitives::contract::Strain;
 use crate::primitives::deal::Seat;
-use crate::primitives::{Card, Deal, Suit};
+use crate::primitives::{Card, Deal};
 use double_dummy_result::DoubleDummyResult;
+use enum_iterator::all;
+use itertools::Itertools;
 use strum::IntoEnumIterator;
 
 pub mod card_manager;
@@ -38,35 +41,40 @@ impl<const N: usize> DoubleDummySolver<N> {
     fn calculate_max_tricks_for_declarer(deal: Deal<N>, declarer: Seat) -> [usize; 5] {
         let mut result = Vec::new();
 
-        let max_tricks = Self::calculate_max_tricks_for_declarer_with_trumps(deal, declarer, None);
-        result.push(max_tricks);
-        for suit in Suit::iter().rev() {
-            let max_tricks = Self::calculate_max_tricks_for_declarer_with_trumps(deal, declarer, Some(suit));
+        for strain in all::<Strain>().collect_vec().iter().rev() {
+            let max_tricks = Self::calculate_max_tricks_for_declarer_with_trumps(deal, declarer, *strain);
             result.push(max_tricks);
         }
         result.try_into().unwrap()
     }
 
-    fn calculate_max_tricks_for_declarer_with_trumps(deal: Deal<N>, declarer: Seat, trumps: Option<Suit>) -> usize {
-        Self::determine_maximum_achievable_tricks(deal, trumps, declarer)
+    fn calculate_max_tricks_for_declarer_with_trumps(deal: Deal<N>, declarer: Seat, strain: Strain) -> usize {
+        Self::solve_initial_position(deal, strain, declarer)
     }
 
-    fn determine_maximum_achievable_tricks(deal: Deal<N>, trumps: Option<Suit>, declarer: Seat) -> usize {
+    fn solve_initial_position(deal: Deal<N>, strain: Strain, declarer: Seat) -> usize {
         let max_tricks = N;
 
-        // adapted from Min-Sheng Chang (1996)
         let mut at_least = 0;
-        let mut at_most = max_tricks;
+        let mut at_most = max_tricks; // at_most = b - 1;
 
         while at_least < at_most {
             let target = (at_least + at_most + 1) / 2;
             println!("------------------------");
             println!(
                 "Testing {} tricks for {} as declarer and {:?} as trumps.",
-                target, declarer, trumps
+                target, declarer, strain
             );
 
-            if Self::declarer_can_achieve_target(deal, declarer, trumps, target) {
+            let trumps = match strain {
+                Strain::Trump(suit) => Some(suit),
+                _ => None,
+            };
+
+            let opening_leader = declarer + 1;
+            let mut start_state = DdsRunner::new(deal.hands, opening_leader, trumps);
+
+            if !Self::defenders_can_achieve_estimate(&mut start_state, N + 1 - target) {
                 // println!("Declarer can reach their target!");
                 at_least = target;
             } else {
@@ -77,26 +85,11 @@ impl<const N: usize> DoubleDummySolver<N> {
         at_least
     }
 
-    fn declarer_can_achieve_target(deal: Deal<N>, declarer: Seat, trumps: Option<Suit>, target: usize) -> bool {
-        !Self::defenders_can_achieve_target(deal, declarer, trumps, N + 1 - target)
+    fn defenders_can_achieve_estimate(start_state: &mut DdsRunner<N>, target: usize) -> bool {
+        Self::score_node(start_state, target)
     }
 
-    fn defenders_can_achieve_target(deal: Deal<N>, declarer: Seat, trumps: Option<Suit>, target: usize) -> bool {
-        let opening_leader = declarer + 1;
-        let mut start_state = DdsRunner::new(deal.hands, opening_leader, trumps);
-        Self::can_achieve_target(&mut start_state, target)
-    }
-
-    // This is essentially a nega-scout algorithm with alpha=beta=target
-    // Starting from minimax, using min(a,b) = -max(-b,-a), creates negamax
-    // the score of a position is simply the number of tricks taken for the playing side.
-    // This means that the score never decreases as we progress through the game
-    //
-    // As we always want to evaluate the exact result, the depth of the
-    // search is implicitly set to (number of tricks - 1) as there is no
-    // more freedom of choice at the last trick
-    //
-    fn can_achieve_target(state: &mut DdsRunner<N>, target: usize) -> bool {
+    fn score_node(state: &mut DdsRunner<N>, estimate: usize) -> bool {
         // println!("Now checking target {} for player {}", target, state.next_to_play());
         // println!(
         //     "{:?} has won {} tricks",
@@ -104,28 +97,28 @@ impl<const N: usize> DoubleDummySolver<N> {
         //     state.tricks_won_by_axis(state.next_to_play())
         // );
         // println!("There are {} tricks left to play", state.tricks_left());
-        if Self::already_enough_tricks_for_target(state, target) {
+        if Self::already_enough_tricks_for_estimate(state, estimate) {
             // println!("Already won enough tricks!");
             return true;
         };
-        if Self::not_enough_tricks_left_to_achieve_target(state, target) {
+        if Self::not_enough_tricks_left_to_achieve_estimate(state, estimate) {
             // println!("Not enough tricks left!");
             return false;
         };
-        if Self::CHECK_QUICK_TRICKS && Self::have_enough_quick_tricks_for_target(state, target) {
+        if Self::CHECK_QUICK_TRICKS && Self::have_enough_quick_tricks_for_target(state, estimate) {
             // println!("Enough quick tricks for target!");
             return true;
         };
         if Self::only_one_trick_left_to_play(state) {
             // println!("Checking last trick!");
-            return Self::we_win_last_trick(state);
+            return Self::score_terminal_node(state);
         }
         // println!("generating possible moves!");
         let available_moves = Self::generate_moves(state);
 
         for candidate_move in available_moves {
             // println!("trying card {} for {}!", candidate_move, state.next_to_play());
-            let move_achieves_target = Self::apply_move_and_recurse(state, target, candidate_move);
+            let move_achieves_target = Self::apply_move_and_recurse(state, estimate, candidate_move);
             if move_achieves_target {
                 return true;
             }
@@ -152,11 +145,11 @@ impl<const N: usize> DoubleDummySolver<N> {
         state.tricks_left() == 1
     }
 
-    fn not_enough_tricks_left_to_achieve_target(state: &mut DdsRunner<{ N }>, target: usize) -> bool {
+    fn not_enough_tricks_left_to_achieve_estimate(state: &mut DdsRunner<{ N }>, target: usize) -> bool {
         target > state.tricks_left() + state.tricks_won_by_axis(state.next_to_play())
     }
 
-    fn already_enough_tricks_for_target(state: &mut DdsRunner<{ N }>, target: usize) -> bool {
+    fn already_enough_tricks_for_estimate(state: &mut DdsRunner<{ N }>, target: usize) -> bool {
         target <= state.tricks_won_by_axis(state.next_to_play())
     }
 
@@ -165,15 +158,15 @@ impl<const N: usize> DoubleDummySolver<N> {
         state.play(test_move);
         let new_player = state.next_to_play();
         let we_can_achieve_target = if current_player.same_axis(&new_player) {
-            Self::can_achieve_target(state, target)
+            Self::score_node(state, target)
         } else {
-            !Self::can_achieve_target(state, N + 1 - target)
+            !Self::score_node(state, N + 1 - target)
         };
         state.undo();
         we_can_achieve_target
     }
 
-    fn we_win_last_trick(state: &mut DdsRunner<N>) -> bool {
+    fn score_terminal_node(state: &mut DdsRunner<N>) -> bool {
         let lead = state.next_to_play();
 
         Self::play_last_trick(state);
@@ -218,8 +211,9 @@ mod test {
     use std::str::FromStr;
     use strum::IntoEnumIterator;
     // use crate::primitives::deal::Seat;
-    use crate::primitives::{Deal, Hand, Suit};
+    use crate::primitives::{Deal, Hand};
     // use strum::IntoEnumIterator;
+    use crate::primitives::contract::Strain;
     use crate::primitives::deal::{Board, Seat};
     use test_case::test_case;
 
@@ -374,13 +368,13 @@ mod test {
     }
 
     #[ignore]
-    #[test_case( "S:8654,H:J964,D:75,C:K98", "S:J92,H:KT83,D:AK64,C:AQ", "S:AQ7,H:A7,D:QJ83,C:J764", "S:KT3, H:Q52,D:T92,C:T532", None, Seat::West, 9; "Test A")]
+    #[test_case( "S:8654,H:J964,D:75,C:K98", "S:J92,H:KT83,D:AK64,C:AQ", "S:AQ7,H:A7,D:QJ83,C:J764", "S:KT3, H:Q52,D:T92,C:T532", Strain::NoTrump, Seat::West, 9; "Test A")]
     fn solve_single13(
         north: &str,
         east: &str,
         south: &str,
         west: &str,
-        trumps: Option<Suit>,
+        strain: Strain,
         declarer: Seat,
         expected: usize,
     ) {
@@ -398,7 +392,7 @@ mod test {
         //     println!("{}:\n{}", seat, hand)
         // }
 
-        let dds_result = DoubleDummySolver::calculate_max_tricks_for_declarer_with_trumps(deal, declarer, trumps);
+        let dds_result = DoubleDummySolver::calculate_max_tricks_for_declarer_with_trumps(deal, declarer, strain);
 
         // println!("{}", dds_result);
         assert_eq!(dds_result, expected);
