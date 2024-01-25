@@ -1,10 +1,66 @@
+use crate::dds::card_manager::relative_rank::RelativeRank;
 use crate::primitives::card::rank::N_RANKS;
 use crate::primitives::card::Rank;
+use lazy_static::lazy_static;
 use std::ops::BitXor;
 use strum::IntoEnumIterator;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct SuitField(u16);
+
+lazy_static! {
+    static ref TO_RELATIVE_GIVEN_PLAYED: [[RelativeRank; 13]; 8192] = {
+        let mut rr = [[RelativeRank::OutOfPlay; 13]; 8192];
+        for rank in Rank::iter().take(13) {
+            for played in 0u16..8192 {
+                rr[played as usize][rank as usize] = relative_from_rank(rank, played)
+            }
+        }
+        rr
+    };
+    static ref TO_ABSOLUTE_GIVEN_PLAYED: [[Option<Rank>; 13]; 8192] = {
+        let mut ar = [[None; 13]; 8192];
+        for relrank in RelativeRank::iter().take(13) {
+            for played in 0u16..8192 {
+                ar[played as usize][relrank as usize] = try_absolute_from_relative(relrank, played)
+            }
+        }
+        ar
+    };
+}
+
+fn try_absolute_from_relative(relative: RelativeRank, played: u16) -> Option<Rank> {
+    let rel_index = relative as u16;
+    let mut index = 0;
+
+    while index <= rel_index {
+        if played & (1 << index) == 0 {
+            let shifted = played >> index;
+            let pop_count = shifted.count_ones() as u16;
+
+            if rel_index == index + pop_count {
+                return Some(Rank::from(index));
+            }
+        }
+        index += 1;
+    }
+    None
+}
+
+fn relative_from_rank(rank: Rank, played: u16) -> RelativeRank {
+    let relative = SuitField::u16_from_rank(rank);
+
+    if relative & played != 0 {
+        return RelativeRank::OutOfPlay;
+    }
+
+    let index = rank as u16;
+
+    let shifted = played >> index;
+    let pop_count = shifted.count_ones() as u16;
+
+    RelativeRank::from(index + pop_count)
+}
 
 #[allow(dead_code)]
 impl SuitField {
@@ -181,7 +237,9 @@ impl SuitField {
 
 #[cfg(test)]
 mod test {
+    use super::{TO_ABSOLUTE_GIVEN_PLAYED, TO_RELATIVE_GIVEN_PLAYED};
 
+    use crate::dds::card_manager::relative_rank::RelativeRank;
     use crate::dds::card_manager::suit_field::SuitField;
     use crate::primitives::card::Rank;
     use test_case::test_case;
@@ -237,5 +295,21 @@ mod test {
     #[test_case(Rank::Ace, 0b0000_1111_1111_1111)]
     fn all_lower_than(rank: Rank, expected: u16) {
         assert_eq!(SuitField::all_lower_than(rank), SuitField::from_u16(expected));
+    }
+
+    #[test_case(Rank::Two, 0b0000_0011_0000_1000, RelativeRank::Five)]
+    #[test_case(Rank::Two, 0b0000_0011_0100_1000, RelativeRank::Six)]
+    #[test_case(Rank::Two, 0b0000_0011_0100_1001, RelativeRank::OutOfPlay)]
+    fn relative_given_played(rank: Rank, played: u16, expected: RelativeRank) {
+        let relative = TO_RELATIVE_GIVEN_PLAYED[played as usize][rank as usize];
+        assert_eq!(relative, expected)
+    }
+
+    #[test_case(RelativeRank::Five, 0b0000_0011_0000_1000, Some(Rank::Two))]
+    #[test_case(RelativeRank::Six, 0b0000_0011_0100_1000, Some(Rank::Two))]
+    #[test_case(RelativeRank::Jack, 0b0000_0011_0100_1001, Some(Rank::Nine))]
+    fn absolute_given_played(rank: RelativeRank, played: u16, expected: Option<Rank>) {
+        let relative = TO_ABSOLUTE_GIVEN_PLAYED[played as usize][rank as usize];
+        assert_eq!(relative, expected)
     }
 }

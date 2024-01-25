@@ -10,18 +10,6 @@ pub struct CardTracker([SuitField; 4]);
 
 pub const SUIT_ARRAY: [Suit; 4] = [Suit::Clubs, Suit::Diamonds, Suit::Hearts, Suit::Spades];
 
-// fn element_wise<const N: usize, T: Copy + Clone + Debug, F>(a: [T; N], b: [T; N], function: F) -> [T; N]
-// where
-//     F: Fn(&T, &T) -> T,
-// {
-//     a.iter()
-//         .zip(b.iter())
-//         .map(|(i, j)| function(i, j))
-//         .collect_vec()
-//         .try_into()
-//         .unwrap()
-// }
-
 impl CardTracker {
     pub fn suit_state(&self, suit: &Suit) -> &SuitField {
         &self.0[*suit as usize]
