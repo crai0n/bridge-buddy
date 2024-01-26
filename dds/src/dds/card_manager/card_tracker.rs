@@ -1,6 +1,6 @@
 use super::suit_field::SuitField;
 
-use crate::primitives::{Card, Hand, Suit};
+use bridge_buddy_core::primitives::{Card, Hand, Suit};
 use itertools::Itertools;
 use std::fmt::Debug;
 use strum::IntoEnumIterator;
@@ -137,7 +137,7 @@ impl CardTracker {
 mod test {
     use super::CardTracker;
 
-    use crate::primitives::{Card, Hand, Suit};
+    use bridge_buddy_core::primitives::{Card, Hand, Suit};
     use itertools::Itertools;
     use std::str::FromStr;
     use test_case::test_case;

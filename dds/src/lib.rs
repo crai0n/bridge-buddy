@@ -1,6 +1,6 @@
-use bridge_buddy_core::game::card_manager::suit_field::SuitField;
 use bridge_buddy_core::primitives::card::relative_rank::RelativeRank;
 use bridge_buddy_core::primitives::card::Rank;
+use dds::card_manager::suit_field::SuitField;
 
 pub mod dds;
 

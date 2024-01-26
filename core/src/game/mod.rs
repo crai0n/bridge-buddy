@@ -4,7 +4,6 @@ pub mod trick_manager;
 pub mod game_data;
 // mod bid_manager;
 pub mod bid_manager;
-pub mod card_manager;
 pub mod hand_manager;
 pub mod scoring;
 

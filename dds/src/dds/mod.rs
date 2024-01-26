@@ -6,6 +6,7 @@ use double_dummy_result::DoubleDummyResult;
 use enum_iterator::all;
 use strum::IntoEnumIterator;
 
+pub mod card_manager;
 mod double_dummy_result;
 pub mod double_dummy_state;
 // mod transposition_table;

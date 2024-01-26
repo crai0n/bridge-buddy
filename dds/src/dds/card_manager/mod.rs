@@ -3,8 +3,8 @@ pub mod suit_field;
 
 use card_tracker::CardTracker;
 
-use crate::primitives::deal::Seat;
-use crate::primitives::{Card, Hand};
+use bridge_buddy_core::primitives::deal::Seat;
+use bridge_buddy_core::primitives::{Card, Hand};
 use itertools::Itertools;
 
 pub struct CardManager {
@@ -59,9 +59,9 @@ impl CardManager {
 mod test {
     use super::card_tracker::CardTracker;
     use super::CardManager;
-    use crate::primitives::card::Rank;
-    use crate::primitives::deal::Seat;
-    use crate::primitives::{Card, Suit};
+    use bridge_buddy_core::primitives::card::Rank;
+    use bridge_buddy_core::primitives::deal::Seat;
+    use bridge_buddy_core::primitives::{Card, Suit};
     use itertools::Itertools;
     use test_case::test_case;
 

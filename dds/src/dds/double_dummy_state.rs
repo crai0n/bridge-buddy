@@ -1,4 +1,4 @@
-use bridge_buddy_core::game::card_manager::CardManager;
+use crate::dds::card_manager::CardManager;
 use bridge_buddy_core::game::trick_manager::TrickManager;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::{Card, Hand, Suit};
@@ -185,9 +185,9 @@ impl<const N: usize> DoubleDummyState<N> {
 
 #[cfg(test)]
 mod test {
+    use crate::dds::card_manager::card_tracker::CardTracker;
+    use crate::dds::card_manager::CardManager;
     use crate::dds::double_dummy_state::DoubleDummyState;
-    use bridge_buddy_core::game::card_manager::card_tracker::CardTracker;
-    use bridge_buddy_core::game::card_manager::CardManager;
     use bridge_buddy_core::game::trick_manager::TrickManager;
     use bridge_buddy_core::primitives::card::Rank;
     use bridge_buddy_core::primitives::deal::Seat;

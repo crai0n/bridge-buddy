@@ -1,6 +1,6 @@
-use crate::primitives::card::rank::N_RANKS;
-use crate::primitives::card::relative_rank::RelativeRank;
-use crate::primitives::card::Rank;
+use bridge_buddy_core::primitives::card::rank::N_RANKS;
+use bridge_buddy_core::primitives::card::relative_rank::RelativeRank;
+use bridge_buddy_core::primitives::card::Rank;
 use lazy_static::lazy_static;
 use std::ops::BitXor;
 use strum::IntoEnumIterator;
@@ -240,8 +240,8 @@ mod test {
     use super::{TO_ABSOLUTE_GIVEN_PLAYED, TO_RELATIVE_GIVEN_PLAYED};
 
     use super::SuitField;
-    use crate::primitives::card::relative_rank::RelativeRank;
-    use crate::primitives::card::Rank;
+    use bridge_buddy_core::primitives::card::relative_rank::RelativeRank;
+    use bridge_buddy_core::primitives::card::Rank;
     use test_case::test_case;
 
     #[test_case(0b0000_0011_0000_1000, 0b0000_1100_0110_0110, 0b0000_1100_1000_0000)]
