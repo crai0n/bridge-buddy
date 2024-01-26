@@ -1,12 +1,11 @@
 use crate::dds::double_dummy_state::DoubleDummyState;
-use crate::primitives::contract::Strain;
-use crate::primitives::deal::Seat;
-use crate::primitives::{Card, Deal};
+use bridge_buddy_core::primitives::contract::Strain;
+use bridge_buddy_core::primitives::deal::Seat;
+use bridge_buddy_core::primitives::{Card, Deal};
 use double_dummy_result::DoubleDummyResult;
 use enum_iterator::all;
 use strum::IntoEnumIterator;
 
-pub mod card_manager;
 mod double_dummy_result;
 pub mod double_dummy_state;
 // mod transposition_table;
@@ -177,9 +176,9 @@ impl<const N: usize> DoubleDummySolver<N> {
 #[cfg(test)]
 mod test {
     use crate::dds::DoubleDummySolver;
-    use crate::primitives::contract::Strain;
-    use crate::primitives::deal::{Board, Seat};
-    use crate::primitives::{Deal, Hand};
+    use bridge_buddy_core::primitives::contract::Strain;
+    use bridge_buddy_core::primitives::deal::{Board, Seat};
+    use bridge_buddy_core::primitives::{Deal, Hand};
     use std::str::FromStr;
     use strum::IntoEnumIterator;
     use test_case::test_case;

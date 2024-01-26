@@ -1,5 +1,5 @@
-use crate::dds::card_manager::relative_rank::RelativeRank;
 use crate::primitives::card::rank::N_RANKS;
+use crate::primitives::card::relative_rank::RelativeRank;
 use crate::primitives::card::Rank;
 use lazy_static::lazy_static;
 use std::ops::BitXor;
@@ -29,7 +29,7 @@ lazy_static! {
     };
 }
 
-fn try_absolute_from_relative(relative: RelativeRank, played: u16) -> Option<Rank> {
+pub fn try_absolute_from_relative(relative: RelativeRank, played: u16) -> Option<Rank> {
     let rel_index = relative as u16;
     let mut index = 0;
 
@@ -47,7 +47,7 @@ fn try_absolute_from_relative(relative: RelativeRank, played: u16) -> Option<Ran
     None
 }
 
-fn relative_from_rank(rank: Rank, played: u16) -> RelativeRank {
+pub fn relative_from_rank(rank: Rank, played: u16) -> RelativeRank {
     let relative = SuitField::u16_from_rank(rank);
 
     if relative & played != 0 {
@@ -78,7 +78,7 @@ impl SuitField {
         Self(mask)
     }
 
-    const fn u16_from_rank(rank: Rank) -> u16 {
+    pub const fn u16_from_rank(rank: Rank) -> u16 {
         1 << (rank as usize)
     }
 
@@ -239,8 +239,8 @@ impl SuitField {
 mod test {
     use super::{TO_ABSOLUTE_GIVEN_PLAYED, TO_RELATIVE_GIVEN_PLAYED};
 
-    use crate::dds::card_manager::relative_rank::RelativeRank;
-    use crate::dds::card_manager::suit_field::SuitField;
+    use super::SuitField;
+    use crate::primitives::card::relative_rank::RelativeRank;
     use crate::primitives::card::Rank;
     use test_case::test_case;
 

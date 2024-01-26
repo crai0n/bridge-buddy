@@ -3,6 +3,7 @@ pub use rank::Rank;
 pub use suit::Suit;
 
 pub mod rank;
+pub mod relative_rank;
 pub mod suit;
 
 pub const N_CARDS: usize = rank::N_RANKS * suit::N_SUITS;

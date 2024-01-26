@@ -5,7 +5,7 @@ use strum::{Display, EnumIter};
 
 pub const N_RANKS: usize = 13;
 
-#[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
+#[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter, Hash)]
 pub enum Rank {
     #[strum(serialize = "2")]
     Two = 0,

@@ -1,6 +1,6 @@
-use crate::primitives::contract::Strain;
-use crate::primitives::deal::Seat;
-use crate::primitives::Suit;
+use bridge_buddy_core::primitives::contract::Strain;
+use bridge_buddy_core::primitives::deal::Seat;
+use bridge_buddy_core::primitives::Suit;
 use std::fmt::{Display, Formatter};
 use strum::IntoEnumIterator;
 

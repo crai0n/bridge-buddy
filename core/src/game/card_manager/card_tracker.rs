@@ -1,4 +1,4 @@
-use crate::dds::card_manager::suit_field::SuitField;
+use super::suit_field::SuitField;
 
 use crate::primitives::{Card, Hand, Suit};
 use itertools::Itertools;
@@ -135,7 +135,7 @@ impl CardTracker {
 
 #[cfg(test)]
 mod test {
-    use crate::dds::card_manager::card_tracker::CardTracker;
+    use super::CardTracker;
 
     use crate::primitives::{Card, Hand, Suit};
     use itertools::Itertools;

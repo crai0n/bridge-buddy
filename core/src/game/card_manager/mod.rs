@@ -1,8 +1,7 @@
 pub mod card_tracker;
-mod relative_rank;
-mod suit_field;
+pub mod suit_field;
 
-use crate::dds::card_manager::card_tracker::CardTracker;
+use card_tracker::CardTracker;
 
 use crate::primitives::deal::Seat;
 use crate::primitives::{Card, Hand};
@@ -58,8 +57,8 @@ impl CardManager {
 
 #[cfg(test)]
 mod test {
-    use crate::dds::card_manager::card_tracker::CardTracker;
-    use crate::dds::card_manager::CardManager;
+    use super::card_tracker::CardTracker;
+    use super::CardManager;
     use crate::primitives::card::Rank;
     use crate::primitives::deal::Seat;
     use crate::primitives::{Card, Suit};

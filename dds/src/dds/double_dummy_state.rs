@@ -1,7 +1,7 @@
-use crate::dds::card_manager::CardManager;
-use crate::game::trick_manager::TrickManager;
-use crate::primitives::deal::Seat;
-use crate::primitives::{Card, Hand, Suit};
+use bridge_buddy_core::game::card_manager::CardManager;
+use bridge_buddy_core::game::trick_manager::TrickManager;
+use bridge_buddy_core::primitives::deal::Seat;
+use bridge_buddy_core::primitives::{Card, Hand, Suit};
 use itertools::Itertools;
 #[allow(unused_imports)]
 use std::cmp::{max, min, Ordering};
@@ -185,13 +185,13 @@ impl<const N: usize> DoubleDummyState<N> {
 
 #[cfg(test)]
 mod test {
-    use crate::dds::card_manager::card_tracker::CardTracker;
-    use crate::dds::card_manager::CardManager;
     use crate::dds::double_dummy_state::DoubleDummyState;
-    use crate::game::trick_manager::TrickManager;
-    use crate::primitives::card::Rank;
-    use crate::primitives::deal::Seat;
-    use crate::primitives::{Card, Suit};
+    use bridge_buddy_core::game::card_manager::card_tracker::CardTracker;
+    use bridge_buddy_core::game::card_manager::CardManager;
+    use bridge_buddy_core::game::trick_manager::TrickManager;
+    use bridge_buddy_core::primitives::card::Rank;
+    use bridge_buddy_core::primitives::deal::Seat;
+    use bridge_buddy_core::primitives::{Card, Suit};
     use itertools::Itertools;
     use test_case::test_case;
 
