@@ -1,66 +1,14 @@
 use bridge_buddy_core::primitives::card::rank::N_RANKS;
 use bridge_buddy_core::primitives::card::relative_rank::RelativeRank;
 use bridge_buddy_core::primitives::card::Rank;
-use lazy_static::lazy_static;
+
 use std::ops::BitXor;
 use strum::IntoEnumIterator;
 
+include!(concat!(env!("OUT_DIR"), "/codegen.rs"));
+
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct SuitField(u16);
-
-lazy_static! {
-    static ref TO_RELATIVE_GIVEN_PLAYED: [[RelativeRank; 13]; 8192] = {
-        let mut rr = [[RelativeRank::OutOfPlay; 13]; 8192];
-        for rank in Rank::iter().take(13) {
-            for played in 0u16..8192 {
-                rr[played as usize][rank as usize] = relative_from_rank(rank, played)
-            }
-        }
-        rr
-    };
-    static ref TO_ABSOLUTE_GIVEN_PLAYED: [[Option<Rank>; 13]; 8192] = {
-        let mut ar = [[None; 13]; 8192];
-        for relrank in RelativeRank::iter().take(13) {
-            for played in 0u16..8192 {
-                ar[played as usize][relrank as usize] = try_absolute_from_relative(relrank, played)
-            }
-        }
-        ar
-    };
-}
-
-pub fn try_absolute_from_relative(relative: RelativeRank, played: u16) -> Option<Rank> {
-    let rel_index = relative as u16;
-    let mut index = 0;
-
-    while index <= rel_index {
-        if played & (1 << index) == 0 {
-            let shifted = played >> index;
-            let pop_count = shifted.count_ones() as u16;
-
-            if rel_index == index + pop_count {
-                return Some(Rank::from(index));
-            }
-        }
-        index += 1;
-    }
-    None
-}
-
-pub fn relative_from_rank(rank: Rank, played: u16) -> RelativeRank {
-    let relative = SuitField::u16_from_rank(rank);
-
-    if relative & played != 0 {
-        return RelativeRank::OutOfPlay;
-    }
-
-    let index = rank as u16;
-
-    let shifted = played >> index;
-    let pop_count = shifted.count_ones() as u16;
-
-    RelativeRank::from(index + pop_count)
-}
 
 #[allow(dead_code)]
 impl SuitField {
@@ -228,6 +176,18 @@ impl SuitField {
     }
 
     pub const ALL_RANKS: u16 = 0b0001_1111_1111_1111;
+
+    pub fn find_relative(&self, absolute: Rank) -> RelativeRank {
+        let field = 1u32 << absolute as usize;
+        let key = field << 16 | self.0 as u32;
+        *RELATIVE.get(&key).unwrap()
+    }
+
+    pub fn try_find_absolute(&self, relative: RelativeRank) -> Option<Rank> {
+        let field = 1u32 << relative as usize;
+        let key = field << 16 | self.0 as u32;
+        *ABSOLUTE.get(&key).unwrap()
+    }
 }
 
 // pub struct HighCard {
@@ -237,7 +197,6 @@ impl SuitField {
 
 #[cfg(test)]
 mod test {
-    use super::{TO_ABSOLUTE_GIVEN_PLAYED, TO_RELATIVE_GIVEN_PLAYED};
 
     use super::SuitField;
     use bridge_buddy_core::primitives::card::relative_rank::RelativeRank;
@@ -301,7 +260,8 @@ mod test {
     #[test_case(Rank::Two, 0b0000_0011_0100_1000, RelativeRank::Six)]
     #[test_case(Rank::Two, 0b0000_0011_0100_1001, RelativeRank::OutOfPlay)]
     fn relative_given_played(rank: Rank, played: u16, expected: RelativeRank) {
-        let relative = TO_RELATIVE_GIVEN_PLAYED[played as usize][rank as usize];
+        let played = SuitField::from_u16(played);
+        let relative = played.find_relative(rank);
         assert_eq!(relative, expected)
     }
 
@@ -309,7 +269,8 @@ mod test {
     #[test_case(RelativeRank::Six, 0b0000_0011_0100_1000, Some(Rank::Two))]
     #[test_case(RelativeRank::Jack, 0b0000_0011_0100_1001, Some(Rank::Nine))]
     fn absolute_given_played(rank: RelativeRank, played: u16, expected: Option<Rank>) {
-        let relative = TO_ABSOLUTE_GIVEN_PLAYED[played as usize][rank as usize];
+        let played = SuitField::from_u16(played);
+        let relative = played.try_find_absolute(rank);
         assert_eq!(relative, expected)
     }
 }
