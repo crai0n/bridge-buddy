@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use strum::{Display, EnumIter};
 
 #[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
-pub enum RelativeRank {
+pub enum VirtualRank {
     #[strum(serialize = "2")]
     Two = 0,
     #[strum(serialize = "3")]
@@ -33,31 +33,31 @@ pub enum RelativeRank {
     OutOfPlay = 15,
 }
 
-impl From<u16> for RelativeRank {
-    fn from(value: u16) -> RelativeRank {
+impl From<u16> for VirtualRank {
+    fn from(value: u16) -> VirtualRank {
         match value {
-            15 => RelativeRank::OutOfPlay,
-            0 => RelativeRank::Two,
-            1 => RelativeRank::Three,
-            2 => RelativeRank::Four,
-            3 => RelativeRank::Five,
-            4 => RelativeRank::Six,
-            5 => RelativeRank::Seven,
-            6 => RelativeRank::Eight,
-            7 => RelativeRank::Nine,
-            8 => RelativeRank::Ten,
-            9 => RelativeRank::Jack,
-            10 => RelativeRank::Queen,
-            11 => RelativeRank::King,
-            12 => RelativeRank::Ace,
+            15 => VirtualRank::OutOfPlay,
+            0 => VirtualRank::Two,
+            1 => VirtualRank::Three,
+            2 => VirtualRank::Four,
+            3 => VirtualRank::Five,
+            4 => VirtualRank::Six,
+            5 => VirtualRank::Seven,
+            6 => VirtualRank::Eight,
+            7 => VirtualRank::Nine,
+            8 => VirtualRank::Ten,
+            9 => VirtualRank::Jack,
+            10 => VirtualRank::Queen,
+            11 => VirtualRank::King,
+            12 => VirtualRank::Ace,
             _ => panic!("Not a valid relative rank!"),
         }
     }
 }
 
-impl RelativeRank {
+impl VirtualRank {
     #[allow(dead_code)]
-    pub fn touches(&self, other: &RelativeRank) -> bool {
+    pub fn touches(&self, other: &VirtualRank) -> bool {
         // println!("testing {} and {}", self, other);
         match self.cmp(other) {
             Ordering::Less => *other as usize - *self as usize == 1,
@@ -69,15 +69,15 @@ impl RelativeRank {
 
 #[cfg(test)]
 mod tests {
-    use super::RelativeRank;
-    use super::RelativeRank::*;
+    use super::VirtualRank;
+    use super::VirtualRank::*;
     use test_case::test_case;
 
     #[test_case(King, Ace; "King and Ace")]
     #[test_case(Ten, Queen; "Ten and Queen")]
     #[test_case(Eight, Jack; "Eight and Jack")]
     #[test_case(Two, Ten; "Two and Ten")]
-    fn relative_ranking(lower: RelativeRank, higher: RelativeRank) {
+    fn relative_ranking(lower: VirtualRank, higher: VirtualRank) {
         assert!(lower < higher);
     }
 
@@ -94,7 +94,7 @@ mod tests {
     #[test_case(Four, "4")]
     #[test_case(Three, "3")]
     #[test_case(Two, "2")]
-    fn display(rank: RelativeRank, expected: &str) {
+    fn display(rank: VirtualRank, expected: &str) {
         assert_eq!(format!("{}", rank), expected);
     }
 

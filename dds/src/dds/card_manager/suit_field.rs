@@ -1,11 +1,12 @@
 use bridge_buddy_core::primitives::card::rank::N_RANKS;
-use bridge_buddy_core::primitives::card::relative_rank::RelativeRank;
+use bridge_buddy_core::primitives::card::virtual_rank::VirtualRank;
 use bridge_buddy_core::primitives::card::Rank;
 
 use std::ops::BitXor;
 use strum::IntoEnumIterator;
 
-include!(concat!(env!("OUT_DIR"), "/codegen.rs"));
+include!(concat!(env!("OUT_DIR"), "/relative_map.rs"));
+include!(concat!(env!("OUT_DIR"), "/absolute_map.rs"));
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct SuitField(u16);
@@ -177,13 +178,13 @@ impl SuitField {
 
     pub const ALL_RANKS: u16 = 0b0001_1111_1111_1111;
 
-    pub fn find_relative(&self, absolute: Rank) -> RelativeRank {
+    pub fn find_relative(&self, absolute: Rank) -> VirtualRank {
         let field = 1u32 << absolute as usize;
         let key = field << 16 | self.0 as u32;
         *RELATIVE.get(&key).unwrap()
     }
 
-    pub fn try_find_absolute(&self, relative: RelativeRank) -> Option<Rank> {
+    pub fn try_find_absolute(&self, relative: VirtualRank) -> Option<Rank> {
         let field = 1u32 << relative as usize;
         let key = field << 16 | self.0 as u32;
         *ABSOLUTE.get(&key).unwrap()
@@ -199,7 +200,7 @@ impl SuitField {
 mod test {
 
     use super::SuitField;
-    use bridge_buddy_core::primitives::card::relative_rank::RelativeRank;
+    use bridge_buddy_core::primitives::card::virtual_rank::VirtualRank;
     use bridge_buddy_core::primitives::card::Rank;
     use test_case::test_case;
 
@@ -256,19 +257,19 @@ mod test {
         assert_eq!(SuitField::all_lower_than(rank), SuitField::from_u16(expected));
     }
 
-    #[test_case(Rank::Two, 0b0000_0011_0000_1000, RelativeRank::Five)]
-    #[test_case(Rank::Two, 0b0000_0011_0100_1000, RelativeRank::Six)]
-    #[test_case(Rank::Two, 0b0000_0011_0100_1001, RelativeRank::OutOfPlay)]
-    fn relative_given_played(rank: Rank, played: u16, expected: RelativeRank) {
+    #[test_case(Rank::Two, 0b0000_0011_0000_1000, VirtualRank::Five)]
+    #[test_case(Rank::Two, 0b0000_0011_0100_1000, VirtualRank::Six)]
+    #[test_case(Rank::Two, 0b0000_0011_0100_1001, VirtualRank::OutOfPlay)]
+    fn relative_given_played(rank: Rank, played: u16, expected: VirtualRank) {
         let played = SuitField::from_u16(played);
         let relative = played.find_relative(rank);
         assert_eq!(relative, expected)
     }
 
-    #[test_case(RelativeRank::Five, 0b0000_0011_0000_1000, Some(Rank::Two))]
-    #[test_case(RelativeRank::Six, 0b0000_0011_0100_1000, Some(Rank::Two))]
-    #[test_case(RelativeRank::Jack, 0b0000_0011_0100_1001, Some(Rank::Nine))]
-    fn absolute_given_played(rank: RelativeRank, played: u16, expected: Option<Rank>) {
+    #[test_case(VirtualRank::Five, 0b0000_0011_0000_1000, Some(Rank::Two))]
+    #[test_case(VirtualRank::Six, 0b0000_0011_0100_1000, Some(Rank::Two))]
+    #[test_case(VirtualRank::Jack, 0b0000_0011_0100_1001, Some(Rank::Nine))]
+    fn absolute_given_played(rank: VirtualRank, played: u16, expected: Option<Rank>) {
         let played = SuitField::from_u16(played);
         let relative = played.try_find_absolute(rank);
         assert_eq!(relative, expected)
