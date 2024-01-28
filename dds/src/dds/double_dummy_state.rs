@@ -5,6 +5,7 @@ use bridge_buddy_core::primitives::{Card, Hand, Suit};
 use itertools::Itertools;
 #[allow(unused_imports)]
 use std::cmp::{max, min, Ordering};
+use crate::dds::card_manager::card_tracker::CardTracker;
 
 pub struct DoubleDummyState<const N: usize> {
     trick_manager: TrickManager<N>,
@@ -81,6 +82,10 @@ impl<const N: usize> DoubleDummyState<N> {
                 }
             }
         }
+    }
+
+    pub fn played_cards(&self) -> CardTracker {
+        self.card_manager.played_cards()
     }
 
     pub fn quick_tricks_for_player(&self, player: Seat) -> u8 {

@@ -9,6 +9,7 @@ use strum::IntoEnumIterator;
 pub mod card_manager;
 mod double_dummy_result;
 pub mod double_dummy_state;
+pub mod virtual_game_view;
 // mod transposition_table;
 // mod double_dummy_solver;
 
