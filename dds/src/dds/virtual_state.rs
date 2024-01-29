@@ -187,4 +187,8 @@ impl<const N: usize> VirtualState<N> {
     pub fn last_trick_winner(&self) -> Option<Seat> {
         self.game.last_trick_winner()
     }
+
+    pub fn list_played_cards(&self) -> &[Card] {
+        self.game.list_played_cards()
+    }
 }

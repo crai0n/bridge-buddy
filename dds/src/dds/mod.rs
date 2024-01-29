@@ -3,7 +3,7 @@ use crate::dds::transposition_table::{TTValue, TranspositionTable};
 use crate::dds::virtual_state::VirtualState;
 use bridge_buddy_core::primitives::contract::Strain;
 use bridge_buddy_core::primitives::deal::Seat;
-use bridge_buddy_core::primitives::Deal;
+use bridge_buddy_core::primitives::{Card, Deal};
 use dds_config::DdsConfig;
 use double_dummy_result::DoubleDummyResult;
 use enum_iterator::all;
@@ -119,7 +119,8 @@ impl<const N: usize> DoubleDummySolver<N> {
             if score >= estimate {
                 if self.config.use_transposition_table {
                     let add_tricks = score - state.tricks_won_by_axis(state.next_to_play());
-                    Self::store_lower_bound_in_tt(state, add_tricks, tt);
+                    let cards = state.list_played_cards().to_vec();
+                    Self::store_lower_bound_in_tt(state, add_tricks, tt, cards);
                 }
                 return score;
             } else if score > highest_score {
@@ -130,7 +131,8 @@ impl<const N: usize> DoubleDummySolver<N> {
 
         if self.config.use_transposition_table {
             let add_tricks = highest_score - state.tricks_won_by_axis(state.next_to_play());
-            Self::store_upper_bound_in_tt(state, add_tricks, tt);
+            let cards = state.list_played_cards().to_vec();
+            Self::store_upper_bound_in_tt(state, add_tricks, tt, cards);
         }
 
         highest_score
@@ -140,7 +142,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         let tt_key = state.generate_tt_key();
         match tt.lookup(&tt_key) {
             None => None,
-            Some(&TTValue(lower_add, upper_add)) => {
+            Some(&TTValue(lower_add, upper_add, _)) => {
                 let current_tricks = state.tricks_won_by_axis(state.next_to_play());
                 let lower = current_tricks + lower_add;
                 let upper = current_tricks + upper_add;
@@ -189,7 +191,8 @@ impl<const N: usize> DoubleDummySolver<N> {
             // println!("Enough quick tricks for target!");
             if total_with_quick_tricks >= estimate {
                 if self.config.use_transposition_table {
-                    Self::store_lower_bound_in_tt(state, quick_tricks, tt);
+                    let cards = state.list_played_cards().to_vec();
+                    Self::store_lower_bound_in_tt(state, quick_tricks, tt, cards);
                 }
                 return Some(total_with_quick_tricks);
             }
@@ -200,14 +203,14 @@ impl<const N: usize> DoubleDummySolver<N> {
         None
     }
 
-    fn store_lower_bound_in_tt(state: &VirtualState<N>, bound: usize, tt: &mut TranspositionTable) {
+    fn store_lower_bound_in_tt(state: &VirtualState<N>, bound: usize, tt: &mut TranspositionTable, cards: Vec<Card>) {
         let tt_key = state.generate_tt_key();
-        tt.update_lower_bound(&tt_key, bound)
+        tt.update_lower_bound(&tt_key, bound, cards)
     }
 
-    fn store_upper_bound_in_tt(state: &VirtualState<N>, bound: usize, tt: &mut TranspositionTable) {
+    fn store_upper_bound_in_tt(state: &VirtualState<N>, bound: usize, tt: &mut TranspositionTable, cards: Vec<Card>) {
         let tt_key = state.generate_tt_key();
-        tt.update_upper_bound(&tt_key, bound)
+        tt.update_upper_bound(&tt_key, bound, cards)
     }
 
     fn quick_tricks_for_current_player(state: &VirtualState<N>) -> u8 {
@@ -230,6 +233,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         // println!("{:?} has won the last trick!", state.last_trick_winner());
 
         let result = state.tricks_won_by_axis(lead);
+        let played_cards = state.list_played_cards().to_vec();
 
         let winner_of_last_trick = state.last_trick_winner().unwrap();
 
@@ -238,9 +242,9 @@ impl<const N: usize> DoubleDummySolver<N> {
         if self.config.use_transposition_table {
             // store exact score in tt
             if winner_of_last_trick.same_axis(&state.next_to_play()) {
-                Self::store_lower_bound_in_tt(state, 1, tt);
+                Self::store_lower_bound_in_tt(state, 1, tt, played_cards);
             } else {
-                Self::store_upper_bound_in_tt(state, 0, tt);
+                Self::store_upper_bound_in_tt(state, 0, tt, played_cards);
             }
         }
 

@@ -127,6 +127,10 @@ impl<const N: usize> DoubleDummyState<N> {
         }
     }
 
+    pub fn list_played_cards(&self) -> &[Card] {
+        self.trick_manager.played_cards()
+    }
+
     pub fn played_cards(&self) -> CardTracker {
         self.card_manager.played_cards()
     }

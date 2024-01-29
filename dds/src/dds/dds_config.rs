@@ -9,7 +9,7 @@ impl Default for DdsConfig {
         Self {
             move_ordering: true,
             check_quick_tricks: true,
-            use_transposition_table: false,
+            use_transposition_table: true,
         }
     }
 }
