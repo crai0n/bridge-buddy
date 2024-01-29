@@ -80,8 +80,17 @@ impl<const N: usize> DoubleDummySolver<N> {
 
             let mut start_state = VirtualState::new(deal.hands, opening_leader, trumps);
 
-            let score = self.score_node(&mut start_state, estimate, tt);
+            let (score, pv) = self.score_node(&mut start_state, estimate, tt);
             println!("Scored {} tricks for defenders", score);
+            println!("Principal Variation:");
+
+            for (index, card) in pv.iter().enumerate() {
+                print!("{}, ", card);
+                if index % 4 == 3 {
+                    println!();
+                }
+            }
+
             if score >= estimate {
                 at_least = score;
             } else {
@@ -91,7 +100,12 @@ impl<const N: usize> DoubleDummySolver<N> {
         at_least
     }
 
-    fn score_node(&self, state: &mut VirtualState<N>, estimate: usize, tt: &mut TranspositionTable) -> usize {
+    fn score_node(
+        &self,
+        state: &mut VirtualState<N>,
+        estimate: usize,
+        tt: &mut TranspositionTable,
+    ) -> (usize, Vec<Card>) {
         if let Some(early_score) = self.try_early_node_score(state, estimate, tt) {
             return early_score;
         }
@@ -103,29 +117,31 @@ impl<const N: usize> DoubleDummySolver<N> {
         // println!("generating possible moves!");
         let available_moves = self.generate_moves(state);
         let mut highest_score = 0;
+        let mut pv: Vec<Card> = vec![];
         for candidate_move in available_moves {
             // println!("trying card {} for {}!", candidate_move, state.next_to_play());
             let current_player = state.next_to_play();
 
             state.play(candidate_move.card).unwrap();
             let new_player = state.next_to_play();
-            let score = if current_player.same_axis(&new_player) {
+            let (score, played_cards) = if current_player.same_axis(&new_player) {
                 self.score_node(state, estimate, tt)
             } else {
-                N - self.score_node(state, N + 1 - estimate, tt)
+                let opposite = self.score_node(state, N + 1 - estimate, tt);
+                (N - opposite.0, opposite.1)
             };
             state.undo();
 
             if score >= estimate {
                 if self.config.use_transposition_table {
                     let add_tricks = score - state.tricks_won_by_axis(state.next_to_play());
-                    let cards = state.list_played_cards().to_vec();
-                    Self::store_lower_bound_in_tt(state, add_tricks, tt, cards);
+                    Self::store_lower_bound_in_tt(state, add_tricks, tt, played_cards.clone());
                 }
-                return score;
+                return (score, played_cards.clone());
             } else if score > highest_score {
                 // if we cannot reach estimate, we need the highest score found
-                highest_score = score
+                highest_score = score;
+                pv = played_cards.clone();
             }
         }
 
@@ -135,14 +151,18 @@ impl<const N: usize> DoubleDummySolver<N> {
             Self::store_upper_bound_in_tt(state, add_tricks, tt, cards);
         }
 
-        highest_score
+        (highest_score, pv)
     }
 
-    fn try_find_node_in_tt(state: &VirtualState<N>, estimate: usize, tt: &mut TranspositionTable) -> Option<usize> {
+    fn try_find_node_in_tt(
+        state: &VirtualState<N>,
+        estimate: usize,
+        tt: &mut TranspositionTable,
+    ) -> Option<(usize, Vec<Card>)> {
         let tt_key = state.generate_tt_key();
         match tt.lookup(&tt_key) {
             None => None,
-            Some(&TTValue(lower_add, upper_add, _)) => {
+            Some(&TTValue(lower_add, upper_add, ref cards)) => {
                 let current_tricks = state.tricks_won_by_axis(state.next_to_play());
                 let lower = current_tricks + lower_add;
                 let upper = current_tricks + upper_add;
@@ -154,10 +174,26 @@ impl<const N: usize> DoubleDummySolver<N> {
                 // );
                 if lower >= estimate {
                     // println!("lower bound is good enough for estimate!");
-                    Some(lower)
+                    // print!("Cards: ");
+                    // for (index, card) in cards.iter().enumerate() {
+                    //     print!("{}, ", card);
+                    //     if index % 4 == 3 {
+                    //         println!();
+                    //     }
+                    // }
+                    // println!();
+                    Some((lower, cards.clone()))
                 } else if upper < estimate {
                     // println!("upper bound is worse than estimate!");
-                    Some(upper)
+                    // print!("Cards: ");
+                    // for (index, card) in cards.iter().enumerate() {
+                    //     print!("{}, ", card);
+                    //     if index % 4 == 3 {
+                    //         println!();
+                    //     }
+                    // }
+                    // println!();
+                    Some((upper, cards.clone()))
                 } else {
                     None
                 }
@@ -170,19 +206,19 @@ impl<const N: usize> DoubleDummySolver<N> {
         state: &mut VirtualState<N>,
         estimate: usize,
         tt: &mut TranspositionTable,
-    ) -> Option<usize> {
+    ) -> Option<(usize, Vec<Card>)> {
         let current_tricks = Self::current_tricks(state);
         if current_tricks >= estimate {
             // println!("Already won enough tricks!");
             // let tt_value = TTValue {at_least_additional_tricks: current_tricks, at_most_additional_tricks}
             // storing in TT doesn't make sense as we can never improve lower bound here
-            return Some(current_tricks);
+            return Some((current_tricks, state.list_played_cards().to_vec()));
         };
         let maximum_tricks = Self::maximum_achievable_tricks(state);
         if maximum_tricks < estimate {
             // println!("Not enough tricks left!");
             // storing in TT doesn't make sense as we can never improve upper bound here
-            return Some(maximum_tricks);
+            return Some((maximum_tricks, state.list_played_cards().to_vec()));
         };
         if self.config.check_quick_tricks && state.player_is_leading() {
             let quick_tricks = Self::quick_tricks_for_current_player(state) as usize;
@@ -194,7 +230,7 @@ impl<const N: usize> DoubleDummySolver<N> {
                     let cards = state.list_played_cards().to_vec();
                     Self::store_lower_bound_in_tt(state, quick_tricks, tt, cards);
                 }
-                return Some(total_with_quick_tricks);
+                return Some((total_with_quick_tricks, state.list_played_cards().to_vec()));
             }
         }
         if self.config.use_transposition_table && state.player_is_leading() {
@@ -225,7 +261,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         state.tricks_won_by_axis(state.next_to_play())
     }
 
-    fn score_terminal_node(&self, state: &mut VirtualState<N>, tt: &mut TranspositionTable) -> usize {
+    fn score_terminal_node(&self, state: &mut VirtualState<N>, tt: &mut TranspositionTable) -> (usize, Vec<Card>) {
         let lead = state.next_to_play();
 
         Self::play_last_trick(state);
@@ -242,13 +278,13 @@ impl<const N: usize> DoubleDummySolver<N> {
         if self.config.use_transposition_table {
             // store exact score in tt
             if winner_of_last_trick.same_axis(&state.next_to_play()) {
-                Self::store_lower_bound_in_tt(state, 1, tt, played_cards);
+                Self::store_lower_bound_in_tt(state, 1, tt, played_cards.clone());
             } else {
-                Self::store_upper_bound_in_tt(state, 0, tt, played_cards);
+                Self::store_upper_bound_in_tt(state, 0, tt, played_cards.clone());
             }
         }
 
-        result
+        (result, played_cards)
     }
 
     fn play_last_trick(state: &mut VirtualState<N>) {
