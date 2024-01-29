@@ -1,4 +1,5 @@
-use crate::dds::virtual_game_view::{VirtualCard, VirtualState};
+use crate::dds::dds_move::DdsMove;
+use crate::dds::virtual_state::VirtualState;
 use bridge_buddy_core::primitives::contract::Strain;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::Deal;
@@ -7,9 +8,11 @@ use enum_iterator::all;
 use strum::IntoEnumIterator;
 
 pub mod card_manager;
+mod dds_move;
 mod double_dummy_result;
 pub mod double_dummy_state;
-pub mod virtual_game_view;
+mod virtual_card;
+pub mod virtual_state;
 // mod transposition_table;
 // mod double_dummy_solver;
 
@@ -83,7 +86,7 @@ impl<const N: usize> DoubleDummySolver<N> {
             // println!("trying card {} for {}!", candidate_move, state.next_to_play());
             let current_player = state.next_to_play();
 
-            state.play(candidate_move).unwrap();
+            state.play(candidate_move.card).unwrap();
             let new_player = state.next_to_play();
             let score = if current_player.same_axis(&new_player) {
                 Self::score_node(state, estimate)
@@ -158,7 +161,7 @@ impl<const N: usize> DoubleDummySolver<N> {
 
     fn play_last_trick(state: &mut VirtualState<N>) {
         for _ in 0..4 {
-            let last_card_of_player = *state.valid_moves().first().unwrap();
+            let last_card_of_player = state.valid_moves().first().unwrap().card;
 
             state.play(last_card_of_player).unwrap();
         }
@@ -170,13 +173,26 @@ impl<const N: usize> DoubleDummySolver<N> {
         }
     }
 
-    fn generate_moves(state: &VirtualState<N>) -> Vec<VirtualCard> {
+    fn generate_moves(state: &VirtualState<N>) -> Vec<DdsMove> {
         let mut valid_moves = state.valid_moves();
-        Self::remove_equivalent_moves(&mut valid_moves);
-        valid_moves
+        Self::find_and_remove_equivalent_moves(&mut valid_moves)
     }
 
-    fn remove_equivalent_moves(_moves: &mut [VirtualCard]) {}
+    fn find_and_remove_equivalent_moves(moves: &mut [DdsMove]) -> Vec<DdsMove> {
+        let mut output: Vec<DdsMove> = vec![];
+        for &mut candidate_move in moves {
+            if let Some(last) = output.last_mut() {
+                if candidate_move.card.touches(&last.card) {
+                    last.sequence_length += 1;
+                } else {
+                    output.push(candidate_move);
+                }
+            } else {
+                output.push(candidate_move);
+            }
+        }
+        output
+    }
 }
 
 #[cfg(test)]

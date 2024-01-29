@@ -152,10 +152,7 @@ impl DoubleDummySolver {
     }
 }
 
-pub struct Move {
-    card: Card,
-    priority: usize,
-}
+
 
 pub struct DdsConfig {
     ab_pruning: bool,

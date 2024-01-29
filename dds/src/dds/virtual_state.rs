@@ -1,9 +1,9 @@
 use super::double_dummy_state::DoubleDummyState;
-use crate::dds::card_manager::suit_field::SuitField;
-use bridge_buddy_core::error::BBError;
-use bridge_buddy_core::primitives::card::virtual_rank::VirtualRank;
-
 use crate::dds::card_manager::card_tracker::CardTracker;
+use crate::dds::card_manager::suit_field::SuitField;
+use crate::dds::dds_move::DdsMove;
+use crate::dds::virtual_card::VirtualCard;
+use bridge_buddy_core::error::BBError;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::{Card, Hand, Suit};
 use itertools::Itertools;
@@ -80,15 +80,15 @@ impl<const N: usize> VirtualState<N> {
         }
     }
 
-    fn valid_moves_for(&self, player: Seat) -> Vec<VirtualCard> {
+    fn valid_moves_for(&self, player: Seat) -> Vec<DdsMove> {
         let absolute_moves = self.game.valid_moves_for(player);
         absolute_moves
             .into_iter()
-            .map(|x| self.absolute_to_virtual(x))
+            .map(|x| DdsMove::new(self.absolute_to_virtual(x)))
             .collect_vec()
     }
 
-    pub fn valid_moves(&self) -> Vec<VirtualCard> {
+    pub fn valid_moves(&self) -> Vec<DdsMove> {
         self.valid_moves_for(self.next_to_play())
     }
 
@@ -107,10 +107,4 @@ impl<const N: usize> VirtualState<N> {
     pub fn quick_tricks_for_player(&self, player: Seat) -> u8 {
         self.game.quick_tricks_for_player(player)
     }
-}
-
-#[derive(Copy, Clone, Eq, PartialOrd, PartialEq, Ord)]
-pub struct VirtualCard {
-    suit: Suit,
-    rank: VirtualRank,
 }
