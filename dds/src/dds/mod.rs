@@ -1,4 +1,5 @@
 use crate::dds::dds_move::DdsMove;
+use crate::dds::transposition_table::TranspositionTable;
 use crate::dds::virtual_state::VirtualState;
 use bridge_buddy_core::primitives::contract::Strain;
 use bridge_buddy_core::primitives::deal::Seat;
@@ -41,10 +42,11 @@ impl<const N: usize> DoubleDummySolver<N> {
 
         let mut result = DoubleDummyResult::new();
 
-        for declarer in Seat::iter() {
-            for strain in all::<Strain>() {
+        for strain in all::<Strain>() {
+            let mut tt = TranspositionTable::new();
+            for declarer in Seat::iter() {
                 let opening_leader = declarer + 1;
-                let defenders_tricks = self.solve_initial_position(deal, strain, opening_leader);
+                let defenders_tricks = self.solve_initial_position(deal, strain, opening_leader, &mut tt);
                 result.set_tricks_for_declarer_in_strain(N - defenders_tricks, declarer, strain);
             }
         }
@@ -53,7 +55,13 @@ impl<const N: usize> DoubleDummySolver<N> {
         result
     }
 
-    fn solve_initial_position(&self, deal: Deal<N>, strain: Strain, opening_leader: Seat) -> usize {
+    fn solve_initial_position(
+        &self,
+        deal: Deal<N>,
+        strain: Strain,
+        opening_leader: Seat,
+        tt: &mut TranspositionTable,
+    ) -> usize {
         let mut at_least = 0;
         let mut at_most = N; // at_most = b - 1;
 
@@ -72,7 +80,7 @@ impl<const N: usize> DoubleDummySolver<N> {
 
             let mut start_state = VirtualState::new(deal.hands, opening_leader, trumps);
 
-            let score = self.score_node(&mut start_state, estimate);
+            let score = self.score_node(&mut start_state, estimate, tt);
             println!("Scored {} tricks for defenders", score);
             if score >= estimate {
                 at_least = score;
@@ -83,8 +91,12 @@ impl<const N: usize> DoubleDummySolver<N> {
         at_least
     }
 
-    fn score_node(&self, state: &mut VirtualState<N>, estimate: usize) -> usize {
-        if let Some(early_score) = self.try_early_node_score(state, estimate) {
+    fn score_node(&self, state: &mut VirtualState<N>, estimate: usize, tt: &mut TranspositionTable) -> usize {
+        if let Some(tt_score) = Self::try_find_score_in_tt(state, estimate, tt) {
+            return tt_score;
+        }
+
+        if let Some(early_score) = self.try_early_node_score(state, estimate, tt) {
             return early_score;
         }
 
@@ -102,9 +114,9 @@ impl<const N: usize> DoubleDummySolver<N> {
             state.play(candidate_move.card).unwrap();
             let new_player = state.next_to_play();
             let score = if current_player.same_axis(&new_player) {
-                self.score_node(state, estimate)
+                self.score_node(state, estimate, tt)
             } else {
-                N - self.score_node(state, N + 1 - estimate)
+                N - self.score_node(state, N + 1 - estimate, tt)
             };
             state.undo();
 
@@ -118,10 +130,27 @@ impl<const N: usize> DoubleDummySolver<N> {
         highest_score
     }
 
-    fn try_early_node_score(&self, state: &mut VirtualState<N>, estimate: usize) -> Option<usize> {
+    fn try_find_score_in_tt(_state: &VirtualState<N>, _estimate: usize, _tt: &mut TranspositionTable) -> Option<usize> {
+        // let key = state.generate_tt_key();
+        // match tt.lookup(key) {
+        //     None => None,
+        //     Some(tt_value) => {
+        //
+        //     }
+        // }
+        None
+    }
+
+    fn try_early_node_score(
+        &self,
+        state: &mut VirtualState<N>,
+        estimate: usize,
+        _tt: &mut TranspositionTable,
+    ) -> Option<usize> {
         let current_tricks = Self::current_tricks(state);
         if current_tricks >= estimate {
             // println!("Already won enough tricks!");
+            // let tt_value = TTValue {at_least_additional_tricks: current_tricks, at_most_additional_tricks}
             return Some(current_tricks);
         };
         let maximum_tricks = Self::maximum_achievable_tricks(state);
@@ -278,6 +307,7 @@ impl<const N: usize> DoubleDummySolver<N> {
 
 #[cfg(test)]
 mod test {
+    use crate::dds::transposition_table::TranspositionTable;
     use crate::dds::DoubleDummySolver;
     use bridge_buddy_core::primitives::contract::Strain;
     use bridge_buddy_core::primitives::deal::{Board, Seat};
@@ -471,7 +501,9 @@ mod test {
 
         let dds = DoubleDummySolver::default();
 
-        let dds_result = dds.solve_initial_position(deal, strain, declarer);
+        let mut tt = TranspositionTable::new();
+
+        let dds_result = dds.solve_initial_position(deal, strain, declarer, &mut tt);
 
         // println!("{}", dds_result);
         assert_eq!(dds_result, expected);

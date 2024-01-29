@@ -46,6 +46,8 @@ pub struct TTKey {
 
 #[derive(Copy, Clone)]
 pub struct TTValue {
+    // because a position can occur with different amount of tricks taken,
+    // we only store the amount of tricks possible once position is reached
     pub at_least_additional_tricks: usize,
     pub at_most_additional_tricks: usize,
 }
