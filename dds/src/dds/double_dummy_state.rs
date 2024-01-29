@@ -20,6 +20,14 @@ impl<const N: usize> DoubleDummyState<N> {
         }
     }
 
+    pub fn count_played_cards(&self) -> usize {
+        self.trick_manager.count_played_cards()
+    }
+
+    pub fn remaining_cards_of(&self, player: Seat) -> Vec<Card> {
+        self.card_manager.remaining_cards_of(player)
+    }
+
     pub fn current_trick_winner(&self) -> Seat {
         self.trick_manager.current_trick_winner()
     }

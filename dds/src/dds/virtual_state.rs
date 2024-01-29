@@ -2,6 +2,7 @@ use super::double_dummy_state::DoubleDummyState;
 use crate::dds::card_manager::card_tracker::CardTracker;
 use crate::dds::card_manager::suit_field::SuitField;
 use crate::dds::dds_move::DdsMove;
+use crate::dds::transposition_table::TTKey;
 use crate::dds::virtual_card::VirtualCard;
 use bridge_buddy_core::error::BBError;
 use bridge_buddy_core::primitives::deal::Seat;
@@ -22,6 +23,40 @@ impl<const N: usize> VirtualState<N> {
         Self {
             game,
             played: [SuitField::empty(); 4],
+        }
+    }
+
+    #[allow(dead_code)]
+    fn generate_card_distribution(&self) -> [u32; 4] {
+        let mut output = vec![];
+        for player in Seat::iter() {
+            let players_cards = self.remaining_cards_for_player(player);
+            for card in players_cards.iter() {
+                output.push((*card, player));
+            }
+        }
+        Self::generate_distribution_field(&output)
+    }
+
+    fn generate_distribution_field(input: &[(VirtualCard, Seat)]) -> [u32; 4] {
+        let mut fields = [0u32; 4];
+        for &(card, seat) in input {
+            let offset = 2 * card.rank as usize;
+            fields[card.suit as usize] |= (seat as u32) << offset;
+        }
+        fields
+    }
+
+    pub fn count_played_cards(&self) -> usize {
+        self.game.count_played_cards()
+    }
+
+    #[allow(dead_code)]
+    pub fn generate_tt_key(&self) -> TTKey {
+        TTKey {
+            depth: self.count_played_cards(),
+            lead: self.next_to_play(),
+            remaining_cards: self.generate_card_distribution(),
         }
     }
 
@@ -78,6 +113,14 @@ impl<const N: usize> VirtualState<N> {
             rank: virtual_rank,
             suit,
         }
+    }
+
+    fn remaining_cards_for_player(&self, player: Seat) -> Vec<VirtualCard> {
+        self.game
+            .remaining_cards_of(player)
+            .iter()
+            .map(|x| self.absolute_to_virtual(*x))
+            .collect_vec()
     }
 
     fn valid_moves_for(&self, player: Seat) -> Vec<DdsMove> {

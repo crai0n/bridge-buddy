@@ -13,6 +13,7 @@ mod dds_config;
 mod dds_move;
 mod double_dummy_result;
 pub mod double_dummy_state;
+mod transposition_table;
 mod virtual_card;
 pub mod virtual_state;
 // mod transposition_table;
