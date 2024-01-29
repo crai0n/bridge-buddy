@@ -83,7 +83,8 @@ fn main() {
                 .try_into()
                 .unwrap();
             let deal = Deal::from_hands(hands);
-            DoubleDummySolver::solve(deal);
+            let dds = DoubleDummySolver::default();
+            dds.solve(deal);
         }
         Command::Play => {
             let mut table = Table::empty();

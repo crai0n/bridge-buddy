@@ -3,11 +3,13 @@ use crate::dds::virtual_state::VirtualState;
 use bridge_buddy_core::primitives::contract::Strain;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::Deal;
+use dds_config::DdsConfig;
 use double_dummy_result::DoubleDummyResult;
 use enum_iterator::all;
 use strum::IntoEnumIterator;
 
 pub mod card_manager;
+mod dds_config;
 mod dds_move;
 mod double_dummy_result;
 pub mod double_dummy_state;
@@ -16,12 +18,22 @@ pub mod virtual_state;
 // mod transposition_table;
 // mod double_dummy_solver;
 
-pub struct DoubleDummySolver<const N: usize> {}
+pub struct DoubleDummySolver<const N: usize> {
+    config: DdsConfig,
+}
+
+impl<const N: usize> Default for DoubleDummySolver<N> {
+    fn default() -> Self {
+        Self::new(DdsConfig::default())
+    }
+}
 
 impl<const N: usize> DoubleDummySolver<N> {
-    const CHECK_QUICK_TRICKS: bool = true;
+    pub fn new(config: DdsConfig) -> Self {
+        Self { config }
+    }
 
-    pub fn solve(deal: Deal<N>) -> DoubleDummyResult {
+    pub fn solve(&self, deal: Deal<N>) -> DoubleDummyResult {
         for (seat, hand) in Seat::iter().zip(deal.hands) {
             println!("{}:\n{}", seat, hand)
         }
@@ -31,7 +43,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         for declarer in Seat::iter() {
             for strain in all::<Strain>() {
                 let opening_leader = declarer + 1;
-                let defenders_tricks = Self::solve_initial_position(deal, strain, opening_leader);
+                let defenders_tricks = self.solve_initial_position(deal, strain, opening_leader);
                 result.set_tricks_for_declarer_in_strain(N - defenders_tricks, declarer, strain);
             }
         }
@@ -40,7 +52,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         result
     }
 
-    fn solve_initial_position(deal: Deal<N>, strain: Strain, opening_leader: Seat) -> usize {
+    fn solve_initial_position(&self, deal: Deal<N>, strain: Strain, opening_leader: Seat) -> usize {
         let mut at_least = 0;
         let mut at_most = N; // at_most = b - 1;
 
@@ -59,7 +71,7 @@ impl<const N: usize> DoubleDummySolver<N> {
 
             let mut start_state = VirtualState::new(deal.hands, opening_leader, trumps);
 
-            let score = Self::score_node(&mut start_state, estimate);
+            let score = self.score_node(&mut start_state, estimate);
             println!("Scored {} tricks for defenders", score);
             if score >= estimate {
                 at_least = score;
@@ -70,8 +82,8 @@ impl<const N: usize> DoubleDummySolver<N> {
         at_least
     }
 
-    fn score_node(state: &mut VirtualState<N>, estimate: usize) -> usize {
-        if let Some(early_score) = Self::try_early_node_score(state, estimate) {
+    fn score_node(&self, state: &mut VirtualState<N>, estimate: usize) -> usize {
+        if let Some(early_score) = self.try_early_node_score(state, estimate) {
             return early_score;
         }
 
@@ -80,7 +92,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         }
 
         // println!("generating possible moves!");
-        let available_moves = Self::generate_moves(state);
+        let available_moves = self.generate_moves(state);
         let mut highest_score = 0;
         for candidate_move in available_moves {
             // println!("trying card {} for {}!", candidate_move, state.next_to_play());
@@ -89,9 +101,9 @@ impl<const N: usize> DoubleDummySolver<N> {
             state.play(candidate_move.card).unwrap();
             let new_player = state.next_to_play();
             let score = if current_player.same_axis(&new_player) {
-                Self::score_node(state, estimate)
+                self.score_node(state, estimate)
             } else {
-                N - Self::score_node(state, N + 1 - estimate)
+                N - self.score_node(state, N + 1 - estimate)
             };
             state.undo();
 
@@ -105,7 +117,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         highest_score
     }
 
-    fn try_early_node_score(state: &mut VirtualState<N>, estimate: usize) -> Option<usize> {
+    fn try_early_node_score(&self, state: &mut VirtualState<N>, estimate: usize) -> Option<usize> {
         let current_tricks = Self::current_tricks(state);
         if current_tricks >= estimate {
             // println!("Already won enough tricks!");
@@ -116,7 +128,7 @@ impl<const N: usize> DoubleDummySolver<N> {
             // println!("Not enough tricks left!");
             return Some(maximum_tricks);
         };
-        if Self::CHECK_QUICK_TRICKS && state.player_is_leading() {
+        if self.config.check_quick_tricks && state.player_is_leading() {
             let total_with_quick_tricks =
                 state.tricks_won_by_axis(state.next_to_play()) + Self::quick_tricks_for_current_player(state) as usize;
             // println!("Enough quick tricks for target!");
@@ -173,15 +185,17 @@ impl<const N: usize> DoubleDummySolver<N> {
         }
     }
 
-    fn generate_moves(state: &VirtualState<N>) -> Vec<DdsMove> {
+    fn generate_moves(&self, state: &VirtualState<N>) -> Vec<DdsMove> {
         let valid_moves = state.valid_moves();
         let mut unique_moves = Self::select_one_move_per_sequence(&valid_moves);
-        Self::prioritize_moves(&mut unique_moves, state);
-        Self::sort_moves_by_priority_descending(&mut unique_moves);
+        if self.config.move_ordering {
+            self.prioritize_moves(&mut unique_moves, state);
+            Self::sort_moves_by_priority_descending(&mut unique_moves);
+        }
         unique_moves
     }
 
-    fn prioritize_moves(moves: &mut [DdsMove], state: &VirtualState<N>) {
+    fn prioritize_moves(&self, moves: &mut [DdsMove], state: &VirtualState<N>) {
         match state.count_cards_in_current_trick() {
             0 => Self::prioritize_moves_for_leading_hand(moves, state),
             1 => Self::prioritize_moves_for_second_hand(moves, state),
@@ -280,7 +294,8 @@ mod test {
         //     println!("{}:\n{}", seat, hand)
         // }
 
-        let dds_result = DoubleDummySolver::solve(deal);
+        let dds = DoubleDummySolver::default();
+        let dds_result = dds.solve(deal);
         // println!("{}", dds_result);
         assert_eq!(dds_result.max_tricks, expected);
     }
@@ -294,7 +309,8 @@ mod test {
         //     println!("{}:\n{}", seat, hand)
         // }
 
-        let dds_result = DoubleDummySolver::solve(deal);
+        let dds = DoubleDummySolver::default();
+        let dds_result = dds.solve(deal);
         // println!("{}", dds_result);
         assert_eq!(dds_result.max_tricks, expected);
     }
@@ -309,7 +325,8 @@ mod test {
         //     println!("{}:\n{}", seat, hand)
         // }
 
-        let dds_result = DoubleDummySolver::solve(deal);
+        let dds = DoubleDummySolver::default();
+        let dds_result = dds.solve(deal);
 
         // println!("{}", dds_result);
         assert_eq!(dds_result.max_tricks, expected);
@@ -326,7 +343,8 @@ mod test {
         //     println!("{}:\n{}", seat, hand)
         // }
 
-        let dds_result = DoubleDummySolver::solve(deal);
+        let dds = DoubleDummySolver::default();
+        let dds_result = dds.solve(deal);
 
         // println!("{}", dds_result);
         assert_eq!(dds_result.max_tricks, expected);
@@ -341,7 +359,8 @@ mod test {
         //     println!("{}:\n{}", seat, hand)
         // }
 
-        let dds_result = DoubleDummySolver::solve(deal);
+        let dds = DoubleDummySolver::default();
+        let dds_result = dds.solve(deal);
 
         // println!("{}", dds_result);
         assert_eq!(dds_result.max_tricks, expected);
@@ -357,7 +376,8 @@ mod test {
         //     println!("{}:\n{}", seat, hand)
         // }
 
-        let dds_result = DoubleDummySolver::solve(deal);
+        let dds = DoubleDummySolver::default();
+        let dds_result = dds.solve(deal);
 
         // println!("{}", dds_result);
         assert_eq!(dds_result.max_tricks, expected);
@@ -373,7 +393,8 @@ mod test {
         //     println!("{}:\n{}", seat, hand)
         // }
 
-        let dds_result = DoubleDummySolver::solve(deal);
+        let dds = DoubleDummySolver::default();
+        let dds_result = dds.solve(deal);
 
         // println!("{}", dds_result);
         assert_eq!(dds_result.max_tricks, expected);
@@ -391,7 +412,8 @@ mod test {
             hands: [north_hand, east_hand, south_hand, west_hand],
         };
 
-        let dds_result = DoubleDummySolver::solve(deal);
+        let dds = DoubleDummySolver::default();
+        let dds_result = dds.solve(deal);
 
         // println!("{}", dds_result);
         assert_eq!(dds_result.max_tricks, expected);
@@ -414,7 +436,8 @@ mod test {
             println!("{}:\n{}", seat, hand)
         }
 
-        let dds_result = DoubleDummySolver::solve(deal);
+        let dds = DoubleDummySolver::default();
+        let dds_result = dds.solve(deal);
 
         println!("{}", dds_result);
         assert_eq!(dds_result.max_tricks, expected);
@@ -445,7 +468,9 @@ mod test {
         //     println!("{}:\n{}", seat, hand)
         // }
 
-        let dds_result = DoubleDummySolver::solve_initial_position(deal, strain, declarer);
+        let dds = DoubleDummySolver::default();
+
+        let dds_result = dds.solve_initial_position(deal, strain, declarer);
 
         // println!("{}", dds_result);
         assert_eq!(dds_result, expected);
