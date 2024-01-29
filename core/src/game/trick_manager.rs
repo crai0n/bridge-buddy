@@ -136,8 +136,20 @@ impl<const N: usize> TrickManager<N> {
             .collect_vec()
     }
 
+    /// A card is played once it leaves a player's hand
     pub fn played_cards(&self) -> &[Card] {
         &self.played_cards
+    }
+
+    /// A card is out of play once it is turned over after a trick
+    pub fn out_of_play_cards(&self) -> &[Card] {
+        let length = self.played_cards.len();
+        let cards_in_current_trick = length % 4;
+        &self.played_cards[..length - cards_in_current_trick]
+    }
+
+    pub fn count_cards_in_current_trick(&self) -> usize {
+        self.played_cards.len() % 4
     }
 
     pub fn play(&mut self, card: Card) {

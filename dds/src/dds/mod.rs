@@ -1,7 +1,7 @@
-use crate::dds::double_dummy_state::DoubleDummyState;
+use crate::dds::virtual_game_view::{VirtualCard, VirtualState};
 use bridge_buddy_core::primitives::contract::Strain;
 use bridge_buddy_core::primitives::deal::Seat;
-use bridge_buddy_core::primitives::{Card, Deal};
+use bridge_buddy_core::primitives::Deal;
 use double_dummy_result::DoubleDummyResult;
 use enum_iterator::all;
 use strum::IntoEnumIterator;
@@ -54,7 +54,7 @@ impl<const N: usize> DoubleDummySolver<N> {
                 _ => None,
             };
 
-            let mut start_state = DoubleDummyState::new(deal.hands, opening_leader, trumps);
+            let mut start_state = VirtualState::new(deal.hands, opening_leader, trumps);
 
             let score = Self::score_node(&mut start_state, estimate);
             println!("Scored {} tricks for defenders", score);
@@ -67,7 +67,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         at_least
     }
 
-    fn score_node(state: &mut DoubleDummyState<N>, estimate: usize) -> usize {
+    fn score_node(state: &mut VirtualState<N>, estimate: usize) -> usize {
         if let Some(early_score) = Self::try_early_node_score(state, estimate) {
             return early_score;
         }
@@ -83,7 +83,7 @@ impl<const N: usize> DoubleDummySolver<N> {
             // println!("trying card {} for {}!", candidate_move, state.next_to_play());
             let current_player = state.next_to_play();
 
-            state.play(candidate_move);
+            state.play(candidate_move).unwrap();
             let new_player = state.next_to_play();
             let score = if current_player.same_axis(&new_player) {
                 Self::score_node(state, estimate)
@@ -102,7 +102,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         highest_score
     }
 
-    fn try_early_node_score(state: &mut DoubleDummyState<N>, estimate: usize) -> Option<usize> {
+    fn try_early_node_score(state: &mut VirtualState<N>, estimate: usize) -> Option<usize> {
         let current_tricks = Self::current_tricks(state);
         if current_tricks >= estimate {
             // println!("Already won enough tricks!");
@@ -124,19 +124,19 @@ impl<const N: usize> DoubleDummySolver<N> {
         None
     }
 
-    fn quick_tricks_for_current_player(state: &DoubleDummyState<N>) -> u8 {
+    fn quick_tricks_for_current_player(state: &VirtualState<N>) -> u8 {
         state.quick_tricks_for_player(state.next_to_play())
     }
 
-    fn maximum_achievable_tricks(state: &mut DoubleDummyState<{ N }>) -> usize {
+    fn maximum_achievable_tricks(state: &mut VirtualState<{ N }>) -> usize {
         state.tricks_left() + state.tricks_won_by_axis(state.next_to_play())
     }
 
-    fn current_tricks(state: &mut DoubleDummyState<{ N }>) -> usize {
+    fn current_tricks(state: &mut VirtualState<{ N }>) -> usize {
         state.tricks_won_by_axis(state.next_to_play())
     }
 
-    fn score_terminal_node(state: &mut DoubleDummyState<N>) -> usize {
+    fn score_terminal_node(state: &mut VirtualState<N>) -> usize {
         let lead = state.next_to_play();
 
         Self::play_last_trick(state);
@@ -156,23 +156,27 @@ impl<const N: usize> DoubleDummySolver<N> {
         result
     }
 
-    fn play_last_trick(state: &mut DoubleDummyState<N>) {
+    fn play_last_trick(state: &mut VirtualState<N>) {
         for _ in 0..4 {
-            let last_card_of_player = *state.valid_moves_for(state.next_to_play()).first().unwrap();
+            let last_card_of_player = *state.valid_moves().first().unwrap();
 
-            state.play(last_card_of_player);
+            state.play(last_card_of_player).unwrap();
         }
     }
 
-    fn undo_last_trick(state: &mut DoubleDummyState<N>) {
+    fn undo_last_trick(state: &mut VirtualState<N>) {
         for _ in 0..4 {
             state.undo();
         }
     }
 
-    fn generate_moves(state: &DoubleDummyState<N>) -> Vec<Card> {
-        state.valid_non_equivalent_moves_for(state.next_to_play())
+    fn generate_moves(state: &VirtualState<N>) -> Vec<VirtualCard> {
+        let mut valid_moves = state.valid_moves();
+        Self::remove_equivalent_moves(&mut valid_moves);
+        valid_moves
     }
+
+    fn remove_equivalent_moves(_moves: &mut [VirtualCard]) {}
 }
 
 #[cfg(test)]
