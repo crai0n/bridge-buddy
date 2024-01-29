@@ -55,6 +55,7 @@ impl<const N: usize> VirtualState<N> {
     pub fn generate_tt_key(&self) -> TTKey {
         TTKey {
             tricks_left: self.tricks_left(),
+            trumps: self.trumps(),
             lead: self.next_to_play(),
             remaining_cards: self.generate_card_distribution(),
         }

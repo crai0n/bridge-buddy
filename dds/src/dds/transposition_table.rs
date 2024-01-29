@@ -1,4 +1,5 @@
 use bridge_buddy_core::primitives::deal::Seat;
+use bridge_buddy_core::primitives::Suit;
 use std::cmp::{max, min};
 use std::collections::BTreeMap;
 
@@ -61,9 +62,10 @@ impl TranspositionTable {
 #[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
 pub struct TTKey {
     pub tricks_left: usize,
+    pub trumps: Option<Suit>,
     pub lead: Seat,
     pub remaining_cards: [u32; 4],
 }
 
 #[derive(Copy, Clone)]
-pub struct TTValue(usize, usize);
+pub struct TTValue(pub usize, pub usize);
