@@ -21,33 +21,49 @@ impl TranspositionTable {
         self.inner.get(key)
     }
 
-    pub fn update(&mut self, key: &TTKey, value: TTValue) {
+    pub fn update_value(&mut self, key: &TTKey, value: TTValue) {
         match self.inner.get(key) {
             None => self.inner.insert(*key, value),
             Some(old) => {
-                let highest_lower_bound = max(value.at_least_additional_tricks, old.at_least_additional_tricks);
-                let lowest_upper_bound = min(value.at_most_additional_tricks, old.at_most_additional_tricks);
-                let new = TTValue {
-                    at_least_additional_tricks: highest_lower_bound,
-                    at_most_additional_tricks: lowest_upper_bound,
-                };
+                let highest_lower_bound = max(value.0, old.0);
+                let lowest_upper_bound = min(value.1, old.1);
+                let new = TTValue(highest_lower_bound, lowest_upper_bound);
                 self.inner.insert(*key, new)
             }
         };
+    }
+
+    pub fn update_upper_bound(&mut self, key: &TTKey, bound: usize) {
+        let new = match self.inner.get(key) {
+            None => TTValue(0, bound),
+            Some(old) => {
+                let highest_lower_bound = old.0;
+                let lowest_upper_bound = min(bound, old.1);
+                TTValue(highest_lower_bound, lowest_upper_bound)
+            }
+        };
+        self.inner.insert(*key, new);
+    }
+
+    pub fn update_lower_bound(&mut self, key: &TTKey, bound: usize) {
+        let new = match self.inner.get(key) {
+            None => TTValue(bound, key.tricks_left),
+            Some(old) => {
+                let highest_lower_bound = max(bound, old.0);
+                let lowest_upper_bound = old.1;
+                TTValue(highest_lower_bound, lowest_upper_bound)
+            }
+        };
+        self.inner.insert(*key, new);
     }
 }
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
 pub struct TTKey {
-    pub depth: usize,
+    pub tricks_left: usize,
     pub lead: Seat,
     pub remaining_cards: [u32; 4],
 }
 
 #[derive(Copy, Clone)]
-pub struct TTValue {
-    // because a position can occur with different amount of tricks taken,
-    // we only store the amount of tricks possible once position is reached
-    pub at_least_additional_tricks: usize,
-    pub at_most_additional_tricks: usize,
-}
+pub struct TTValue(usize, usize);

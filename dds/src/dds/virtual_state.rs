@@ -54,7 +54,7 @@ impl<const N: usize> VirtualState<N> {
     #[allow(dead_code)]
     pub fn generate_tt_key(&self) -> TTKey {
         TTKey {
-            depth: self.count_played_cards(),
+            tricks_left: self.tricks_left(),
             lead: self.next_to_play(),
             remaining_cards: self.generate_card_distribution(),
         }
@@ -181,5 +181,9 @@ impl<const N: usize> VirtualState<N> {
     pub fn currently_winning_card(&self) -> Option<VirtualCard> {
         let winning_card = self.game.currently_winning_card();
         winning_card.map(|x| self.absolute_to_virtual(x))
+    }
+
+    pub fn last_trick_winner(&self) -> Option<Seat> {
+        self.game.last_trick_winner()
     }
 }

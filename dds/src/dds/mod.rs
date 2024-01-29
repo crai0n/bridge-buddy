@@ -92,7 +92,7 @@ impl<const N: usize> DoubleDummySolver<N> {
     }
 
     fn score_node(&self, state: &mut VirtualState<N>, estimate: usize, tt: &mut TranspositionTable) -> usize {
-        if let Some(tt_score) = Self::try_find_score_in_tt(state, estimate, tt) {
+        if let Some(tt_score) = Self::try_find_node_in_tt(state, estimate, tt) {
             return tt_score;
         }
 
@@ -101,7 +101,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         }
 
         if state.is_last_trick() {
-            return Self::score_terminal_node(state);
+            return self.score_terminal_node(state, tt);
         }
 
         // println!("generating possible moves!");
@@ -121,16 +121,19 @@ impl<const N: usize> DoubleDummySolver<N> {
             state.undo();
 
             if score >= estimate {
+                // store lower bound in tt
                 return score;
             } else if score > highest_score {
                 // if we cannot reach estimate, we need the highest score found
                 highest_score = score
             }
         }
+
+        // store upper bound in tt
         highest_score
     }
 
-    fn try_find_score_in_tt(_state: &VirtualState<N>, _estimate: usize, _tt: &mut TranspositionTable) -> Option<usize> {
+    fn try_find_node_in_tt(_state: &VirtualState<N>, _estimate: usize, _tt: &mut TranspositionTable) -> Option<usize> {
         // let key = state.generate_tt_key();
         // match tt.lookup(key) {
         //     None => None,
@@ -151,18 +154,21 @@ impl<const N: usize> DoubleDummySolver<N> {
         if current_tricks >= estimate {
             // println!("Already won enough tricks!");
             // let tt_value = TTValue {at_least_additional_tricks: current_tricks, at_most_additional_tricks}
+            // storing in TT doesn't make sense as we can never improve lower bound here
             return Some(current_tricks);
         };
         let maximum_tricks = Self::maximum_achievable_tricks(state);
         if maximum_tricks < estimate {
             // println!("Not enough tricks left!");
+            // storing in TT doesn't make sense as we can never improve upper bound here
             return Some(maximum_tricks);
         };
         if self.config.check_quick_tricks && state.player_is_leading() {
-            let total_with_quick_tricks =
-                state.tricks_won_by_axis(state.next_to_play()) + Self::quick_tricks_for_current_player(state) as usize;
+            let quick_tricks = Self::quick_tricks_for_current_player(state) as usize;
+            // store lower bound in tt
+            let total_with_quick_tricks = state.tricks_won_by_axis(state.next_to_play()) + quick_tricks;
             // println!("Enough quick tricks for target!");
-            if estimate <= total_with_quick_tricks {
+            if total_with_quick_tricks >= estimate {
                 return Some(total_with_quick_tricks);
             }
         }
@@ -181,7 +187,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         state.tricks_won_by_axis(state.next_to_play())
     }
 
-    fn score_terminal_node(state: &mut VirtualState<N>) -> usize {
+    fn score_terminal_node(&self, state: &mut VirtualState<N>, tt: &mut TranspositionTable) -> usize {
         let lead = state.next_to_play();
 
         Self::play_last_trick(state);
@@ -190,13 +196,19 @@ impl<const N: usize> DoubleDummySolver<N> {
 
         let result = state.tricks_won_by_axis(lead);
 
-        // if result {
-        //     println!("{:?} has won the last trick!", lead.axis())
-        // } else {
-        //     println!("{:?} has lost the last trick!", lead.axis())
-        // }
+        let winner_of_last_trick = state.last_trick_winner().unwrap();
 
         Self::undo_last_trick(state);
+
+        if self.config.use_transposition_table {
+            // store exact score in tt
+            let tt_key = state.generate_tt_key();
+            if winner_of_last_trick.same_axis(&state.next_to_play()) {
+                tt.update_lower_bound(&tt_key, 1);
+            } else {
+                tt.update_upper_bound(&tt_key, 0);
+            }
+        }
 
         result
     }
