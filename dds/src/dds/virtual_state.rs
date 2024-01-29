@@ -107,4 +107,36 @@ impl<const N: usize> VirtualState<N> {
     pub fn quick_tricks_for_player(&self, player: Seat) -> u8 {
         self.game.quick_tricks_for_player(player)
     }
+
+    pub fn count_cards_in_current_trick(&self) -> usize {
+        self.game.count_cards_in_current_trick()
+    }
+
+    pub fn trumps(&self) -> Option<Suit> {
+        self.game.trumps()
+    }
+
+    pub fn count_trump_cards_for_player(&self, player: Seat) -> usize {
+        self.game.count_trump_cards_for_player(player)
+    }
+
+    pub fn count_trump_cards_for_axis(&self, player: Seat) -> usize {
+        self.game.count_trump_cards_for_axis(player)
+    }
+
+    pub fn count_this_sides_trump_cards(&self) -> usize {
+        self.game.count_this_sides_trump_cards()
+    }
+
+    pub fn count_opponents_trump_cards(&self) -> usize {
+        self.game.count_opponents_trump_cards()
+    }
+    pub fn current_trick_winner(&self) -> Seat {
+        self.game.current_trick_winner()
+    }
+
+    pub fn currently_winning_card(&self) -> Option<VirtualCard> {
+        let winning_card = self.game.currently_winning_card();
+        winning_card.map(|x| self.absolute_to_virtual(x))
+    }
 }

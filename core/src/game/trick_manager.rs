@@ -75,7 +75,7 @@ impl<const N: usize> TrickManager<N> {
     }
 
     fn move_to_next_trick(&mut self) {
-        let winner = self.trick_winner();
+        let winner = self.current_trick_winner();
         // println!("The real winner is {}", winner);
         self.next_to_play = winner;
         self.winners.push(winner);
@@ -85,31 +85,45 @@ impl<const N: usize> TrickManager<N> {
         self.winners.last().copied()
     }
 
-    fn trick_winner(&self) -> Seat {
+    pub fn current_trick_winner(&self) -> Seat {
         let n_cards = self.played_cards.len();
-        let cards = &self.played_cards[n_cards - 4..];
-        let winner_card = self.winner_card(cards);
-        let winner_index = cards.iter().position(|card| *card == winner_card).unwrap();
-        let leader = self.last_leader();
-        // println!("leader was {}, winner_index is {}", leader, winner_index);
-        leader + winner_index
-    }
-
-    fn winner_card(&self, cards: &[Card]) -> Card {
-        let mut cards = cards.iter();
-        let mut winning_card = cards.next().unwrap();
-        for card in cards {
-            if let Some(trump) = self.trumps {
-                if card.suit == trump && winning_card.suit != trump {
-                    winning_card = card;
-                }
-            }
-            if card.suit == winning_card.suit && card.rank > winning_card.rank {
-                winning_card = card;
+        let n_cards_in_trick = (n_cards - 1) % 4 + 1;
+        let cards = &self.played_cards[n_cards - n_cards_in_trick..];
+        let winning_card = self.currently_winning_card();
+        match winning_card {
+            None => self.last_leader(),
+            Some(winning_card) => {
+                let winner_index = cards.iter().position(|card| *card == winning_card).unwrap();
+                let leader = self.last_leader();
+                // println!("leader was {}, winner_index is {}", leader, winner_index);
+                leader + winner_index
             }
         }
-        // println!("The winning card is {}", winner_card);
-        *winning_card
+    }
+
+    pub fn currently_winning_card(&self) -> Option<Card> {
+        let n_cards = self.played_cards.len();
+        let n_cards_in_trick = (n_cards - 1) % 4 + 1;
+        let cards = &self.played_cards[n_cards - n_cards_in_trick..];
+        let mut cards = cards.iter();
+        match cards.next() {
+            None => None,
+            Some(card) => {
+                let mut winning_card = card;
+                for card in cards {
+                    if let Some(trump) = self.trumps {
+                        if card.suit == trump && winning_card.suit != trump {
+                            winning_card = card;
+                        }
+                    }
+                    if card.suit == winning_card.suit && card.rank > winning_card.rank {
+                        winning_card = card;
+                    }
+                }
+                // println!("The winning card is {}", winner_card);
+                Some(*winning_card)
+            }
+        }
     }
 
     pub fn tricks_won_by_player(&self, player: Seat) -> usize {

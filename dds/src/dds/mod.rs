@@ -174,13 +174,79 @@ impl<const N: usize> DoubleDummySolver<N> {
     }
 
     fn generate_moves(state: &VirtualState<N>) -> Vec<DdsMove> {
-        let mut valid_moves = state.valid_moves();
-        Self::find_and_remove_equivalent_moves(&mut valid_moves)
+        let valid_moves = state.valid_moves();
+        let mut unique_moves = Self::select_one_move_per_sequence(&valid_moves);
+        Self::prioritize_moves(&mut unique_moves, state);
+        Self::sort_moves_by_priority_descending(&mut unique_moves);
+        unique_moves
     }
 
-    fn find_and_remove_equivalent_moves(moves: &mut [DdsMove]) -> Vec<DdsMove> {
+    fn prioritize_moves(moves: &mut [DdsMove], state: &VirtualState<N>) {
+        match state.count_cards_in_current_trick() {
+            0 => Self::prioritize_moves_for_leading_hand(moves, state),
+            1 => Self::prioritize_moves_for_second_hand(moves, state),
+            2 => Self::prioritize_moves_for_third_hand(moves, state),
+            3 => Self::prioritize_moves_for_last_hand(moves, state),
+            _ => unreachable!(),
+        };
+    }
+
+    fn prioritize_moves_for_leading_hand(moves: &mut [DdsMove], state: &VirtualState<N>) {
+        for dds_move in moves {
+            match state.trumps() {
+                None => {
+                    if dds_move.sequence_length >= 3 {
+                        dds_move.priority += 50;
+                    }
+                }
+                Some(trump_suit) => {
+                    if dds_move.sequence_length >= 2 {
+                        dds_move.priority += 50;
+                    }
+
+                    let our_trump_count = state.count_this_sides_trump_cards();
+                    let opponents_trump_count = state.count_opponents_trump_cards();
+
+                    if our_trump_count >= opponents_trump_count && dds_move.card.suit == trump_suit {
+                        dds_move.priority += 100;
+                    }
+                }
+            }
+        }
+    }
+    fn prioritize_moves_for_second_hand(moves: &mut [DdsMove], _state: &VirtualState<N>) {
+        for dds_move in moves {
+            dds_move.priority += 15 - dds_move.card.rank as usize;
+        }
+    }
+    fn prioritize_moves_for_third_hand(moves: &mut [DdsMove], state: &VirtualState<N>) {
+        for dds_move in moves {
+            if dds_move.card > state.currently_winning_card().unwrap() {
+                dds_move.priority += dds_move.card.rank as usize;
+            }
+        }
+    }
+    fn prioritize_moves_for_last_hand(moves: &mut [DdsMove], state: &VirtualState<N>) {
+        for dds_move in moves {
+            if state.current_trick_winner() == state.next_to_play().partner() {
+                dds_move.priority += 15 - dds_move.card.rank as usize;
+            } else {
+                dds_move.priority += dds_move.card.rank as usize;
+            }
+
+            if dds_move.card > state.currently_winning_card().unwrap() {
+                break;
+            }
+        }
+    }
+
+    fn sort_moves_by_priority_descending(moves: &mut [DdsMove]) {
+        moves.sort_unstable_by(|a, b| a.priority.cmp(&b.priority));
+    }
+
+    fn select_one_move_per_sequence(moves: &[DdsMove]) -> Vec<DdsMove> {
         let mut output: Vec<DdsMove> = vec![];
-        for &mut candidate_move in moves {
+        for &candidate_move in moves {
             if let Some(last) = output.last_mut() {
                 if candidate_move.card.touches(&last.card) {
                     last.sequence_length += 1;

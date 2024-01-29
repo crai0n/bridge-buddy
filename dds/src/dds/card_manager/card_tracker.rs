@@ -68,7 +68,6 @@ impl CardTracker {
         tracker
     }
 
-    #[allow(dead_code)]
     pub fn count_cards_in_suit(&self, suit: &Suit) -> u8 {
         self.suit_state(suit).count_cards()
     }

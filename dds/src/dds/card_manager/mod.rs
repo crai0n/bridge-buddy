@@ -4,7 +4,7 @@ pub mod suit_field;
 use card_tracker::CardTracker;
 
 use bridge_buddy_core::primitives::deal::Seat;
-use bridge_buddy_core::primitives::{Card, Hand};
+use bridge_buddy_core::primitives::{Card, Hand, Suit};
 use itertools::Itertools;
 
 pub struct CardManager {
@@ -52,6 +52,10 @@ impl CardManager {
 
     pub fn played_cards(&self) -> CardTracker {
         self.played_cards
+    }
+
+    pub fn count_cards_in_suit_for_player(&self, suit: Suit, player: Seat) -> usize {
+        self.remaining_cards_for_player(player).count_cards_in_suit(&suit) as usize
     }
 }
 
