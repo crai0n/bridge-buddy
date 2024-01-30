@@ -1,5 +1,5 @@
 use bridge_buddy_core::primitives::deal::Seat;
-use bridge_buddy_core::primitives::{Card, Suit};
+use bridge_buddy_core::primitives::Suit;
 use std::cmp::{max, min};
 use std::collections::BTreeMap;
 
@@ -20,26 +20,30 @@ impl TranspositionTable {
         self.inner.get(key)
     }
 
-    pub fn update_upper_bound(&mut self, key: &TTKey, bound: usize, cards: Vec<Card>) {
+    pub fn update_upper_bound(&mut self, key: &TTKey, bound: usize) {
         let new = match self.inner.get(key) {
-            None => TTValue(0, bound, cards),
-            Some(old) => {
-                let highest_lower_bound = old.0;
-                let lowest_upper_bound = min(bound, old.1);
-                TTValue(highest_lower_bound, lowest_upper_bound, cards)
-            }
+            None => TTValue {
+                at_least: 0,
+                at_most: bound,
+            },
+            Some(old) => TTValue {
+                at_least: old.at_least,
+                at_most: min(bound, old.at_most),
+            },
         };
         self.inner.insert(*key, new);
     }
 
-    pub fn update_lower_bound(&mut self, key: &TTKey, bound: usize, cards: Vec<Card>) {
+    pub fn update_lower_bound(&mut self, key: &TTKey, bound: usize) {
         let new = match self.inner.get(key) {
-            None => TTValue(bound, key.tricks_left, cards),
-            Some(old) => {
-                let highest_lower_bound = max(bound, old.0);
-                let lowest_upper_bound = old.1;
-                TTValue(highest_lower_bound, lowest_upper_bound, cards)
-            }
+            None => TTValue {
+                at_least: bound,
+                at_most: key.tricks_left,
+            },
+            Some(old) => TTValue {
+                at_least: max(bound, old.at_least),
+                at_most: old.at_most,
+            },
         };
         self.inner.insert(*key, new);
     }
@@ -53,5 +57,8 @@ pub struct TTKey {
     pub remaining_cards: [u32; 4],
 }
 
-#[derive(Clone)]
-pub struct TTValue(pub usize, pub usize, pub Vec<Card>);
+#[derive(Clone, Copy)]
+pub struct TTValue {
+    pub at_least: usize,
+    pub at_most: usize,
+}
