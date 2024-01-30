@@ -1,16 +1,3 @@
-use crate::dds::double_dummy_result::DoubleDummyResult;
-use crate::primitives::contract::Strain;
-use crate::primitives::deal::Seat;
-use crate::primitives::Deal;
-use enum_iterator::all;
-use std::collections::HashMap;
-use strum::IntoEnumIterator;
-
-pub struct DoubleDummySolver {
-    dds_config: DdsConfig,
-    transposition_table: HashMap<NodeIdentifier, LookupResult>,
-}
-
 impl DoubleDummySolver {
     pub fn solve_deal<const N_TRICKS: usize>(&mut self, deal: Deal<N_TRICKS>) -> DoubleDummyResult {
         let mut result = DoubleDummyResult::new();
@@ -152,8 +139,6 @@ impl DoubleDummySolver {
     }
 }
 
-
-
 pub struct DdsConfig {
     ab_pruning: bool,
     transposition_table: bool,
@@ -161,40 +146,7 @@ pub struct DdsConfig {
     fail_soft: bool,
 }
 
-pub enum Bound {
-    AtLeast(usize),
-    LessThan(usize),
-}
-
-pub struct Interval {
-    lower: usize,
-    upper: usize,
-}
-
 pub struct NodeIdentifier {
     relative_remaining_cards: [Vec<Cards>; 4],
     trumps: Option<Suit>,
 }
-
-pub enum LookupResult {
-    Exact(usize),
-    Bounded(usize, usize),
-}
-// pub struct PositionNode;
-//
-// pub enum Color {
-//     Min,
-//     Max,
-// }
-
-// pub fn negaMax(node: PositionNode, depth: usize, color: Color) {
-//     if last_trick() {
-//         return Self::evaluate_last_trick(node);
-//     }
-//     let mut value = 0;
-//     for
-// }
-//
-// pub fn evaluate_terminal_node(node: PositionNode) {
-//     unimplemented!()
-// }

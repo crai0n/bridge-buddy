@@ -12,9 +12,9 @@ impl TranspositionTable {
         Self { inner: BTreeMap::new() }
     }
 
-    // pub fn clear(&mut self) {
-    //     self.inner.clear()
-    // }
+    pub fn clear(&mut self) {
+        self.inner.clear()
+    }
 
     pub fn lookup(&self, key: &TTKey) -> Option<&TTValue> {
         self.inner.get(key)
