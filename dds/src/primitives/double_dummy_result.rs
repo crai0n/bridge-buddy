@@ -77,7 +77,7 @@ impl Display for DoubleDummyResult {
 
 #[cfg(test)]
 mod test {
-    use crate::dds::double_dummy_result::DoubleDummyResult;
+    use crate::primitives::DoubleDummyResult;
     use test_case::test_case;
 
     #[test_case([0,1,2,3,4,1,2,3,4,5,2,3,4,5,6,3,4,5,6,7], "  NT ♠S ♥H ♦D ♣C\nN  4  3  2  1  0 \nE  5  4  3  2  1 \nS  6  5  4  3  2 \nW  7  6  5  4  3 \n")]

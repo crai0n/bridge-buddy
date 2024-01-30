@@ -1,21 +1,21 @@
 use super::double_dummy_state::DoubleDummyState;
-use crate::dds::card_manager::card_tracker::CardTracker;
-use crate::dds::card_manager::suit_field::SuitField;
-use crate::dds::dds_move::DdsMove;
-use crate::dds::transposition_table::TTKey;
-use crate::dds::virtual_card::VirtualCard;
+use crate::card_manager::card_tracker::CardTracker;
+use crate::card_manager::suit_field::SuitField;
+use crate::primitives::DdsMove;
+use crate::primitives::VirtualCard;
+use crate::transposition_table::TTKey;
 use bridge_buddy_core::error::BBError;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::{Card, Hand, Suit};
 use itertools::Itertools;
 use strum::IntoEnumIterator;
 
-#[allow(dead_code)]
 pub struct VirtualState<const N: usize> {
     game: DoubleDummyState<N>,
     played: [SuitField; 4],
 }
 
+#[allow(dead_code)]
 impl<const N: usize> VirtualState<N> {
     pub fn new(hands: [Hand<N>; 4], opening_leader: Seat, trumps: Option<Suit>) -> Self {
         let game = DoubleDummyState::new(hands, opening_leader, trumps);
@@ -26,7 +26,6 @@ impl<const N: usize> VirtualState<N> {
         }
     }
 
-    #[allow(dead_code)]
     fn generate_card_distribution(&self) -> [u32; 4] {
         let mut output = vec![];
         for player in Seat::iter() {
@@ -52,7 +51,6 @@ impl<const N: usize> VirtualState<N> {
         self.game.count_played_cards()
     }
 
-    #[allow(dead_code)]
     pub fn generate_tt_key(&self) -> TTKey {
         TTKey {
             tricks_left: self.tricks_left(),
@@ -187,9 +185,5 @@ impl<const N: usize> VirtualState<N> {
 
     pub fn last_trick_winner(&self) -> Option<Seat> {
         self.game.last_trick_winner()
-    }
-
-    pub fn list_played_cards(&self) -> &[Card] {
-        self.game.list_played_cards()
     }
 }

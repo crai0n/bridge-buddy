@@ -1,23 +1,14 @@
-use crate::dds::move_generator::MoveGenerator;
-use crate::dds::transposition_table::TranspositionTable;
-use crate::dds::virtual_state::VirtualState;
+use crate::dds_config::DdsConfig;
+use crate::move_generator::MoveGenerator;
+use crate::primitives::DoubleDummyResult;
+use crate::state::VirtualState;
+use crate::transposition_table::TranspositionTable;
 use bridge_buddy_core::primitives::contract::Strain;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::Deal;
-use dds_config::DdsConfig;
-use double_dummy_result::DoubleDummyResult;
 use enum_iterator::all;
 use strum::IntoEnumIterator;
 
-pub mod card_manager;
-mod dds_config;
-mod dds_move;
-mod double_dummy_result;
-pub mod double_dummy_state;
-mod move_generator;
-mod transposition_table;
-mod virtual_card;
-pub mod virtual_state;
 // mod transposition_table;
 // mod double_dummy_solver;
 
@@ -258,11 +249,10 @@ impl<const N: usize> DoubleDummySolver<N> {
 
 #[cfg(test)]
 mod test {
-    use crate::dds::DoubleDummySolver;
-    use bridge_buddy_core::primitives::card::Suit;
+    use super::DoubleDummySolver;
     use bridge_buddy_core::primitives::contract::Strain;
     use bridge_buddy_core::primitives::deal::{Board, Seat};
-    use bridge_buddy_core::primitives::{Deal, Hand};
+    use bridge_buddy_core::primitives::{Deal, Hand, Suit};
     use std::str::FromStr;
     use strum::IntoEnumIterator;
     use test_case::test_case;

@@ -29,10 +29,12 @@ impl CardTracker {
         Self(inner)
     }
 
+    #[allow(dead_code)]
     pub fn from_suit_fields(fields: [SuitField; 4]) -> Self {
         Self(fields)
     }
 
+    #[allow(dead_code)]
     pub fn from_u64(val: u64) -> Self {
         let field = [val as u16, (val >> 16) as u16, (val >> 32) as u16, (val >> 48) as u16];
         Self::from_u16s(field)
@@ -72,6 +74,7 @@ impl CardTracker {
         self.suit_state(suit).count_cards()
     }
 
+    #[allow(dead_code)]
     pub fn cards_per_suit(&self) -> [u8; 4] {
         self.0.map(|suit| suit.count_cards())
     }
@@ -100,17 +103,13 @@ impl CardTracker {
             .collect_vec()
     }
 
+    #[allow(dead_code)]
     pub fn contained_cards_in_suit(&self, suit: &Suit) -> Vec<Card> {
         self.suit_state(suit)
             .all_contained_ranks()
             .iter()
             .map(|&rank| Card { suit: *suit, rank })
             .collect_vec()
-    }
-
-    pub fn only_tops_of_sequences(self) -> Self {
-        let fields = self.0.map(|field| field.only_tops_of_sequences());
-        Self::from_suit_fields(fields)
     }
 
     pub fn non_equivalent_moves(&self, played_cards: &CardTracker) -> Vec<Card> {

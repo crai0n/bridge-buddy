@@ -2,6 +2,7 @@ pub struct DdsConfig {
     pub move_ordering: bool,
     pub check_quick_tricks: bool,
     pub use_transposition_table: bool,
+    // fail_soft: bool,
 }
 
 impl Default for DdsConfig {

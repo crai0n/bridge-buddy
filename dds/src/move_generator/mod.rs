@@ -1,5 +1,5 @@
-use crate::dds::dds_move::DdsMove;
-use crate::dds::virtual_state::VirtualState;
+use crate::primitives::DdsMove;
+use crate::state::VirtualState;
 
 pub struct MoveGenerator {}
 

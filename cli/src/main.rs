@@ -6,7 +6,7 @@ use bridge_buddy_core::primitives::card::Suit;
 use bridge_buddy_core::primitives::deal::Seat::{East, North, South, West};
 use bridge_buddy_core::primitives::deal::{Hand, Seat};
 use bridge_buddy_core::primitives::Deal;
-use bridge_buddy_dds::dds::DoubleDummySolver;
+use bridge_buddy_dds::DoubleDummySolver;
 use clap::{Parser, Subcommand};
 use std::io::stdin;
 use std::process::exit;
