@@ -133,7 +133,7 @@ impl<const N: usize> DoubleDummySolver<N> {
             state.undo();
 
             if score >= estimate {
-                if self.config.use_transposition_table {
+                if self.config.use_transposition_table && state.player_is_leading() {
                     let add_tricks = score - state.tricks_won_by_axis(state.next_to_play());
                     Self::store_lower_bound_in_tt(state, add_tricks, tt, played_cards.clone());
                 }
@@ -145,7 +145,7 @@ impl<const N: usize> DoubleDummySolver<N> {
             }
         }
 
-        if self.config.use_transposition_table {
+        if self.config.use_transposition_table && state.player_is_leading() {
             let add_tricks = highest_score - state.tricks_won_by_axis(state.next_to_play());
             let cards = state.list_played_cards().to_vec();
             Self::store_upper_bound_in_tt(state, add_tricks, tt, cards);
@@ -226,7 +226,7 @@ impl<const N: usize> DoubleDummySolver<N> {
             let total_with_quick_tricks = state.tricks_won_by_axis(state.next_to_play()) + quick_tricks;
             // println!("Enough quick tricks for target!");
             if total_with_quick_tricks >= estimate {
-                if self.config.use_transposition_table {
+                if self.config.use_transposition_table && state.player_is_leading() {
                     let cards = state.list_played_cards().to_vec();
                     Self::store_lower_bound_in_tt(state, quick_tricks, tt, cards);
                 }
@@ -275,7 +275,7 @@ impl<const N: usize> DoubleDummySolver<N> {
 
         Self::undo_last_trick(state);
 
-        if self.config.use_transposition_table {
+        if self.config.use_transposition_table && state.player_is_leading() {
             // store exact score in tt
             if winner_of_last_trick.same_axis(&state.next_to_play()) {
                 Self::store_lower_bound_in_tt(state, 1, tt, played_cards.clone());
@@ -484,7 +484,6 @@ mod test {
         assert_eq!(dds_result.max_tricks, expected);
     }
 
-    #[ignore]
     #[test_case( 37u64, [4, 2, 1, 1, 1, 4, 5, 7, 7, 6, 4, 2, 1, 1, 1, 4, 5, 7, 7, 6]; "Test A")]
     #[test_case( 82u64, [6, 8, 5, 4, 5, 2, 0, 2, 3, 2, 6, 8, 5, 4, 5, 2, 0, 2, 3, 2]; "Test B")]
     fn solve8(seed: u64, expected: [usize; 20]) {

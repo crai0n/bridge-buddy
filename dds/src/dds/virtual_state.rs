@@ -43,6 +43,7 @@ impl<const N: usize> VirtualState<N> {
         for &(card, seat) in input {
             let offset = 2 * card.rank as usize;
             fields[card.suit as usize] |= (seat as u32) << offset;
+            fields[card.suit as usize] += 1 << 28; // count the cards still in play on the highest 4 bits
         }
         fields
     }
