@@ -32,9 +32,9 @@ impl<const N: usize> DoubleDummySolver<N> {
     }
 
     pub fn solve(&mut self, deal: Deal<N>) -> DoubleDummyResult {
-        for (seat, hand) in Seat::iter().zip(deal.hands) {
-            println!("{}:\n{}", seat, hand)
-        }
+        // for (seat, hand) in Seat::iter().zip(deal.hands) {
+        //     println!("{}:\n{}", seat, hand)
+        // }
 
         let mut result = DoubleDummyResult::new();
 
@@ -47,7 +47,7 @@ impl<const N: usize> DoubleDummySolver<N> {
             }
         }
 
-        println!("{}", result);
+        // println!("{}", result);
         result
     }
 
@@ -57,11 +57,11 @@ impl<const N: usize> DoubleDummySolver<N> {
 
         while at_least < at_most {
             let estimate = (at_least + at_most + 1) / 2;
-            println!("------------------------");
-            println!(
-                "Trying to make {} tricks for {} as opening leader and {:?}.",
-                estimate, opening_leader, strain
-            );
+            // println!("------------------------");
+            // println!(
+            //     "Trying to make {} tricks for {} as opening leader and {:?}.",
+            //     estimate, opening_leader, strain
+            // );
 
             let trumps = match strain {
                 Strain::Trump(suit) => Some(suit),
@@ -71,7 +71,7 @@ impl<const N: usize> DoubleDummySolver<N> {
             let mut start_state = VirtualState::new(deal.hands, opening_leader, trumps);
 
             let score = self.score_node(&mut start_state, estimate);
-            println!("Scored {} tricks for defenders", score);
+            // println!("Scored {} tricks for defenders", score);
 
             if score >= estimate {
                 at_least = score;
@@ -254,7 +254,6 @@ mod test {
     use bridge_buddy_core::primitives::deal::{Board, Seat};
     use bridge_buddy_core::primitives::{Deal, Hand, Suit};
     use std::str::FromStr;
-    use strum::IntoEnumIterator;
     use test_case::test_case;
 
     #[test_case( 1u64, [1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0]; "Test A")]
@@ -415,14 +414,14 @@ mod test {
             hands: [north_hand, east_hand, south_hand, west_hand],
         };
 
-        for (seat, hand) in Seat::iter().zip(deal.hands) {
-            println!("{}:\n{}", seat, hand)
-        }
+        // for (seat, hand) in Seat::iter().zip(deal.hands) {
+        //     println!("{}:\n{}", seat, hand)
+        // }
 
         let mut dds = DoubleDummySolver::default();
         let dds_result = dds.solve(deal);
 
-        println!("{}", dds_result);
+        // println!("{}", dds_result);
         assert_eq!(dds_result.max_tricks, expected);
     }
 
