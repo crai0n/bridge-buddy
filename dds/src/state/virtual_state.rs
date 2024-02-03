@@ -119,7 +119,7 @@ impl<const N: usize> VirtualState<N> {
         }
     }
 
-    fn remaining_cards_for_player(&self, player: Seat) -> Vec<VirtualCard> {
+    pub(crate) fn remaining_cards_for_player(&self, player: Seat) -> Vec<VirtualCard> {
         self.game
             .remaining_cards_of(player)
             .iter()
