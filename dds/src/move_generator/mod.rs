@@ -90,12 +90,12 @@ impl MoveGenerator {
             if Some(candidate.card.suit) == state.trumps() {
                 candidate.priority += 50;
             }
-            // candidate.priority -= candidate.card.rank as isize;
+            candidate.priority -= candidate.card.rank as isize;
         }
     }
 
     fn sort_moves_by_priority_descending(moves: &mut [DdsMove]) {
-        moves.sort_unstable_by(|a, b| a.priority.cmp(&b.priority));
+        moves.sort_unstable_by(|a, b| b.priority.cmp(&a.priority));
     }
 
     fn select_one_move_per_sequence(moves: &[DdsMove]) -> Vec<DdsMove> {
