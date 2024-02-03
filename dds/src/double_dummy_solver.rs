@@ -3,6 +3,7 @@ use crate::move_generator::MoveGenerator;
 use crate::primitives::DoubleDummyResult;
 use crate::state::VirtualState;
 use crate::transposition_table::TranspositionTable;
+use crate::trick_estimations::quick_tricks::*;
 use bridge_buddy_core::primitives::contract::Strain;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::Deal;
@@ -175,7 +176,7 @@ impl<const N: usize> DoubleDummySolver<N> {
     }
 
     fn try_score_using_quick_tricks(&mut self, state: &VirtualState<N>, estimate: usize) -> Option<usize> {
-        let quick_tricks = Self::quick_tricks_for_current_player(state) as usize;
+        let quick_tricks = Self::quick_tricks_for_current_player(state);
         let total_with_quick_tricks = state.tricks_won_by_axis(state.next_to_play()) + quick_tricks;
         if total_with_quick_tricks >= estimate {
             if self.config.use_transposition_table {
@@ -196,8 +197,8 @@ impl<const N: usize> DoubleDummySolver<N> {
         self.transposition_table.update_upper_bound(&tt_key, bound)
     }
 
-    fn quick_tricks_for_current_player(state: &VirtualState<N>) -> u8 {
-        state.quick_tricks_for_player(state.next_to_play())
+    fn quick_tricks_for_current_player(state: &VirtualState<N>) -> usize {
+        quick_tricks_for_player(state, state.next_to_play())
     }
 
     fn maximum_achievable_tricks(state: &mut VirtualState<{ N }>) -> usize {

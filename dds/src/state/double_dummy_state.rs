@@ -138,7 +138,7 @@ impl<const N: usize> DoubleDummyState<N> {
         self.card_manager.played_cards()
     }
 
-    pub fn quick_tricks_for_player(&self, player: Seat) -> u8 {
+    pub fn quick_tricks_for_player(&self, player: Seat) -> usize {
         // Quick tricks are the tricks that an axis can take without losing the lead.
         // For this, we need to look at both hands combined
         let players = [player, player.partner()];
@@ -234,7 +234,7 @@ impl<const N: usize> DoubleDummyState<N> {
 
         // println!("I have {} quick tricks.", final_quick_tricks);
 
-        final_quick_tricks
+        final_quick_tricks as usize
     }
 }
 

@@ -151,7 +151,7 @@ impl<const N: usize> VirtualState<N> {
         self.game.tricks_won_by_axis(player)
     }
 
-    pub fn quick_tricks_for_player(&self, player: Seat) -> u8 {
+    pub fn quick_tricks_for_player(&self, player: Seat) -> usize {
         self.game.quick_tricks_for_player(player)
     }
 
