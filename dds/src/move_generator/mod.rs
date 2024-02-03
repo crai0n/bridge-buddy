@@ -47,29 +47,50 @@ impl MoveGenerator {
             }
         }
     }
-    fn prioritize_moves_for_second_hand<const N: usize>(moves: &mut [DdsMove], _state: &VirtualState<N>) {
-        for dds_move in moves {
-            dds_move.priority += 15 - dds_move.card.rank as usize;
+    fn prioritize_moves_for_second_hand<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
+        if moves.first().unwrap().card.suit != state.suit_to_follow().unwrap() {
+            Self::prioritize_cards_for_discard(moves, state);
+        } else {
+            for dds_move in moves.iter_mut() {
+                dds_move.priority -= dds_move.card.rank as isize;
+            }
         }
     }
     fn prioritize_moves_for_third_hand<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
-        for dds_move in moves {
-            if dds_move.card > state.currently_winning_card().unwrap() {
-                dds_move.priority += dds_move.card.rank as usize;
+        if moves.first().unwrap().card.suit != state.suit_to_follow().unwrap() {
+            Self::prioritize_cards_for_discard(moves, state);
+        } else {
+            for dds_move in moves {
+                if dds_move.card > state.currently_winning_card().unwrap() {
+                    dds_move.priority += dds_move.card.rank as isize;
+                }
             }
         }
     }
     fn prioritize_moves_for_last_hand<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
-        for dds_move in moves {
-            if state.current_trick_winner() == state.next_to_play().partner() {
-                dds_move.priority += 15 - dds_move.card.rank as usize;
-            } else {
-                dds_move.priority += dds_move.card.rank as usize;
-            }
+        if moves.first().unwrap().card.suit != state.suit_to_follow().unwrap() {
+            Self::prioritize_cards_for_discard(moves, state);
+        } else {
+            for dds_move in moves {
+                if state.current_trick_winner() == state.next_to_play().partner() {
+                    dds_move.priority -= dds_move.card.rank as isize;
+                } else {
+                    dds_move.priority += dds_move.card.rank as isize;
+                }
 
-            if dds_move.card > state.currently_winning_card().unwrap() {
-                break;
+                if dds_move.card > state.currently_winning_card().unwrap() {
+                    break;
+                }
             }
+        }
+    }
+
+    fn prioritize_cards_for_discard<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
+        for candidate in moves.iter_mut() {
+            if Some(candidate.card.suit) == state.trumps() {
+                candidate.priority += 50;
+            }
+            // candidate.priority -= candidate.card.rank as isize;
         }
     }
 

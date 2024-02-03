@@ -46,6 +46,10 @@ impl<const N: usize> DoubleDummyState<N> {
         self.count_trump_cards_for_player(player) + self.count_trump_cards_for_player(player.partner())
     }
 
+    pub fn suit_to_follow(&self) -> Option<Suit> {
+        self.trick_manager.suit_to_follow()
+    }
+
     pub fn count_this_sides_trump_cards(&self) -> usize {
         self.count_trump_cards_for_axis(self.next_to_play())
     }

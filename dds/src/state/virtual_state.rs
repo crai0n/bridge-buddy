@@ -26,6 +26,10 @@ impl<const N: usize> VirtualState<N> {
         }
     }
 
+    pub fn suit_to_follow(&self) -> Option<Suit> {
+        self.game.suit_to_follow()
+    }
+
     fn generate_card_distribution(&self) -> [u32; 4] {
         let mut output = vec![];
         for player in Seat::iter() {

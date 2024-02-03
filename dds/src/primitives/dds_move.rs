@@ -4,7 +4,7 @@ use crate::primitives::VirtualCard;
 pub struct DdsMove {
     pub card: VirtualCard,
     pub sequence_length: usize,
-    pub priority: usize,
+    pub priority: isize,
 }
 
 impl DdsMove {
