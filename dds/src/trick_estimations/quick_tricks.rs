@@ -3,7 +3,7 @@ use crate::state::VirtualState;
 use bridge_buddy_core::primitives::card::virtual_rank::VirtualRank;
 use bridge_buddy_core::primitives::deal::Seat;
 use itertools::Itertools;
-use std::cmp::{max, min};
+use std::cmp::{max, min, Ordering};
 use strum::IntoEnumIterator;
 
 pub fn quick_tricks_for_player<const N: usize>(state: &VirtualState<N>, player: Seat) -> usize {
@@ -44,15 +44,49 @@ pub fn quick_tricks_for_player<const N: usize>(state: &VirtualState<N>, player: 
             let lhos_cards_per_suit = count_cards_per_suit(&lhos_cards);
             let rhos_cards_per_suit = count_cards_per_suit(&rhos_cards);
 
-            let opponents_max_cards_per_suit =
-                [0, 1, 2, 3].map(|i| max(lhos_cards_per_suit[i], rhos_cards_per_suit[i]));
+            let lhos_trump_cards = lhos_cards_per_suit[trump_suit as usize];
+            let rhos_trump_cards = rhos_cards_per_suit[trump_suit as usize];
 
-            if opponents_max_cards_per_suit[trump_suit as usize] == 0 {
-                // count all quick tricks,
-                higher_bounds.iter().sum()
-            } else {
-                // count only trump quick tricks,
-                higher_bounds[trump_suit as usize]
+            let opponents_trump_cards = [lhos_trump_cards, rhos_trump_cards];
+
+            let our_trump_high_cards = higher_bounds[trump_suit as usize];
+
+            // let opponents_max_cards_per_suit =
+            //     [0, 1, 2, 3].map(|i| max(lhos_cards_per_suit[i], rhos_cards_per_suit[i]));
+
+            match opponents_trump_cards.map(|num| num.cmp(&our_trump_high_cards)) {
+                [Ordering::Greater, Ordering::Greater] => {
+                    // both opponents can ruff
+                    // only count high cards until one is void
+                    let quick_tricks = [0, 1, 2, 3].map(|i| min(rhos_cards_per_suit[i], higher_bounds[i]));
+                    let mut quick_tricks = [0, 1, 2, 3].map(|i| min(lhos_cards_per_suit[i], quick_tricks[i]));
+
+                    // correct count for trump suit
+                    quick_tricks[trump_suit as usize] = our_trump_high_cards;
+                    quick_tricks.iter().sum()
+                }
+                [Ordering::Greater, _] => {
+                    // LHO can ruff
+                    // only count high cards until LHO is void
+                    let mut quick_tricks = [0, 1, 2, 3].map(|i| min(lhos_cards_per_suit[i], higher_bounds[i]));
+
+                    // correct count for trump suit
+                    quick_tricks[trump_suit as usize] = our_trump_high_cards;
+                    quick_tricks.iter().sum()
+                }
+                [_, Ordering::Greater] => {
+                    // RHO can ruff
+                    // only count high cards until RHO is void
+                    let mut quick_tricks = [0, 1, 2, 3].map(|i| min(rhos_cards_per_suit[i], higher_bounds[i]));
+
+                    // correct count for trump suit
+                    quick_tricks[trump_suit as usize] = our_trump_high_cards;
+                    quick_tricks.iter().sum()
+                }
+                [_, _] => {
+                    // opponents won't have trumps left
+                    higher_bounds.iter().sum()
+                }
             }
         }
     };
