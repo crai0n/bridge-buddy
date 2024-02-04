@@ -178,7 +178,7 @@ impl SuitField {
 
     pub const ALL_RANKS: u16 = 0b0001_1111_1111_1111;
 
-    pub fn find_relative(&self, absolute: Rank) -> VirtualRank {
+    pub fn try_find_relative(&self, absolute: Rank) -> Option<VirtualRank> {
         let field = 1u32 << absolute as usize;
         let key = field << 16 | self.0 as u32;
         *RELATIVE.get(&key).unwrap()
@@ -257,12 +257,12 @@ mod test {
         assert_eq!(SuitField::all_lower_than(rank), SuitField::from_u16(expected));
     }
 
-    #[test_case(Rank::Two, 0b0000_0011_0000_1000, VirtualRank::Five)]
-    #[test_case(Rank::Two, 0b0000_0011_0100_1000, VirtualRank::Six)]
-    #[test_case(Rank::Two, 0b0000_0011_0100_1001, VirtualRank::OutOfPlay)]
-    fn relative_given_played(rank: Rank, played: u16, expected: VirtualRank) {
+    #[test_case(Rank::Two, 0b0000_0011_0000_1000, Some(VirtualRank::Five))]
+    #[test_case(Rank::Two, 0b0000_0011_0100_1000, Some(VirtualRank::Six))]
+    #[test_case(Rank::Two, 0b0000_0011_0100_1001, None)]
+    fn relative_given_played(rank: Rank, played: u16, expected: Option<VirtualRank>) {
         let played = SuitField::from_u16(played);
-        let relative = played.find_relative(rank);
+        let relative = played.try_find_relative(rank);
         assert_eq!(relative, expected)
     }
 

@@ -49,25 +49,24 @@ fn create_relative_map() {
         for rank in Rank::iter() {
             let field = 1u32 << (rank as u8);
             let key = field << 16 | played as u32;
-            let rel_rank = relative_from_rank(rank, played);
-            let value = format!("VirtualRank::{:?}", rel_rank);
+            let rel_rank = try_relative_from_rank(rank, played);
+            let value = match rel_rank {
+                Some(rel) => format!("Some(VirtualRank::{:?})", rel),
+                None => "None".to_string(),
+            };
             relative_map.entry(key, &value);
         }
     }
 
     writeln!(
         &mut file,
-        "static RELATIVE: phf::Map<u32, VirtualRank> = {};",
+        "static RELATIVE: phf::Map<u32, Option<VirtualRank>> = {};",
         relative_map.build()
     )
     .unwrap();
 }
 
 fn try_absolute_from_virtual_rank(virtual_rank: VirtualRank, played: u16) -> Option<Rank> {
-    if virtual_rank == VirtualRank::OutOfPlay {
-        return None;
-    }
-
     let rel_index = virtual_rank as u16;
     let mut index = 0;
 
@@ -85,11 +84,11 @@ fn try_absolute_from_virtual_rank(virtual_rank: VirtualRank, played: u16) -> Opt
     None
 }
 
-fn relative_from_rank(rank: Rank, played: u16) -> VirtualRank {
+fn try_relative_from_rank(rank: Rank, played: u16) -> Option<VirtualRank> {
     let relative = 1u16 << rank as usize;
 
     if relative & played != 0 {
-        return VirtualRank::OutOfPlay;
+        return None;
     }
 
     let index = rank as u16;
@@ -97,5 +96,5 @@ fn relative_from_rank(rank: Rank, played: u16) -> VirtualRank {
     let shifted = played >> index;
     let pop_count = shifted.count_ones() as u16;
 
-    VirtualRank::from(index + pop_count)
+    Some(VirtualRank::from(index + pop_count))
 }

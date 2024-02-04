@@ -1,3 +1,4 @@
+use crate::error::BBError;
 use std::cmp::Ordering;
 use strum::{Display, EnumIter};
 
@@ -29,14 +30,11 @@ pub enum VirtualRank {
     King,
     #[strum(serialize = "A")]
     Ace,
-    #[strum(serialize = "OUT")]
-    OutOfPlay = 15,
 }
 
 impl From<u16> for VirtualRank {
     fn from(value: u16) -> VirtualRank {
         match value {
-            15 => VirtualRank::OutOfPlay,
             0 => VirtualRank::Two,
             1 => VirtualRank::Three,
             2 => VirtualRank::Four,
@@ -56,6 +54,29 @@ impl From<u16> for VirtualRank {
 }
 
 impl VirtualRank {
+    pub fn from_char(char: char) -> Result<VirtualRank, BBError> {
+        match char {
+            'A' => Ok(VirtualRank::Ace),
+            'a' => Ok(VirtualRank::Ace),
+            'K' => Ok(VirtualRank::King),
+            'k' => Ok(VirtualRank::King),
+            'Q' => Ok(VirtualRank::Queen),
+            'q' => Ok(VirtualRank::Queen),
+            'J' => Ok(VirtualRank::Jack),
+            'j' => Ok(VirtualRank::Jack),
+            'T' => Ok(VirtualRank::Ten),
+            't' => Ok(VirtualRank::Ten),
+            '9' => Ok(VirtualRank::Nine),
+            '8' => Ok(VirtualRank::Eight),
+            '7' => Ok(VirtualRank::Seven),
+            '6' => Ok(VirtualRank::Six),
+            '5' => Ok(VirtualRank::Five),
+            '4' => Ok(VirtualRank::Four),
+            '3' => Ok(VirtualRank::Three),
+            '2' => Ok(VirtualRank::Two),
+            c => Err(BBError::UnknownRank(c.into())),
+        }
+    }
     #[allow(dead_code)]
     pub fn touches(&self, other: &VirtualRank) -> bool {
         // println!("testing {} and {}", self, other);
@@ -64,6 +85,19 @@ impl VirtualRank {
             Ordering::Greater => *self as usize - *other as usize == 1,
             Ordering::Equal => false,
         }
+    }
+}
+
+impl std::str::FromStr for VirtualRank {
+    type Err = BBError;
+
+    fn from_str(string: &str) -> Result<VirtualRank, BBError> {
+        let mut chars = string.trim().chars();
+        let char = chars.next().ok_or(BBError::UnknownRank(string.into()))?;
+        if chars.next().is_some() {
+            return Err(BBError::UnknownRank(string.into()));
+        }
+        VirtualRank::from_char(char)
     }
 }
 
@@ -79,6 +113,18 @@ mod tests {
     #[test_case(Two, Ten; "Two and Ten")]
     fn relative_ranking(lower: VirtualRank, higher: VirtualRank) {
         assert!(lower < higher);
+    }
+
+    #[test_case('a', Ace; "A is Ace")]
+    #[test_case('k', King; "k is King")]
+    #[test_case('q', Queen; "q is Queen")]
+    #[test_case('J', Jack; "J is Jack")]
+    #[test_case('t', Ten; "t is Ten")]
+    #[test_case('9', Nine; "9 is Nine")]
+    #[test_case('7', Seven; "7 is Seven")]
+    #[test_case('3', Three; "3 is Three")]
+    fn parsing_char(input: char, expected: VirtualRank) {
+        assert_eq!(VirtualRank::from_char(input).unwrap(), expected);
     }
 
     #[test_case(Ace, "A")]

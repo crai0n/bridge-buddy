@@ -109,21 +109,18 @@ impl<const N: usize> VirtualState<N> {
         absolute_rank.map(|rank| Card { rank, suit })
     }
 
-    fn absolute_to_virtual(&self, card: Card) -> VirtualCard {
+    fn absolute_to_virtual(&self, card: Card) -> Option<VirtualCard> {
         let suit = card.suit;
         let suit_field = self.played[suit as usize];
-        let virtual_rank = suit_field.find_relative(card.rank);
-        VirtualCard {
-            rank: virtual_rank,
-            suit,
-        }
+        let virtual_rank = suit_field.try_find_relative(card.rank);
+        virtual_rank.map(|rank| VirtualCard { rank, suit })
     }
 
     pub(crate) fn remaining_cards_for_player(&self, player: Seat) -> Vec<VirtualCard> {
         self.game
             .remaining_cards_of(player)
             .iter()
-            .map(|x| self.absolute_to_virtual(*x))
+            .map(|x| self.absolute_to_virtual(*x).unwrap())
             .collect_vec()
     }
 
@@ -131,7 +128,7 @@ impl<const N: usize> VirtualState<N> {
         let absolute_moves = self.game.valid_moves_for(player);
         absolute_moves
             .into_iter()
-            .map(|x| DdsMove::new(self.absolute_to_virtual(x)))
+            .map(|x| DdsMove::new(self.absolute_to_virtual(x).unwrap()))
             .collect_vec()
     }
 
@@ -184,7 +181,10 @@ impl<const N: usize> VirtualState<N> {
 
     pub fn currently_winning_card(&self) -> Option<VirtualCard> {
         let winning_card = self.game.currently_winning_card();
-        winning_card.map(|x| self.absolute_to_virtual(x))
+        match winning_card {
+            None => None,
+            Some(winning_card) => self.absolute_to_virtual(winning_card),
+        }
     }
 
     pub fn last_trick_winner(&self) -> Option<Seat> {
