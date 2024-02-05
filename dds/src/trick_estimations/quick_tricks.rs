@@ -4,7 +4,7 @@ use bridge_buddy_core::primitives::card::virtual_rank::VirtualRank;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::Suit;
 use itertools::Itertools;
-use std::cmp::{max, min};
+use std::cmp::{max, min, Ordering};
 use strum::IntoEnumIterator;
 
 pub fn nt_quick_tricks_for_player<const N: usize>(state: &VirtualState<N>, player: Seat) -> usize {
@@ -18,85 +18,24 @@ pub fn nt_quick_tricks_for_player<const N: usize>(state: &VirtualState<N>, playe
     let high_card_tricks = nt_high_card_tricks_per_suit(my_cards, partners_cards);
 
     let my_cards_per_suit = count_cards_per_suit(my_cards);
-    // let partners_cards_per_suit = count_cards_per_suit(partners_cards);
-    // let lhos_cards_per_suit = count_cards_per_suit(lhos_cards);
-    // let rhos_cards_per_suit = count_cards_per_suit(rhos_cards);
 
-    // let mut quick_tricks = [0; 4];
-
-    // for i in 0..4 {
-    //     if high_card_tricks[i] > max(lhos_cards_per_suit[i], rhos_cards_per_suit[i]) {
-    //         // after our high cards, opponents have nothing left, so we can run our low cards,
-    //         // making one trick for each card of the longer hand
-    //         quick_tricks[i] = max(my_cards_per_suit[i], partners_cards_per_suit[i])
-    //     } else {
-    //         // just count the high card tricks
-    //         quick_tricks[i] = high_card_tricks[i]
-    //     }
-    // }
-
-    // if we have a lot of quick tricks, they might collide. we can never make more tricks than we have cards
     min(high_card_tricks.iter().sum(), my_cards_per_suit.iter().sum())
 }
 
-pub fn trump_quick_tricks_for_player<const N: usize>(
-    _state: &VirtualState<N>,
-    _player: Seat,
-    _trump_suit: Suit,
-) -> usize {
-    // there is a trump suit.
-    // To reach this maximum number of quick tricks we need to make sure that opponents cannot ruff.
+pub fn trump_quick_tricks_for_player<const N: usize>(state: &VirtualState<N>, player: Seat, trump_suit: Suit) -> usize {
+    // Quick tricks are the tricks that an axis can take without losing the lead.
+    // For this, we need to look at both hands combined
+    let players = [player, player + 1, player + 2, player + 3];
+    let cards = players.map(|x| state.remaining_cards_for_player(x));
 
-    // let lhos_trump_cards = lhos_cards_per_suit[trump_suit as usize];
-    // let rhos_trump_cards = rhos_cards_per_suit[trump_suit as usize];
-    //
-    // let opponents_trump_cards = [lhos_trump_cards, rhos_trump_cards];
-    //
-    // let our_trump_high_cards = high_card_tricks[trump_suit as usize];
-    //
-    // // let opponents_max_cards_per_suit =
-    // //     [0, 1, 2, 3].map(|i| max(lhos_cards_per_suit[i], rhos_cards_per_suit[i]));
-    //
-    // match opponents_trump_cards.map(|num| num.cmp(&our_trump_high_cards)) {
-    //     [Ordering::Greater, Ordering::Greater] => {
-    //         // println!("Both opponents have trumps left");
-    //         // both opponents can ruff
-    //         // only count high cards until one is void
-    //         let quick_tricks = [0, 1, 2, 3].map(|i| min(rhos_cards_per_suit[i], high_card_tricks[i]));
-    //         let mut quick_tricks = [0, 1, 2, 3].map(|i| min(lhos_cards_per_suit[i], quick_tricks[i]));
-    //
-    //         // correct count for trump suit
-    //         quick_tricks[trump_suit as usize] = our_trump_high_cards;
-    //         quick_tricks.iter().sum()
-    //     }
-    //     [Ordering::Greater, _] => {
-    //         // LHO can ruff
-    //         // only count high cards until LHO is void
-    //         let mut quick_tricks = [0, 1, 2, 3].map(|i| min(lhos_cards_per_suit[i], high_card_tricks[i]));
-    //
-    //         // correct count for trump suit
-    //         quick_tricks[trump_suit as usize] = our_trump_high_cards;
-    //         quick_tricks.iter().sum()
-    //     }
-    //     [_, Ordering::Greater] => {
-    //         // RHO can ruff
-    //         // only count high cards until RHO is void
-    //         let mut quick_tricks = [0, 1, 2, 3].map(|i| min(rhos_cards_per_suit[i], high_card_tricks[i]));
-    //
-    //         // correct count for trump suit
-    //         quick_tricks[trump_suit as usize] = our_trump_high_cards;
-    //         quick_tricks.iter().sum()
-    //     }
-    //     [_, _] => {
-    //         // opponents won't have trumps left
-    //         high_card_tricks.iter().sum()
-    //     }
-    // }
-    //
-    // let max_cards = my_cards_per_suit.iter().sum();
-    //
-    // min(final_quick_tricks, max_cards)
-    0
+    let [my_cards, lhos_cards, partners_cards, rhos_cards] = &cards;
+
+    let high_card_tricks =
+        trump_high_card_tricks_per_suit(my_cards, partners_cards, lhos_cards, rhos_cards, trump_suit);
+
+    let my_cards_per_suit = count_cards_per_suit(my_cards);
+
+    min(high_card_tricks.iter().sum(), my_cards_per_suit.iter().sum())
 }
 pub fn quick_tricks_for_player<const N: usize>(state: &VirtualState<N>, player: Seat) -> usize {
     match state.trumps() {
@@ -106,28 +45,80 @@ pub fn quick_tricks_for_player<const N: usize>(state: &VirtualState<N>, player: 
 }
 #[allow(dead_code)]
 fn trump_high_card_tricks_per_suit(
-    _my_cards: &[VirtualCard],
-    _partners_cards: &[VirtualCard],
-    _trump_suit: Suit,
+    my_cards: &[VirtualCard],
+    partners_cards: &[VirtualCard],
+    lhos_cards: &[VirtualCard],
+    rhos_cards: &[VirtualCard],
+    trump_suit: Suit,
 ) -> [usize; 4] {
-    // let (quick_tricks, partners_blocked_quick_tricks, my_blocked_quick_tricks, can_move_to_partner, can_move_back) =
-    //     high_card_tricks_per_suit(my_cards, partners_cards);
+    let (
+        high_card_tricks,
+        partners_blocked_high_card_tricks,
+        my_blocked_high_card_tricks,
+        can_move_to_partner,
+        can_move_back,
+    ) = high_card_tricks_per_suit(my_cards, partners_cards);
 
-    // We might have "stuck tricks" left over. Counting these takes a bit more caution than in NT, because we need to
-    // be careful about ruffing from opponents. In the best case, we can just run all our trump tricks first, and then
+    if trump_suit == Suit::Hearts {
+        println!(" My cards: {:?}", my_cards);
+        println!("Prt cards: {:?}", partners_cards);
+        println!("LHO cards: {:?}", lhos_cards);
+        println!("RHO cards: {:?}", rhos_cards);
 
-    // check trump suit first:
-    // if partners_blocked_quick_tricks[trump_suit as usize] != 0 {
-    //     // there are blocked tricks in partners hand in trump suit
-    // } else if {
-    //     my_blocked_quick_tricks[trump_suit as usize] != 0 {
-    //         // there are blocked tricks in my hand in trump suit
-    //     }
-    // } else {
-    //     // we can run all trump tricks
-    // }
+        println!("immediate quick tricks: {:?}", high_card_tricks);
+        println!("p.blocked quick tricks: {:?}", partners_blocked_high_card_tricks);
+        println!("m.blocked quick tricks: {:?}", my_blocked_high_card_tricks);
+        println!("   can move to partner: {:?}", can_move_to_partner);
+        println!("         can move back: {:?}", can_move_back);
+    }
 
-    [0; 4]
+    // Run trump suit first:
+    // TODO: There might be blocked tricks in the trump suit, which we can run if we have a safe entry into the hand
+    // (opponents cannot ruff)
+
+    let lhos_card_count = count_cards_per_suit(lhos_cards);
+    let rhos_card_count = count_cards_per_suit(rhos_cards);
+
+    let opponents_trump_card_count = [
+        lhos_card_count[trump_suit as usize],
+        rhos_card_count[trump_suit as usize],
+    ];
+
+    match opponents_trump_card_count.map(|num| num.cmp(&high_card_tricks[trump_suit as usize])) {
+        [Ordering::Greater, Ordering::Greater] => {
+            // println!("Both opponents have trumps left");
+            // both opponents can ruff
+            // only count high cards until one is void
+            let quick_tricks = [0, 1, 2, 3].map(|i| min(rhos_card_count[i], high_card_tricks[i]));
+            let mut quick_tricks = [0, 1, 2, 3].map(|i| min(lhos_card_count[i], quick_tricks[i]));
+
+            // correct count for trump suit
+            quick_tricks[trump_suit as usize] = high_card_tricks[trump_suit as usize];
+            quick_tricks
+        }
+        [Ordering::Greater, _] => {
+            // LHO can ruff
+            // only count high cards until LHO is void
+            let mut quick_tricks = [0, 1, 2, 3].map(|i| min(lhos_card_count[i], high_card_tricks[i]));
+
+            // correct count for trump suit
+            quick_tricks[trump_suit as usize] = high_card_tricks[trump_suit as usize];
+            quick_tricks
+        }
+        [_, Ordering::Greater] => {
+            // RHO can ruff
+            // only count high cards until RHO is void
+            let mut quick_tricks = [0, 1, 2, 3].map(|i| min(rhos_card_count[i], high_card_tricks[i]));
+
+            // correct count for trump suit
+            quick_tricks[trump_suit as usize] = high_card_tricks[trump_suit as usize];
+            quick_tricks
+        }
+        [_, _] => {
+            // opponents won't have trumps left
+            high_card_tricks
+        }
+    }
 }
 
 fn nt_high_card_tricks_per_suit(my_cards: &[VirtualCard], partners_cards: &[VirtualCard]) -> [usize; 4] {
@@ -238,6 +229,10 @@ fn high_card_tricks_per_suit(
             {
                 // I can run the whole suit without partner
                 quick_tricks[i] += my_extended_high_card_count[i];
+                // TODO: Or I could move to partner if they have more quick tricks in other suits available. How to decide this?
+                // Example: I have AQ against partners K, but partner has AKQ in another suit. I'd rather make 1 trick here
+                // Idea: set can_move_to_partner to true, but introduce a 'penalty' array, so that we discount tricks if we actually use the
+                // entries to partner.
             } else {
                 // partner has high cards
                 if my_card_count[i] > my_extended_high_card_count[i]
@@ -409,6 +404,8 @@ mod test {
     #[test_case(&["SA", "SJ", "DQ", "CQ", "CJ"], &["SQ", "HA", "HK", "HQ", "HT"], [0, 0, 0, 1] )]
     #[test_case(&["SQ", "HA", "HK", "HQ", "HT"], &["SA", "SJ", "DQ", "CQ", "CJ"], [0, 0, 3, 1] )]
     #[test_case(&["SK", "DK", "DT", "CA", "CT"], &["ST", "HJ", "DA", "DJ", "CK"], [2, 2, 0, 0] )]
+    #[test_case(&["SA", "SQ", "D5", "D4", "D3"], &["SK", "H7", "H6", "H5", "H4"], [0, 0, 0, 2] )]
+    #[test_case(&["SA", "SQ", "D5", "D4", "D3"], &["SK", "HA", "HK", "HQ", "HJ"], [0, 0, 4, 1] )] // this is a weird edge case where we should leave tricks on the table in one suit to make more in another
     fn nt_high_card_tricks(my_cards: &[&str], partners_cards: &[&str], expected: [usize; 4]) {
         let my_cards = my_cards
             .iter()
