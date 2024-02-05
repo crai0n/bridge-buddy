@@ -13,30 +13,30 @@ pub fn nt_quick_tricks_for_player<const N: usize>(state: &VirtualState<N>, playe
     let players = [player, player + 1, player + 2, player + 3];
     let cards = players.map(|x| state.remaining_cards_for_player(x));
 
-    let [my_cards, lhos_cards, partners_cards, rhos_cards] = &cards;
+    let [my_cards, _lhos_cards, partners_cards, _rhos_cards] = &cards;
 
     let high_card_tricks = nt_high_card_tricks_per_suit(my_cards, partners_cards);
 
     let my_cards_per_suit = count_cards_per_suit(my_cards);
-    let partners_cards_per_suit = count_cards_per_suit(partners_cards);
-    let lhos_cards_per_suit = count_cards_per_suit(lhos_cards);
-    let rhos_cards_per_suit = count_cards_per_suit(rhos_cards);
+    // let partners_cards_per_suit = count_cards_per_suit(partners_cards);
+    // let lhos_cards_per_suit = count_cards_per_suit(lhos_cards);
+    // let rhos_cards_per_suit = count_cards_per_suit(rhos_cards);
 
-    let mut quick_tricks = [0; 4];
+    // let mut quick_tricks = [0; 4];
 
-    for i in 0..4 {
-        if high_card_tricks[i] > max(lhos_cards_per_suit[i], rhos_cards_per_suit[i]) {
-            // after our high cards, opponents have nothing left, so we can run our low cards,
-            // making one trick for each card of the longer hand
-            quick_tricks[i] = max(my_cards_per_suit[i], partners_cards_per_suit[i])
-        } else {
-            // just count the high card tricks
-            quick_tricks[i] = high_card_tricks[i]
-        }
-    }
+    // for i in 0..4 {
+    //     if high_card_tricks[i] > max(lhos_cards_per_suit[i], rhos_cards_per_suit[i]) {
+    //         // after our high cards, opponents have nothing left, so we can run our low cards,
+    //         // making one trick for each card of the longer hand
+    //         quick_tricks[i] = max(my_cards_per_suit[i], partners_cards_per_suit[i])
+    //     } else {
+    //         // just count the high card tricks
+    //         quick_tricks[i] = high_card_tricks[i]
+    //     }
+    // }
 
     // if we have a lot of quick tricks, they might collide. we can never make more tricks than we have cards
-    min(quick_tricks.iter().sum(), my_cards_per_suit.iter().sum())
+    min(high_card_tricks.iter().sum(), my_cards_per_suit.iter().sum())
 }
 
 pub fn trump_quick_tricks_for_player<const N: usize>(
@@ -152,6 +152,7 @@ fn nt_high_card_tricks_per_suit(my_cards: &[VirtualCard], partners_cards: &[Virt
         }
     }
 
+    // println!("reporting {:?} to caller", quick_tricks);
     quick_tricks
 }
 #[allow(clippy::type_complexity)]
@@ -159,11 +160,6 @@ fn high_card_tricks_per_suit(
     my_cards: &[VirtualCard],
     partners_cards: &[VirtualCard],
 ) -> ([usize; 4], [usize; 4], [usize; 4], [bool; 4], [bool; 4]) {
-    println!("Trying to find high-card tricks per suit!");
-
-    println!("      My Cards: {:?}", my_cards);
-    println!("Partners Cards: {:?}", partners_cards);
-
     let my_card_count = count_cards_per_suit(my_cards);
     let partners_card_count = count_cards_per_suit(partners_cards);
 
@@ -237,7 +233,9 @@ fn high_card_tricks_per_suit(
             if partners_extended_high_card_count[i] == 0 {
                 // partner has no high cards that need to be played, just count mine
                 quick_tricks[i] += my_simple_high_card_count[i];
-            } else if my_extended_high_card_count[i] == my_card_count[i] {
+            } else if my_extended_high_card_count[i] == my_card_count[i]
+                && my_simple_high_card_count[i] >= partners_extended_high_card_count[i]
+            {
                 // I can run the whole suit without partner
                 quick_tricks[i] += my_extended_high_card_count[i];
             } else {
@@ -261,20 +259,20 @@ fn high_card_tricks_per_suit(
                             quick_tricks[i] += long_side_remaining_high_cards;
                         }
                     } else if partners_extended_high_card_count[i] > partners_simple_high_card_count[i] {
-                        // partner will sacrifice his lowest high card to play back to me
-                        quick_tricks[i] += partners_extended_high_card_count[i] - 1;
+                        // partner will need to sacrifice his lowest high card to play back to me
+                        quick_tricks[i] += max(partners_extended_high_card_count[i] - 1, 1);
                         // i am trying to hold on to my highest card
-                        long_side_remaining_cards[i] -= partners_extended_high_card_count[i] - 1;
+                        long_side_remaining_cards[i] -= max(partners_extended_high_card_count[i] - 1, 1);
                         let long_side_remaining_high_cards =
                             min(long_side_remaining_cards[i], my_extended_high_card_count[i]);
-                        if long_side_remaining_high_cards > 0 {
+                        if long_side_remaining_high_cards > 0 && partners_card_count[i] > 1 {
                             can_move_back[i] = true;
                             quick_tricks[i] += long_side_remaining_high_cards;
                         } else {
-                            unreachable!("long side should always have high cards left here")
+                            my_blocked_quick_tricks[i] = long_side_remaining_high_cards;
                         }
                     } else {
-                        // partner has only all the highest cards, once we touch this suit we are definitely moving to partner
+                        // partner has only all the highest cards, once we touch this suit we are stuck in partner
                         quick_tricks[i] += partners_simple_high_card_count[i];
 
                         // I am trying to hold on to my highest cards
@@ -291,11 +289,11 @@ fn high_card_tricks_per_suit(
             }
         }
     }
-    println!("immediate quick tricks: {:?}", quick_tricks);
-    println!("p.blocked quick tricks: {:?}", partners_blocked_quick_tricks);
-    println!("m.blocked quick tricks: {:?}", my_blocked_quick_tricks);
-    println!("   can move to partner: {:?}", can_move_to_partner);
-    println!("         can move back: {:?}", can_move_back);
+    // println!("immediate quick tricks: {:?}", quick_tricks);
+    // println!("p.blocked quick tricks: {:?}", partners_blocked_quick_tricks);
+    // println!("m.blocked quick tricks: {:?}", my_blocked_quick_tricks);
+    // println!("   can move to partner: {:?}", can_move_to_partner);
+    // println!("         can move back: {:?}", can_move_back);
     (
         quick_tricks,
         partners_blocked_quick_tricks,
@@ -343,9 +341,13 @@ fn count_combined_high_cards_per_suit(my_cards: &[VirtualCard], partners_cards: 
 }
 
 fn count_cards_per_suit(cards: &[VirtualCard]) -> [usize; 4] {
+    let mut sorted = cards.to_vec();
+    sorted.sort_unstable_by(|a, b| b.cmp(a));
+    let sorted = sorted;
+
     let mut result = [0usize; 4];
 
-    for (suit, cards) in &cards.iter().group_by(|card| card.suit) {
+    for (suit, cards) in &sorted.iter().group_by(|card| card.suit) {
         for _card in cards {
             result[suit as usize] += 1;
         }
