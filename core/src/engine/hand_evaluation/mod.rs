@@ -232,7 +232,7 @@ impl ForumDPlus2015Evaluator {
     //
     // There are different opinions on how exactly Playing Tricks are counted. The difference mostly stems from disagreements about the value of Jack and Ten, especially for suits with 4-6 cards.
     // For now, we implement a basic approach, where we only evaluate at most the first three cards of the suit.
-    pub fn playing_trick_count(hand: &Hand<13>) -> f64 {
+    pub fn playing_trick_count<const N: usize>(hand: &Hand<N>) -> f64 {
         let mut acc = 0.0;
         for suit in Suit::iter() {
             let card_vec = hand.cards_in(suit).rev().map(|c| c.rank).collect_vec();
@@ -308,7 +308,7 @@ impl ForumDPlus2015Evaluator {
     // There are different opinions on how exactly Losing Tricks are counted. The difference mostly stems from disagreements about the value of Jack and Ten, especially for suits with 4-6 cards.
     // For now, we implement a basic approach, never counting more than 3 losers per suit. From these, one loser is deducted for each of the Ace, King and Queen.
     // This means that Qxx is valued the same as Axx though, which should be refined todo!
-    pub fn losing_trick_count(hand: &Hand<13>) -> f64 {
+    pub fn losing_trick_count<const N: usize>(hand: &Hand<N>) -> f64 {
         let mut acc = 0.0;
         for suit in Suit::iter() {
             let card_vec = hand.cards_in(suit).rev().map(|c| c.rank).collect_vec();
@@ -583,7 +583,7 @@ mod test {
     #[test_case("S:984,H:QT86,D:J863,C:AK", 8.5; "Eight and a half losers")]
     #[test_case("S:AJT9874,H:QT8,D:J3,C:K", 7.0; "Seven losers")]
     fn test_losing_trick_count(hand_str: &str, ltc: f64) {
-        let hand = Hand::from_str(hand_str).unwrap();
+        let hand = Hand::<13>::from_str(hand_str).unwrap();
         assert_eq!(ForumDPlus2015Evaluator::losing_trick_count(&hand), ltc)
     }
     #[test_case("S:AKQJ976,H:,D:A,C:Q9763", Suit::Hearts, Some(Suit::Spades), true)]

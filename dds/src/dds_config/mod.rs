@@ -3,6 +3,7 @@ pub struct DdsConfig {
     pub check_quick_tricks: bool,
     pub use_transposition_table: bool,
     pub check_losing_tricks: bool,
+    pub pre_estimate: bool,
     // fail_soft: bool,
 }
 
@@ -13,6 +14,7 @@ impl Default for DdsConfig {
             check_quick_tricks: true,
             use_transposition_table: true,
             check_losing_tricks: true,
+            pre_estimate: true,
         }
     }
 }

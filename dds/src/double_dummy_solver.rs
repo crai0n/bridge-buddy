@@ -5,10 +5,12 @@ use crate::state::VirtualState;
 use crate::transposition_table::TranspositionTable;
 use crate::trick_estimations::losing_tricks_for_player;
 use crate::trick_estimations::quick_tricks_for_player;
+use bridge_buddy_core::engine::hand_evaluation::ForumDPlus2015Evaluator;
 use bridge_buddy_core::primitives::contract::Strain;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::Deal;
 use enum_iterator::all;
+use std::cmp::min;
 use strum::IntoEnumIterator;
 
 // mod transposition_table;
@@ -53,17 +55,36 @@ impl<const N: usize> DoubleDummySolver<N> {
         result
     }
 
+    fn get_initial_estimate(deal: Deal<N>, strain: Strain, opening_leader: Seat) -> usize {
+        let my_hand = deal.hand_of(opening_leader);
+        let partners_hand = deal.hand_of(opening_leader + 2);
+        match strain {
+            Strain::NoTrump => {
+                let my_ptc = ForumDPlus2015Evaluator::playing_trick_count(my_hand) as usize;
+                let partners_ptc = ForumDPlus2015Evaluator::playing_trick_count(partners_hand) as usize;
+                min(N, my_ptc + partners_ptc)
+            }
+            Strain::Trump(_) => {
+                let my_ltc = ForumDPlus2015Evaluator::losing_trick_count(my_hand) as usize;
+                let partners_ltc = ForumDPlus2015Evaluator::losing_trick_count(my_hand) as usize;
+                let min_ltc = min(my_ltc, partners_ltc);
+                N - min_ltc
+            }
+        }
+    }
+
     fn solve_initial_position(&mut self, deal: Deal<N>, strain: Strain, opening_leader: Seat) -> usize {
         let mut at_least = 0;
         let mut at_most = N; // at_most = b - 1;
 
+        let mut first_round = true;
         while at_least < at_most {
-            let estimate = (at_least + at_most + 1) / 2;
-            // println!("------------------------");
-            // println!(
-            //     "Trying to make {} tricks for {} as opening leader and {:?}.",
-            //     estimate, opening_leader, strain
-            // );
+            let estimate = if self.config.pre_estimate && first_round {
+                first_round = false;
+                Self::get_initial_estimate(deal, strain, opening_leader)
+            } else {
+                (at_least + at_most + 1) / 2
+            };
 
             let trumps = match strain {
                 Strain::Trump(suit) => Some(suit),

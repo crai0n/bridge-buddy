@@ -280,7 +280,7 @@ fn high_card_tricks_per_suit(
     )
 }
 
-fn count_high_cards_per_suit(cards: &[VirtualCard]) -> [usize; 4] {
+pub(crate) fn count_high_cards_per_suit(cards: &[VirtualCard]) -> [usize; 4] {
     let mut sorted = cards.to_vec();
     sorted.sort_unstable_by(|a, b| b.cmp(a));
     let sorted = sorted;
@@ -298,7 +298,10 @@ fn count_high_cards_per_suit(cards: &[VirtualCard]) -> [usize; 4] {
     result
 }
 
-fn count_combined_high_cards_per_suit(my_cards: &[VirtualCard], partners_cards: &[VirtualCard]) -> [[usize; 4]; 2] {
+pub(crate) fn count_combined_high_cards_per_suit(
+    my_cards: &[VirtualCard],
+    partners_cards: &[VirtualCard],
+) -> [[usize; 4]; 2] {
     let mut sorted = my_cards.iter().map(|card| (card, 0usize)).collect_vec();
     sorted.extend(partners_cards.iter().map(|card| (card, 1usize)));
     sorted.sort_unstable_by(|a, b| b.0.cmp(a.0));
@@ -317,7 +320,7 @@ fn count_combined_high_cards_per_suit(my_cards: &[VirtualCard], partners_cards: 
     result
 }
 
-fn count_cards_per_suit(cards: &[VirtualCard]) -> [usize; 4] {
+pub fn count_cards_per_suit(cards: &[VirtualCard]) -> [usize; 4] {
     let mut sorted = cards.to_vec();
     sorted.sort_unstable_by(|a, b| b.cmp(a));
     let sorted = sorted;
