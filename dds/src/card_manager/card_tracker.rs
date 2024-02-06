@@ -122,13 +122,6 @@ impl CardTracker {
             })
             .collect_vec()
     }
-
-    pub fn count_high_cards_per_suit_given_played_cards(&self, played_cards: &CardTracker) -> [u8; 4] {
-        SUIT_ARRAY.map(|suit| {
-            self.suit_state(&suit)
-                .count_high_cards_given_played_cards(played_cards.suit_state(&suit))
-        })
-    }
 }
 
 #[cfg(test)]

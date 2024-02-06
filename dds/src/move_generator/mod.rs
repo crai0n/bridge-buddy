@@ -25,6 +25,7 @@ impl MoveGenerator {
     }
 
     fn prioritize_moves_for_leading_hand<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
+        let _suit_weights = Self::calculate_suit_weights(state);
         for dds_move in moves {
             match state.trumps() {
                 None => {
@@ -47,6 +48,16 @@ impl MoveGenerator {
             }
         }
     }
+
+    fn calculate_suit_weights<const N: usize>(_state: &VirtualState<N>) -> [usize; 4] {
+        // let suit_weights = [0usize; 4];
+        //
+        // // for suit in Suit::iter() {}
+        //
+        // suit_weights
+        [0usize; 4]
+    }
+
     fn prioritize_moves_for_second_hand<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
         if moves.first().unwrap().card.suit != state.suit_to_follow().unwrap() {
             Self::prioritize_cards_for_discard(moves, state);

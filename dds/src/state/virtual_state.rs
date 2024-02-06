@@ -109,6 +109,22 @@ impl<const N: usize> VirtualState<N> {
         absolute_rank.map(|rank| Card { rank, suit })
     }
 
+    pub fn count_cards_in_suit_for_player(&self, suit: Suit, player: Seat) -> usize {
+        self.game.count_cards_in_suit_for_player(suit, player)
+    }
+
+    pub fn player_is_void_in(&self, suit: Suit, player: Seat) -> bool {
+        self.game.player_is_void_in(suit, player)
+    }
+
+    pub fn player_has_singleton_in(&self, suit: Suit, player: Seat) -> bool {
+        self.game.player_has_singleton_in(suit, player)
+    }
+
+    pub fn player_has_doubleton_in(&self, suit: Suit, player: Seat) -> bool {
+        self.game.player_has_doubleton_in(suit, player)
+    }
+
     fn absolute_to_virtual(&self, card: Card) -> Option<VirtualCard> {
         let suit = card.suit;
         let suit_field = self.played[suit as usize];
@@ -146,10 +162,6 @@ impl<const N: usize> VirtualState<N> {
 
     pub fn tricks_won_by_axis(&self, player: Seat) -> usize {
         self.game.tricks_won_by_axis(player)
-    }
-
-    pub fn quick_tricks_for_player(&self, player: Seat) -> usize {
-        self.game.quick_tricks_for_player(player)
     }
 
     pub fn count_cards_in_current_trick(&self) -> usize {
