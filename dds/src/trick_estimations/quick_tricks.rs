@@ -7,7 +7,6 @@ use itertools::Itertools;
 use std::cmp::{max, min, Ordering};
 use strum::IntoEnumIterator;
 
-#[allow(dead_code)]
 pub fn nt_quick_tricks_for_player<const N: usize>(state: &VirtualState<N>, player: Seat) -> usize {
     // Quick tricks are the tricks that an axis can take without losing the lead.
     // For this, we need to look at both hands combined
@@ -22,7 +21,7 @@ pub fn nt_quick_tricks_for_player<const N: usize>(state: &VirtualState<N>, playe
 
     min(high_card_tricks.iter().sum(), my_cards_per_suit.iter().sum())
 }
-#[allow(dead_code)]
+
 pub fn trump_quick_tricks_for_player<const N: usize>(state: &VirtualState<N>, player: Seat, trump_suit: Suit) -> usize {
     // Quick tricks are the tricks that an axis can take without losing the lead.
     // For this, we need to look at both hands combined
@@ -44,146 +43,7 @@ pub fn quick_tricks_for_player<const N: usize>(state: &VirtualState<N>, player: 
         Some(trump_suit) => trump_quick_tricks_for_player(state, player, trump_suit),
     }
 }
-#[allow(dead_code)]
-pub fn simple_quick_tricks_for_player<const N: usize>(state: &VirtualState<N>, player: Seat) -> usize {
-    // this simple qt routine is modeled after Bo Haglunds double dummy solver
-    let players = [player, player + 1, player + 2, player + 3];
-    let cards = players.map(|x| state.remaining_cards_for_player(x));
 
-    let [my_cards, lhos_cards, partners_cards, rhos_cards] = &cards;
-
-    let my_card_count = count_cards_per_suit(my_cards);
-    let partners_card_count = count_cards_per_suit(partners_cards);
-    let mut lhos_card_count = count_cards_per_suit(lhos_cards);
-    let mut rhos_card_count = count_cards_per_suit(rhos_cards);
-
-    let my_simple_high_card_count = count_high_cards_per_suit(my_cards);
-    let partners_simple_high_card_count = count_high_cards_per_suit(partners_cards);
-
-    let [my_extended_high_card_count, _] = count_combined_high_cards_per_suit(my_cards, partners_cards);
-
-    let mut can_move_to_partner = [false; 4];
-
-    for suit in Suit::iter() {
-        if my_card_count[suit as usize] > my_extended_high_card_count[suit as usize]
-            || my_extended_high_card_count[suit as usize] > my_simple_high_card_count[suit as usize]
-        {
-            can_move_to_partner[suit as usize] = true;
-        }
-    }
-
-    let mut quick_tricks = 0;
-
-    if let Some(trump_suit) = state.trumps() {
-        if lhos_card_count[trump_suit as usize] == 0 && rhos_card_count[trump_suit as usize] == 0 {
-            // we will make tricks for each card
-            quick_tricks += my_card_count[trump_suit as usize];
-        } else if my_simple_high_card_count[trump_suit as usize] > 0 {
-            quick_tricks += my_simple_high_card_count[trump_suit as usize];
-            lhos_card_count[trump_suit as usize] = max(
-                0,
-                lhos_card_count[trump_suit as usize] - my_simple_high_card_count[trump_suit as usize],
-            );
-            rhos_card_count[trump_suit as usize] = max(
-                0,
-                rhos_card_count[trump_suit as usize] - my_simple_high_card_count[trump_suit as usize],
-            );
-        }
-        can_move_to_partner[trump_suit as usize] = false;
-    }
-
-    let rho_still_has_trumps = match state.trumps() {
-        None => false,
-        Some(trump_suit) => rhos_card_count[trump_suit as usize] > 0,
-    };
-
-    let lho_still_has_trumps = match state.trumps() {
-        None => false,
-        Some(trump_suit) => lhos_card_count[trump_suit as usize] > 0,
-    };
-
-    let opponents_have_no_trumps = !rho_still_has_trumps && !lho_still_has_trumps;
-
-    let can_move_to_partner = can_move_to_partner.contains(&true);
-
-    for s in Suit::iter() {
-        if state.trumps() == Some(s) {
-            continue;
-        }
-        quick_tricks += count_quick_tricks_for_side_suit(
-            my_card_count,
-            partners_card_count,
-            lhos_card_count,
-            rhos_card_count,
-            my_simple_high_card_count,
-            partners_simple_high_card_count,
-            can_move_to_partner,
-            rho_still_has_trumps,
-            lho_still_has_trumps,
-            opponents_have_no_trumps,
-            s,
-        );
-    }
-    min(quick_tricks, my_card_count.iter().sum())
-}
-#[allow(clippy::too_many_arguments)]
-fn count_quick_tricks_for_side_suit(
-    my_card_count: [usize; 4],
-    partners_card_count: [usize; 4],
-    lhos_card_count: [usize; 4],
-    rhos_card_count: [usize; 4],
-    my_simple_high_card_count: [usize; 4],
-    partners_simple_high_card_count: [usize; 4],
-    can_move_to_partner: bool,
-    rho_has_trumps: bool,
-    lho_has_trumps: bool,
-    opponents_have_no_trumps: bool,
-    s: Suit,
-) -> usize {
-    let mut quick_tricks = 0;
-    if lhos_card_count[s as usize] == 0
-        && rhos_card_count[s as usize] == 0
-        && partners_card_count[s as usize] == 0
-        && opponents_have_no_trumps
-    {
-        // hand-to-play is the only hand with cards in s
-        quick_tricks += my_card_count[s as usize];
-    } else if can_move_to_partner
-        && lhos_card_count[s as usize] == 0
-        && rhos_card_count[s as usize] == 0
-        && my_card_count[s as usize] == 0
-        && opponents_have_no_trumps
-    {
-        // there is a suit in which we can move to partner and
-        // partner is the only hand with cards in s
-        quick_tricks += partners_card_count[s as usize];
-    } else if my_simple_high_card_count[s as usize] > 0 {
-        // I have high cards to run in this suit
-        let mut tricks_to_run = my_simple_high_card_count[s as usize];
-        if rho_has_trumps {
-            tricks_to_run = min(tricks_to_run, rhos_card_count[s as usize]);
-        }
-        if lho_has_trumps {
-            tricks_to_run = min(tricks_to_run, lhos_card_count[s as usize]);
-        }
-        quick_tricks += tricks_to_run;
-    } else if partners_simple_high_card_count[s as usize] > 0 && my_card_count[s as usize] > 0 {
-        // partner has high cards to run and I have a card to lead in the suit
-        let mut tricks_to_run = partners_simple_high_card_count[s as usize];
-        if rho_has_trumps {
-            tricks_to_run = min(tricks_to_run, rhos_card_count[s as usize]);
-        }
-        if lho_has_trumps {
-            tricks_to_run = min(tricks_to_run, lhos_card_count[s as usize]);
-        }
-        quick_tricks += tricks_to_run;
-    }
-    quick_tricks
-}
-
-#[allow(dead_code)]
-#[allow(unused_mut)]
-#[allow(clippy::let_and_return)]
 fn trump_high_card_tricks_per_suit(
     my_cards: &[VirtualCard],
     partners_cards: &[VirtualCard],
@@ -198,23 +58,6 @@ fn trump_high_card_tricks_per_suit(
         _can_move_to_partner,
         _can_move_back,
     ) = high_card_tricks_per_suit(my_cards, partners_cards);
-
-    // if trump_suit == Suit::Spades {
-    //     println!(" My cards: {:?}", my_cards);
-    //     println!("Prt cards: {:?}", partners_cards);
-    //     println!("LHO cards: {:?}", lhos_cards);
-    //     println!("RHO cards: {:?}", rhos_cards);
-    //
-    //     println!("immediate high-card tricks: {:?}", high_card_tricks);
-    //     // println!("p.blocked quick tricks: {:?}", partners_blocked_high_card_tricks);
-    //     // println!("m.blocked quick tricks: {:?}", my_blocked_high_card_tricks);
-    //     // println!("   can move to partner: {:?}", can_move_to_partner);
-    //     // println!("         can move back: {:?}", can_move_back);
-    // }
-
-    // Run trump suit first:
-    // TODO: There might be blocked tricks in the trump suit, which we can run if we have a safe entry into the hand
-    // (opponents cannot ruff)
 
     let lhos_card_count = count_cards_per_suit(lhos_cards);
     let rhos_card_count = count_cards_per_suit(rhos_cards);
@@ -264,7 +107,7 @@ fn trump_high_card_tricks_per_suit(
         }
     }
 }
-#[allow(dead_code)]
+
 fn nt_high_card_tricks_per_suit(my_cards: &[VirtualCard], partners_cards: &[VirtualCard]) -> [usize; 4] {
     let (mut quick_tricks, partners_blocked_quick_tricks, my_blocked_quick_tricks, can_move_to_partner, can_move_back) =
         high_card_tricks_per_suit(my_cards, partners_cards);
@@ -428,11 +271,6 @@ fn high_card_tricks_per_suit(
             }
         }
     }
-    // println!("immediate quick tricks: {:?}", quick_tricks);
-    // println!("p.blocked quick tricks: {:?}", partners_blocked_quick_tricks);
-    // println!("m.blocked quick tricks: {:?}", my_blocked_quick_tricks);
-    // println!("   can move to partner: {:?}", can_move_to_partner);
-    // println!("         can move back: {:?}", can_move_back);
     (
         quick_tricks,
         partners_blocked_quick_tricks,
@@ -493,34 +331,6 @@ fn count_cards_per_suit(cards: &[VirtualCard]) -> [usize; 4] {
     }
 
     result
-}
-
-#[allow(dead_code)]
-fn single_suit_analysis(
-    card_counts: [usize; 4],
-    simple_high_card_counts: [usize; 4],
-    extended_high_card_counts: [usize; 4],
-) {
-    let mut _can_move_to_partner = false;
-    let _can_move_to_me = false;
-    let mut _can_move_back = false;
-    if card_counts[0] == 0 {
-        // i have no card to lead
-        _can_move_to_partner = false;
-        _can_move_back = false;
-    } else if card_counts[0] == 1 {
-        // i have only one card
-        _can_move_to_partner = simple_high_card_counts[2] > 0; // partners has a card higher than mine
-        _can_move_back = false;
-    } else if card_counts[2] == 1 {
-        // partner has only one card
-        let partner_has_high_card = extended_high_card_counts[2] > 0;
-        let i_have_lower_card = card_counts[0] > simple_high_card_counts[0];
-        _can_move_to_partner = partner_has_high_card && i_have_lower_card;
-        _can_move_back = false;
-    } else {
-        // we both have at least 2 cards
-    }
 }
 
 #[cfg(test)]
