@@ -39,6 +39,16 @@ impl<const N: usize> DoubleDummyState<N> {
         self.trick_manager.count_played_cards()
     }
 
+    pub fn player_has_higher_cards_in_suit_than_other(&self, player: Seat, suit: Suit, other: Seat) -> bool {
+        self.card_manager
+            .has_higher_cards_in_suit_than_other(player, suit, other)
+    }
+
+    pub fn partner_has_higher_cards_than_opponent(&self, suit: Suit, leader: Seat) -> bool {
+        self.player_has_higher_cards_in_suit_than_other(leader + 2, suit, leader + 1)
+            && self.player_has_higher_cards_in_suit_than_other(leader + 2, suit, leader + 3)
+    }
+
     pub fn remaining_cards_of(&self, player: Seat) -> Vec<Card> {
         self.card_manager.remaining_cards_of(player)
     }

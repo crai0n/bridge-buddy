@@ -54,6 +54,11 @@ impl CardManager {
             .non_equivalent_moves(&self.played_cards)
     }
 
+    pub fn has_higher_cards_in_suit_than_other(&self, player: Seat, suit: Suit, other: Seat) -> bool {
+        self.remaining_cards_for_player(player)
+            .has_higher_cards_in_suit_than(suit, self.remaining_cards_for_player(other))
+    }
+
     pub fn played_cards(&self) -> CardTracker {
         self.played_cards
     }

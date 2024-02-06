@@ -189,6 +189,10 @@ impl SuitField {
         let key = field << 16 | self.0 as u32;
         *ABSOLUTE.get(&key).unwrap()
     }
+
+    pub fn has_higher_ranks_than_other(&self, other: &Self) -> bool {
+        self.0 > other.0
+    }
 }
 
 // pub struct HighCard {

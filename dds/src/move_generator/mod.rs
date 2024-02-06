@@ -1,6 +1,7 @@
 use crate::card_manager::card_tracker::SUIT_ARRAY;
 use crate::primitives::DdsMove;
 use crate::state::VirtualState;
+use bridge_buddy_core::primitives::card::virtual_rank::VirtualRank;
 
 pub struct MoveGenerator {}
 
@@ -27,7 +28,10 @@ impl MoveGenerator {
 
     fn prioritize_moves_for_leading_hand<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
         let suit_weights = Self::calculate_suit_weights_for_leading(state);
+        let player = state.next_to_play();
         for dds_move in moves {
+            let _is_winning_move = dds_move.card.rank == VirtualRank::Ace
+                || state.partner_has_higher_cards_than_opponent(dds_move.card.suit, player);
             let suit_weight = suit_weights[dds_move.card.suit as usize];
             match state.trumps() {
                 None => {
@@ -89,7 +93,6 @@ impl MoveGenerator {
         [0, 1, 2, 3].map(|i| suit_bonus[i] - ((count_lho[i] + count_rho[i]) * 32) / 15)
     }
 
-    #[allow(dead_code)]
     fn calculate_suit_weights_for_discarding<const N: usize>(state: &VirtualState<N>) -> [isize; 4] {
         let player = state.next_to_play();
         // Taken from Bo Haglund's Double Dummy Solver
@@ -141,11 +144,13 @@ impl MoveGenerator {
     }
 
     fn prioritize_cards_for_discard<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
+        let suit_weights = Self::calculate_suit_weights_for_discarding(state);
         for candidate in moves.iter_mut() {
+            let suit_weight = suit_weights[candidate.card.suit as usize];
             if Some(candidate.card.suit) == state.trumps() {
-                candidate.priority += 50;
+                candidate.priority += 50 + suit_weight;
             }
-            candidate.priority -= candidate.card.rank as isize;
+            candidate.priority += suit_weight - candidate.card.rank as isize;
         }
     }
 

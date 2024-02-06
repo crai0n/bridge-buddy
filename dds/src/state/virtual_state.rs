@@ -265,6 +265,10 @@ impl<const N: usize> VirtualState<N> {
         }
     }
 
+    pub fn partner_has_higher_cards_than_opponent(&self, suit: Suit, leader: Seat) -> bool {
+        self.game.partner_has_higher_cards_than_opponent(suit, leader)
+    }
+
     pub fn last_trick_winner(&self) -> Option<Seat> {
         self.game.last_trick_winner()
     }

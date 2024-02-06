@@ -15,6 +15,11 @@ impl CardTracker {
         &self.0[*suit as usize]
     }
 
+    pub fn has_higher_cards_in_suit_than(&self, suit: Suit, other: Self) -> bool {
+        self.suit_state(&suit)
+            .has_higher_ranks_than_other(other.suit_state(&suit))
+    }
+
     pub fn suit_state_mut(&mut self, suit: &Suit) -> &mut SuitField {
         &mut self.0[*suit as usize]
     }
