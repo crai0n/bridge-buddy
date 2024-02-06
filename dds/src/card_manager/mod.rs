@@ -45,6 +45,10 @@ impl CardManager {
         self.remaining_cards_for_player(player).all_contained_cards()
     }
 
+    pub fn remaining_cards_of_player_in_suit(&self, player: Seat, suit: Suit) -> Vec<Card> {
+        self.remaining_cards_for_player(player).contained_cards_in_suit(&suit)
+    }
+
     pub fn non_equivalent_moves_for(&self, player: Seat) -> Vec<Card> {
         self.remaining_cards_for_player(player)
             .non_equivalent_moves(&self.played_cards)

@@ -43,6 +43,10 @@ impl<const N: usize> DoubleDummyState<N> {
         self.card_manager.remaining_cards_of(player)
     }
 
+    pub fn remaining_cards_of_player_in_suit(&self, player: Seat, suit: Suit) -> Vec<Card> {
+        self.card_manager.remaining_cards_of_player_in_suit(player, suit)
+    }
+
     pub fn current_trick_winner(&self) -> Seat {
         self.trick_manager.current_trick_winner()
     }
@@ -52,7 +56,7 @@ impl<const N: usize> DoubleDummyState<N> {
     }
 
     pub fn count_trump_cards_for_player(&self, player: Seat) -> usize {
-        match self.trumps() {
+        match self.trump_suit() {
             None => 0,
             Some(trump_suit) => self.card_manager.count_cards_in_suit_for_player(trump_suit, player),
         }
@@ -106,8 +110,8 @@ impl<const N: usize> DoubleDummyState<N> {
         self.trick_manager.suit_to_follow().is_none()
     }
 
-    pub fn trumps(&self) -> Option<Suit> {
-        self.trick_manager.trumps()
+    pub fn trump_suit(&self) -> Option<Suit> {
+        self.trick_manager.trump_suit()
     }
 
     pub fn play(&mut self, card: Card) {

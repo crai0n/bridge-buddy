@@ -46,7 +46,7 @@ impl<const N: usize> TrickManager<N> {
         }
     }
 
-    pub fn trumps(&self) -> Option<Suit> {
+    pub fn trump_suit(&self) -> Option<Suit> {
         self.trumps
     }
 

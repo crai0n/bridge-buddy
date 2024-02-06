@@ -1,3 +1,4 @@
+use crate::card_manager::card_tracker::SUIT_ARRAY;
 use crate::primitives::DdsMove;
 use crate::state::VirtualState;
 
@@ -25,37 +26,80 @@ impl MoveGenerator {
     }
 
     fn prioritize_moves_for_leading_hand<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
-        let _suit_weights = Self::calculate_suit_weights(state);
+        let suit_weights = Self::calculate_suit_weights_for_leading(state);
         for dds_move in moves {
+            let suit_weight = suit_weights[dds_move.card.suit as usize];
             match state.trumps() {
                 None => {
                     if dds_move.sequence_length >= 3 {
-                        dds_move.priority += 50;
+                        dds_move.priority += 50 + suit_weight;
                     }
                 }
                 Some(trump_suit) => {
                     if dds_move.sequence_length >= 2 {
-                        dds_move.priority += 50;
+                        dds_move.priority += 50 + suit_weight;
                     }
 
                     let our_trump_count = state.count_this_sides_trump_cards();
                     let opponents_trump_count = state.count_opponents_trump_cards();
 
                     if our_trump_count >= opponents_trump_count && dds_move.card.suit == trump_suit {
-                        dds_move.priority += 100;
+                        dds_move.priority += 100 + suit_weight;
                     }
                 }
             }
         }
     }
 
-    fn calculate_suit_weights<const N: usize>(_state: &VirtualState<N>) -> [usize; 4] {
-        // let suit_weights = [0usize; 4];
-        //
-        // // for suit in Suit::iter() {}
-        //
-        // suit_weights
-        [0usize; 4]
+    fn calculate_suit_weights_for_leading<const N: usize>(state: &VirtualState<N>) -> [isize; 4] {
+        let player = state.next_to_play();
+        let lho = player + 1;
+        let partner = player + 2;
+        let rho = player + 3;
+        let suit_bonus = SUIT_ARRAY.map(|suit| {
+            let mut bonus = 0;
+            if state.player_can_ruff_suit(suit, lho) {
+                bonus -= 10;
+            }
+            if state.is_owner_of_winning_rank_in(suit, rho) || state.is_owner_of_runner_up_in(suit, rho) {
+                bonus -= 18;
+            }
+            if let Some(trump_suit) = state.trumps() {
+                if suit != trump_suit
+                    && state.player_has_singleton_in(suit, player)
+                    && state.count_trump_cards_for_player(player) > 0
+                    && state.count_cards_in_suit_for_player(suit, partner) >= 2
+                {
+                    bonus += 16
+                }
+            }
+            bonus
+        });
+
+        let [count_lho, count_rho] = [lho, rho].map(|opponent| {
+            SUIT_ARRAY.map(|suit| {
+                let count = state.count_cards_in_suit_for_player(suit, opponent);
+                match count {
+                    0 => state.count_played_cards() as isize + 4,
+                    _ => count as isize * 4,
+                }
+            })
+        });
+
+        [0, 1, 2, 3].map(|i| suit_bonus[i] - ((count_lho[i] + count_rho[i]) * 32) / 15)
+    }
+
+    #[allow(dead_code)]
+    fn calculate_suit_weights_for_discarding<const N: usize>(state: &VirtualState<N>) -> [isize; 4] {
+        let player = state.next_to_play();
+        // Taken from Bo Haglund's Double Dummy Solver
+        SUIT_ARRAY.map(|suit| {
+            if state.count_cards_in_suit_for_player(suit, player) == 2 && state.is_owner_of_runner_up_in(suit, player) {
+                1
+            } else {
+                state.count_cards_in_suit_for_player(suit, player) as isize * 64 / 36
+            }
+        })
     }
 
     fn prioritize_moves_for_second_hand<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {

@@ -5,6 +5,7 @@ use crate::primitives::DdsMove;
 use crate::primitives::VirtualCard;
 use crate::transposition_table::TTKey;
 use bridge_buddy_core::error::BBError;
+use bridge_buddy_core::primitives::card::virtual_rank::VirtualRank;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::{Card, Hand, Suit};
 use itertools::Itertools;
@@ -132,12 +133,73 @@ impl<const N: usize> VirtualState<N> {
         virtual_rank.map(|rank| VirtualCard { rank, suit })
     }
 
-    pub(crate) fn remaining_cards_for_player(&self, player: Seat) -> Vec<VirtualCard> {
+    pub fn remaining_cards_for_player(&self, player: Seat) -> Vec<VirtualCard> {
         self.game
             .remaining_cards_of(player)
             .iter()
             .map(|x| self.absolute_to_virtual(*x).unwrap())
             .collect_vec()
+    }
+
+    pub fn remaining_cards_for_player_in_suit(&self, player: Seat, suit: Suit) -> Vec<VirtualCard> {
+        self.game
+            .remaining_cards_of_player_in_suit(player, suit)
+            .iter()
+            .map(|x| self.absolute_to_virtual(*x).unwrap())
+            .collect_vec()
+    }
+
+    pub fn owner_of_winning_rank_in(&self, suit: Suit) -> Seat {
+        for seat in Seat::iter() {
+            if self
+                .remaining_cards_for_player_in_suit(seat, suit)
+                .contains(&VirtualCard {
+                    suit,
+                    rank: VirtualRank::Ace,
+                })
+            {
+                return seat;
+            }
+        }
+        unreachable!()
+    }
+
+    pub fn is_owner_of_winning_rank_in(&self, suit: Suit, player: Seat) -> bool {
+        self.remaining_cards_for_player_in_suit(player, suit)
+            .contains(&VirtualCard {
+                suit,
+                rank: VirtualRank::Ace,
+            })
+    }
+
+    pub fn owner_of_runner_up_in(&self, suit: Suit) -> Seat {
+        for seat in Seat::iter() {
+            if self
+                .remaining_cards_for_player_in_suit(seat, suit)
+                .contains(&VirtualCard {
+                    suit,
+                    rank: VirtualRank::King,
+                })
+            {
+                return seat;
+            }
+        }
+        unreachable!()
+    }
+
+    pub fn is_owner_of_runner_up_in(&self, suit: Suit, player: Seat) -> bool {
+        self.remaining_cards_for_player_in_suit(player, suit)
+            .contains(&VirtualCard {
+                suit,
+                rank: VirtualRank::King,
+            })
+    }
+
+    pub fn player_can_ruff_suit(&self, suit: Suit, player: Seat) -> bool {
+        match self.trumps() {
+            None => false,
+            Some(trump_suit) => self.player_is_void_in(suit, player) && !self.player_is_void_in(trump_suit, player),
+        }
     }
 
     fn valid_moves_for(&self, player: Seat) -> Vec<DdsMove> {
@@ -169,11 +231,15 @@ impl<const N: usize> VirtualState<N> {
     }
 
     pub fn trumps(&self) -> Option<Suit> {
-        self.game.trumps()
+        self.game.trump_suit()
     }
 
     pub fn count_trump_cards_for_player(&self, player: Seat) -> usize {
         self.game.count_trump_cards_for_player(player)
+    }
+
+    pub fn player_has_trumps(&self, player: Seat) -> bool {
+        self.count_trump_cards_for_player(player) != 0
     }
 
     pub fn count_trump_cards_for_axis(&self, player: Seat) -> usize {
