@@ -3,8 +3,10 @@ use crate::move_generator::MoveGenerator;
 use crate::primitives::DoubleDummyResult;
 use crate::state::VirtualState;
 use crate::transposition_table::TranspositionTable;
-use crate::trick_estimations::losing_tricks_for_player;
-use crate::trick_estimations::quick_tricks_for_player;
+use crate::trick_estimations::losing_tricks_for_leader;
+use crate::trick_estimations::quick_tricks_for_leader;
+
+use crate::trick_estimations::quick_tricks_for_second_hand;
 use bridge_buddy_core::engine::hand_evaluation::ForumDPlus2015Evaluator;
 use bridge_buddy_core::primitives::contract::Strain;
 use bridge_buddy_core::primitives::deal::Seat;
@@ -188,7 +190,7 @@ impl<const N: usize> DoubleDummySolver<N> {
             }
         }
 
-        if self.config.check_quick_tricks && state.player_is_leading() {
+        if self.config.check_quick_tricks {
             if let Some(qt_score) = self.try_score_using_quick_tricks(state, estimate) {
                 return Some(qt_score);
             }
@@ -204,7 +206,7 @@ impl<const N: usize> DoubleDummySolver<N> {
     }
 
     fn try_score_using_losing_tricks(&mut self, state: &VirtualState<N>, estimate: usize) -> Option<usize> {
-        let losing_tricks = Self::losing_tricks_for_current_player(state);
+        let losing_tricks = losing_tricks_for_leader(state);
         let total_with_losing_tricks = Self::maximum_achievable_tricks(state) - losing_tricks;
         if total_with_losing_tricks < estimate {
             if self.config.use_transposition_table {
@@ -216,7 +218,11 @@ impl<const N: usize> DoubleDummySolver<N> {
     }
 
     fn try_score_using_quick_tricks(&mut self, state: &VirtualState<N>, estimate: usize) -> Option<usize> {
-        let quick_tricks = Self::quick_tricks_for_current_player(state);
+        let quick_tricks = match state.count_cards_in_current_trick() {
+            0 => quick_tricks_for_leader(state),
+            1 if self.config.quick_tricks_in_second_hand => quick_tricks_for_second_hand(state),
+            _ => return None,
+        };
         let total_with_quick_tricks = state.tricks_won_by_axis(state.next_to_play()) + quick_tricks;
         if total_with_quick_tricks >= estimate {
             if self.config.use_transposition_table {
@@ -235,14 +241,6 @@ impl<const N: usize> DoubleDummySolver<N> {
     fn store_upper_bound_in_tt(&mut self, state: &VirtualState<N>, bound: usize) {
         let tt_key = state.generate_tt_key();
         self.transposition_table.update_upper_bound(&tt_key, bound)
-    }
-
-    fn quick_tricks_for_current_player(state: &VirtualState<N>) -> usize {
-        quick_tricks_for_player(state, state.next_to_play())
-    }
-
-    fn losing_tricks_for_current_player(state: &VirtualState<N>) -> usize {
-        losing_tricks_for_player(state, state.next_to_play())
     }
 
     fn maximum_achievable_tricks(state: &VirtualState<{ N }>) -> usize {

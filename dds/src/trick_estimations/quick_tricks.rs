@@ -1,15 +1,15 @@
 use crate::primitives::VirtualCard;
 use crate::state::VirtualState;
 use bridge_buddy_core::primitives::card::virtual_rank::VirtualRank;
-use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::Suit;
 use itertools::Itertools;
 use std::cmp::{max, min, Ordering};
 use strum::IntoEnumIterator;
 
-fn nt_quick_tricks_for_player<const N: usize>(state: &VirtualState<N>, player: Seat) -> usize {
+fn nt_quick_tricks_for_leader<const N: usize>(state: &VirtualState<N>) -> usize {
     // Quick tricks are the tricks that an axis can take without losing the lead.
     // For this, we need to look at both hands combined
+    let player = state.next_to_play();
     let players = [player, player + 1, player + 2, player + 3];
     let cards = players.map(|x| state.remaining_cards_for_player(x));
 
@@ -22,9 +22,10 @@ fn nt_quick_tricks_for_player<const N: usize>(state: &VirtualState<N>, player: S
     min(high_card_tricks.iter().sum(), my_cards_per_suit.iter().sum())
 }
 
-fn trump_quick_tricks_for_player<const N: usize>(state: &VirtualState<N>, player: Seat, trump_suit: Suit) -> usize {
+fn trump_quick_tricks_for_leader<const N: usize>(state: &VirtualState<N>, trump_suit: Suit) -> usize {
     // Quick tricks are the tricks that an axis can take without losing the lead.
     // For this, we need to look at both hands combined
+    let player = state.next_to_play();
     let players = [player, player + 1, player + 2, player + 3];
     let cards = players.map(|x| state.remaining_cards_for_player(x));
 
@@ -37,10 +38,85 @@ fn trump_quick_tricks_for_player<const N: usize>(state: &VirtualState<N>, player
 
     min(high_card_tricks.iter().sum(), my_cards_per_suit.iter().sum())
 }
-pub fn quick_tricks_for_player<const N: usize>(state: &VirtualState<N>, player: Seat) -> usize {
+pub fn quick_tricks_for_leader<const N: usize>(state: &VirtualState<N>) -> usize {
     match state.trumps() {
-        None => nt_quick_tricks_for_player(state, player),
-        Some(trump_suit) => trump_quick_tricks_for_player(state, player, trump_suit),
+        None => nt_quick_tricks_for_leader(state),
+        Some(trump_suit) => trump_quick_tricks_for_leader(state, trump_suit),
+    }
+}
+
+pub fn quick_tricks_for_second_hand<const N: usize>(state: &VirtualState<N>) -> usize {
+    let lead_suit = state.suit_to_follow().unwrap();
+
+    let player = state.next_to_play();
+    let players = [player, player + 1, player + 2, player + 3];
+    let cards = players.map(|x| state.remaining_cards_for_player(x));
+
+    let [my_cards, lhos_cards, partners_cards, _rhos_cards] = &cards;
+
+    let my_card_count = count_cards_per_suit(my_cards);
+    let partners_card_count = count_cards_per_suit(partners_cards);
+    let lhos_card_count = count_cards_per_suit(lhos_cards);
+
+    let my_simple_high_card_count = count_high_cards_per_suit(my_cards);
+    let partners_simple_high_card_count = count_high_cards_per_suit(partners_cards);
+
+    match state.trumps() {
+        None => {
+            if my_simple_high_card_count[lead_suit as usize] > 0 {
+                my_simple_high_card_count.iter().sum()
+            } else if partners_simple_high_card_count[lead_suit as usize] > 0 {
+                partners_simple_high_card_count.iter().sum()
+            } else {
+                0
+            }
+        }
+        Some(trump_suit) => {
+            if my_card_count[lead_suit as usize] == 0 && my_card_count[trump_suit as usize] != 0 {
+                // I can ruff
+                if lhos_card_count[lead_suit as usize] != 0 || lhos_card_count[trump_suit as usize] == 0 {
+                    // opponent cannot ruff
+                    if my_card_count[trump_suit as usize] > my_simple_high_card_count[trump_suit as usize] {
+                        // I can use a small trump for ruffing and then run my high trumps (might be zero)
+                        my_simple_high_card_count[trump_suit as usize] + 1
+                    } else {
+                        // I have only my high trump cards
+                        my_simple_high_card_count[trump_suit as usize]
+                    }
+                } else {
+                    // I win this trick with a high trump card if possible
+                    my_simple_high_card_count[trump_suit as usize]
+                }
+            } else if partners_card_count[lead_suit as usize] == 0 && partners_card_count[trump_suit as usize] != 0 {
+                // partner can ruff
+                if lhos_card_count[lead_suit as usize] != 0 || lhos_card_count[trump_suit as usize] == 0 {
+                    // opponent cannot ruff
+                    if partners_card_count[trump_suit as usize] > partners_simple_high_card_count[trump_suit as usize] {
+                        // partner can use a small trump for ruffing and then run my high trumps (might be zero)
+                        partners_simple_high_card_count[trump_suit as usize] + 1
+                    } else {
+                        // partner has only high trump cards
+                        partners_simple_high_card_count[trump_suit as usize]
+                    }
+                } else {
+                    // Partner wins this trick with a high trump card if possible
+                    partners_simple_high_card_count[trump_suit as usize]
+                }
+            } else if lhos_card_count[lead_suit as usize] != 0 || lhos_card_count[trump_suit as usize] == 0 {
+                // opponent cannot ruff this round
+                let our_high_card_count = max(
+                    my_simple_high_card_count[lead_suit as usize],
+                    partners_simple_high_card_count[lead_suit as usize],
+                );
+                if our_high_card_count > 0 {
+                    1
+                } else {
+                    0
+                }
+            } else {
+                0
+            }
+        }
     }
 }
 
