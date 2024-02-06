@@ -7,7 +7,7 @@ use itertools::Itertools;
 use std::cmp::{max, min, Ordering};
 use strum::IntoEnumIterator;
 
-pub fn nt_quick_tricks_for_player<const N: usize>(state: &VirtualState<N>, player: Seat) -> usize {
+fn nt_quick_tricks_for_player<const N: usize>(state: &VirtualState<N>, player: Seat) -> usize {
     // Quick tricks are the tricks that an axis can take without losing the lead.
     // For this, we need to look at both hands combined
     let players = [player, player + 1, player + 2, player + 3];
@@ -22,7 +22,7 @@ pub fn nt_quick_tricks_for_player<const N: usize>(state: &VirtualState<N>, playe
     min(high_card_tricks.iter().sum(), my_cards_per_suit.iter().sum())
 }
 
-pub fn trump_quick_tricks_for_player<const N: usize>(state: &VirtualState<N>, player: Seat, trump_suit: Suit) -> usize {
+fn trump_quick_tricks_for_player<const N: usize>(state: &VirtualState<N>, player: Seat, trump_suit: Suit) -> usize {
     // Quick tricks are the tricks that an axis can take without losing the lead.
     // For this, we need to look at both hands combined
     let players = [player, player + 1, player + 2, player + 3];
