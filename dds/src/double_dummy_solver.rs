@@ -179,6 +179,11 @@ impl<const N: usize> DoubleDummySolver<N> {
         let quick_tricks = Self::quick_tricks_for_current_player(state);
         let total_with_quick_tricks = state.tricks_won_by_axis(state.next_to_play()) + quick_tricks;
         if total_with_quick_tricks >= estimate {
+            // if state.trumps() == Some(Suit::Spades) {
+            //     println!("breaking because quick-tricks caused a cut-off:");
+            //     println!("quick_tricks: {}", quick_tricks);
+            //     println!("total with quick_tricks: {}", total_with_quick_tricks);
+            // }
             if self.config.use_transposition_table {
                 self.store_lower_bound_in_tt(state, quick_tricks);
             }
