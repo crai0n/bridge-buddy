@@ -114,6 +114,11 @@ impl<const N: usize> TrickManager<N> {
         })
     }
 
+    pub fn would_win_over_current_winner(&self, card: &Card) -> bool {
+        let current_winner = self.currently_winning_card();
+        self.would_win_over(card, current_winner)
+    }
+
     pub fn would_win_over(&self, card: &Card, previous: Option<Card>) -> bool {
         match previous {
             None => true,

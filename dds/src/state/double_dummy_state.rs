@@ -19,6 +19,10 @@ impl<const N: usize> DoubleDummyState<N> {
         }
     }
 
+    pub fn would_win_over_current_winner(&self, card: &Card) -> bool {
+        self.trick_manager.would_win_over_current_winner(card)
+    }
+
     pub fn count_cards_in_suit_for_player(&self, suit: Suit, player: Seat) -> usize {
         self.card_manager.count_cards_in_suit_for_player(suit, player)
     }

@@ -253,6 +253,7 @@ impl<const N: usize> VirtualState<N> {
     pub fn count_opponents_trump_cards(&self) -> usize {
         self.game.count_opponents_trump_cards()
     }
+
     pub fn current_trick_winner(&self) -> Seat {
         self.game.current_trick_winner()
     }
@@ -267,6 +268,11 @@ impl<const N: usize> VirtualState<N> {
 
     pub fn partner_has_higher_cards_than_opponent(&self, suit: Suit, leader: Seat) -> bool {
         self.game.partner_has_higher_cards_than_opponent(suit, leader)
+    }
+
+    pub fn would_win_over_current_winner(&self, card: VirtualCard) -> bool {
+        let real_card = self.virtual_to_absolute(card).unwrap();
+        self.game.would_win_over_current_winner(&real_card)
     }
 
     pub fn last_trick_winner(&self) -> Option<Seat> {
