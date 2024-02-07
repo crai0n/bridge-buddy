@@ -4,7 +4,7 @@ use bridge_buddy_core::primitives::card::virtual_rank::VirtualRank;
 use bridge_buddy_core::primitives::card::Rank;
 use bridge_buddy_core::primitives::{Card, Suit};
 
-include!(concat!(env!("OUT_DIR"), "/relative_map.rs"));
+include!(concat!(env!("OUT_DIR"), "/virtual_map.rs"));
 include!(concat!(env!("OUT_DIR"), "/absolute_map.rs"));
 
 pub struct Virtualizer {

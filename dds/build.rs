@@ -40,7 +40,7 @@ fn create_absolute_map() {
 }
 
 fn create_virtual_map() {
-    let path = Path::new(&env::var("OUT_DIR").unwrap()).join("relative_map.rs");
+    let path = Path::new(&env::var("OUT_DIR").unwrap()).join("virtual_map.rs");
     let mut file = BufWriter::new(File::create(path).unwrap());
 
     let mut virtual_map = phf_codegen::Map::new();

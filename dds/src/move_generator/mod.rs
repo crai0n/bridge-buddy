@@ -11,32 +11,32 @@ impl MoveGenerator {
         let valid_moves = state.valid_moves();
         let mut unique_moves = Self::select_one_move_per_sequence(&valid_moves);
         if move_ordering {
-            Self::prioritize_moves(&mut unique_moves, state);
+            Self::move_priority(&mut unique_moves, state);
             Self::sort_moves_by_priority_descending(&mut unique_moves);
         }
         unique_moves
     }
 
-    fn prioritize_moves<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
+    fn move_priority<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
         match state.count_cards_in_current_trick() {
-            0 => Self::prioritize_moves_for_leading_hand(moves, state),
-            1 => Self::prioritize_moves_for_second_hand(moves, state),
-            2 => Self::prioritize_moves_for_third_hand(moves, state),
-            3 => Self::prioritize_moves_for_last_hand(moves, state),
+            0 => Self::move_priority_for_leading(moves, state),
+            1 => Self::move_priority_for_playing_second(moves, state),
+            2 => Self::move_priority_for_playing_third(moves, state),
+            3 => Self::move_priority_for_playing_last(moves, state),
             _ => unreachable!(),
         };
     }
 
-    fn prioritize_moves_for_leading_hand<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
+    fn move_priority_for_leading<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
         match state.trump_suit() {
-            None => Self::prioritize_moves_for_leading_no_trump(moves, state),
-            Some(trump_suit) => Self::prioritize_moves_for_leading_trump(moves, state, trump_suit),
+            None => Self::move_priority_for_leading_no_trump(moves, state),
+            Some(trump_suit) => Self::move_priority_for_leading_trump(moves, state, trump_suit),
         }
     }
 
     #[allow(clippy::collapsible_if)]
-    fn prioritize_moves_for_leading_no_trump<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
-        let suit_weights = Self::calculate_suit_weights_for_leading(state);
+    fn move_priority_for_leading_no_trump<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
+        let suit_weights = Self::suit_weights_for_leading(state);
         let player = state.next_to_play();
         let _partner = player + 2;
         let _lho = player + 1;
@@ -65,12 +65,12 @@ impl MoveGenerator {
         }
     }
 
-    fn prioritize_moves_for_leading_trump<const N: usize>(
+    fn move_priority_for_leading_trump<const N: usize>(
         moves: &mut [DdsMove],
         state: &VirtualState<N>,
         trump_suit: Suit,
     ) {
-        let suit_weights = Self::calculate_suit_weights_for_leading(state);
+        let suit_weights = Self::suit_weights_for_leading(state);
         let player = state.next_to_play();
         for dds_move in moves {
             let _is_winning_move = dds_move.card.rank == VirtualRank::Ace
@@ -89,7 +89,7 @@ impl MoveGenerator {
         }
     }
 
-    fn calculate_suit_weights_for_leading<const N: usize>(state: &VirtualState<N>) -> [isize; 4] {
+    fn suit_weights_for_leading<const N: usize>(state: &VirtualState<N>) -> [isize; 4] {
         let player = state.next_to_play();
         let lho = player + 1;
         let partner = player + 2;
@@ -134,7 +134,7 @@ impl MoveGenerator {
         [0, 1, 2, 3].map(|i| suit_bonus[i] - ((count_lho[i] + count_rho[i]) * 32) / 15)
     }
 
-    fn calculate_suit_weights_for_discarding<const N: usize>(state: &VirtualState<N>) -> [isize; 4] {
+    fn suit_weights_for_discarding<const N: usize>(state: &VirtualState<N>) -> [isize; 4] {
         // Taken from Bo Haglund's Double Dummy Solver
         let player = state.next_to_play();
         let my_hand = state.cards_of(player);
@@ -149,7 +149,7 @@ impl MoveGenerator {
         })
     }
 
-    fn prioritize_moves_for_second_hand<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
+    fn move_priority_for_playing_second<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
         if moves.first().unwrap().card.suit != state.suit_to_follow().unwrap() {
             Self::prioritize_cards_if_void(moves, state);
         } else {
@@ -158,7 +158,7 @@ impl MoveGenerator {
             }
         }
     }
-    fn prioritize_moves_for_third_hand<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
+    fn move_priority_for_playing_third<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
         if moves.first().unwrap().card.suit != state.suit_to_follow().unwrap() {
             Self::prioritize_cards_if_void(moves, state);
         } else {
@@ -169,7 +169,7 @@ impl MoveGenerator {
             }
         }
     }
-    fn prioritize_moves_for_last_hand<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
+    fn move_priority_for_playing_last<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
         if moves.first().unwrap().card.suit != state.suit_to_follow().unwrap() {
             Self::prioritize_cards_if_void(moves, state);
         } else {
@@ -188,7 +188,7 @@ impl MoveGenerator {
     }
 
     fn prioritize_cards_if_void<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
-        let suit_weights = Self::calculate_suit_weights_for_discarding(state);
+        let suit_weights = Self::suit_weights_for_discarding(state);
 
         for candidate in moves.iter_mut() {
             let suit = candidate.card.suit;
