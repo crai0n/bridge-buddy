@@ -4,6 +4,7 @@ use crate::card_manager::suit_field::SuitField;
 use crate::primitives::DdsMove;
 use crate::primitives::VirtualCard;
 use crate::state::virtual_card_tracker::VirtualCardTracker;
+use crate::state::virtualizer::Virtualizer;
 use crate::transposition_table::TTKey;
 use bridge_buddy_core::error::BBError;
 use bridge_buddy_core::primitives::deal::Seat;
@@ -190,18 +191,16 @@ impl<const N: usize> VirtualState<N> {
         }
     }
 
+    fn create_virtualizer(&self) -> Virtualizer {
+        Virtualizer::new(self.played)
+    }
+
     fn absolute_to_virtual(&self, card: Card) -> Option<VirtualCard> {
-        let suit = card.suit;
-        let suit_field = self.played[suit as usize];
-        let virtual_rank = suit_field.try_find_relative(card.rank);
-        virtual_rank.map(|rank| VirtualCard { rank, suit })
+        self.create_virtualizer().absolute_to_virtual(card)
     }
 
     fn virtual_to_absolute(&self, virtual_card: VirtualCard) -> Option<Card> {
-        let suit = virtual_card.suit;
-        let suit_field = self.played[suit as usize];
-        let absolute_rank = suit_field.try_find_absolute(virtual_card.rank);
-        absolute_rank.map(|rank| Card { rank, suit })
+        self.create_virtualizer().virtual_to_absolute(virtual_card)
     }
 
     pub fn partner_has_higher_cards_than_opponent(&self, suit: Suit, leader: Seat) -> bool {
@@ -219,6 +218,6 @@ impl<const N: usize> VirtualState<N> {
 
     pub fn cards_of(&self, player: Seat) -> VirtualCardTracker {
         let card_tracker = self.game.cards_of(player);
-        VirtualCardTracker::from_card_tracker(card_tracker, self.played)
+        VirtualCardTracker::from_card_tracker(card_tracker, self.create_virtualizer())
     }
 }

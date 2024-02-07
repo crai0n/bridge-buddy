@@ -1,18 +1,21 @@
 use crate::card_manager::card_tracker::CardTracker;
-use crate::card_manager::suit_field::SuitField;
 use crate::primitives::VirtualCard;
+use crate::state::virtualizer::Virtualizer;
 use bridge_buddy_core::primitives::card::virtual_rank::VirtualRank;
 use bridge_buddy_core::primitives::{Card, Suit};
 use itertools::Itertools;
 
 pub struct VirtualCardTracker<'a> {
     card_tracker: &'a CardTracker,
-    played: [SuitField; 4],
+    virtualizer: Virtualizer,
 }
 
 impl<'a> VirtualCardTracker<'a> {
-    pub fn from_card_tracker(card_tracker: &'a CardTracker, played: [SuitField; 4]) -> Self {
-        Self { card_tracker, played }
+    pub fn from_card_tracker(card_tracker: &'a CardTracker, virtualizer: Virtualizer) -> Self {
+        Self {
+            card_tracker,
+            virtualizer,
+        }
     }
 
     pub fn is_void_in(&self, suit: &Suit) -> bool {
@@ -54,7 +57,7 @@ impl<'a> VirtualCardTracker<'a> {
     }
 
     pub fn contains(&self, card: &VirtualCard) -> bool {
-        let real_card = self.virtual_to_absolute(card);
+        let real_card = self.virtual_to_absolute(*card);
         match real_card {
             None => false,
             Some(card) => self.card_tracker.contains(&card),
@@ -70,25 +73,19 @@ impl<'a> VirtualCardTracker<'a> {
         self.card_tracker.count_cards_in(suit)
     }
 
-    fn absolute_to_virtual(&self, card: &Card) -> Option<VirtualCard> {
-        let suit = card.suit;
-        let suit_field = self.played[suit as usize];
-        let virtual_rank = suit_field.try_find_relative(card.rank);
-        virtual_rank.map(|rank| VirtualCard { rank, suit })
+    fn absolute_to_virtual(&self, card: Card) -> Option<VirtualCard> {
+        self.virtualizer.absolute_to_virtual(card)
     }
 
-    fn virtual_to_absolute(&self, virtual_card: &VirtualCard) -> Option<Card> {
-        let suit = virtual_card.suit;
-        let suit_field = self.played[suit as usize];
-        let absolute_rank = suit_field.try_find_absolute(virtual_card.rank);
-        absolute_rank.map(|rank| Card { rank, suit })
+    fn virtual_to_absolute(&self, virtual_card: VirtualCard) -> Option<Card> {
+        self.virtualizer.virtual_to_absolute(virtual_card)
     }
 
     pub fn all_cards(&self) -> Vec<VirtualCard> {
         self.card_tracker
             .all_cards()
             .iter()
-            .map(|x| self.absolute_to_virtual(x).unwrap())
+            .map(|x| self.absolute_to_virtual(*x).unwrap())
             .collect_vec()
     }
 
@@ -96,7 +93,7 @@ impl<'a> VirtualCardTracker<'a> {
         self.card_tracker
             .cards_in(suit)
             .iter()
-            .map(|x| self.absolute_to_virtual(x).unwrap())
+            .map(|x| self.absolute_to_virtual(*x).unwrap())
             .collect_vec()
     }
 

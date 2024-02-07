@@ -8,7 +8,7 @@ use bridge_buddy_core::primitives::card::Rank;
 use strum::IntoEnumIterator;
 
 fn main() {
-    create_relative_map();
+    create_virtual_map();
     create_absolute_map();
 }
 
@@ -39,29 +39,29 @@ fn create_absolute_map() {
     .unwrap();
 }
 
-fn create_relative_map() {
+fn create_virtual_map() {
     let path = Path::new(&env::var("OUT_DIR").unwrap()).join("relative_map.rs");
     let mut file = BufWriter::new(File::create(path).unwrap());
 
-    let mut relative_map = phf_codegen::Map::new();
+    let mut virtual_map = phf_codegen::Map::new();
 
     for played in 0u16..8192 {
         for rank in Rank::iter() {
             let field = 1u32 << (rank as u8);
             let key = field << 16 | played as u32;
-            let rel_rank = try_relative_from_rank(rank, played);
-            let value = match rel_rank {
+            let virt_rank = try_relative_from_rank(rank, played);
+            let value = match virt_rank {
                 Some(rel) => format!("Some(VirtualRank::{:?})", rel),
                 None => "None".to_string(),
             };
-            relative_map.entry(key, &value);
+            virtual_map.entry(key, &value);
         }
     }
 
     writeln!(
         &mut file,
-        "static RELATIVE: phf::Map<u32, Option<VirtualRank>> = {};",
-        relative_map.build()
+        "static VIRTUAL: phf::Map<u32, Option<VirtualRank>> = {};",
+        virtual_map.build()
     )
     .unwrap();
 }
