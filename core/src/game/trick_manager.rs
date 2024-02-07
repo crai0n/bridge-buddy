@@ -105,23 +105,24 @@ impl<const N: usize> TrickManager<N> {
         let n_cards = self.played_cards.len();
         let n_cards_in_trick = (n_cards - 1) % 4 + 1;
         let cards = &self.played_cards[n_cards - n_cards_in_trick..];
-        let mut cards = cards.iter();
-        match cards.next() {
-            None => None,
-            Some(card) => {
-                let mut winning_card = card;
-                for card in cards {
-                    if let Some(trump) = self.trumps {
-                        if card.suit == trump && winning_card.suit != trump {
-                            winning_card = card;
-                        }
-                    }
-                    if card.suit == winning_card.suit && card.rank > winning_card.rank {
-                        winning_card = card;
-                    }
+        cards.iter().fold(None, |previous, card| {
+            if self.would_win_over(card, previous) {
+                Some(*card)
+            } else {
+                previous
+            }
+        })
+    }
+
+    pub fn would_win_over(&self, card: &Card, previous: Option<Card>) -> bool {
+        match previous {
+            None => true,
+            Some(previous) => {
+                if card.suit == previous.suit {
+                    card.rank > previous.rank
+                } else {
+                    self.trump_suit() == Some(card.suit)
                 }
-                // println!("The winning card is {}", winner_card);
-                Some(*winning_card)
             }
         }
     }
