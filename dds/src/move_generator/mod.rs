@@ -38,27 +38,11 @@ impl MoveGenerator {
         let suit_weights = Self::calculate_suit_weights_for_leading(state);
         let player = state.next_to_play();
         for dds_move in moves {
-            let _is_winning_move = dds_move.card.rank == VirtualRank::Ace
+            let _can_force_win = dds_move.card.rank == VirtualRank::Ace
                 || state.partner_has_higher_cards_than_opponent(dds_move.card.suit, player);
             let suit_weight = suit_weights[dds_move.card.suit as usize];
-            match state.trumps() {
-                None => {
-                    if dds_move.sequence_length >= 3 {
-                        dds_move.priority += 50 + suit_weight;
-                    }
-                }
-                Some(trump_suit) => {
-                    if dds_move.sequence_length >= 2 {
-                        dds_move.priority += 50 + suit_weight;
-                    }
-
-                    let our_trump_count = state.count_this_sides_trump_cards();
-                    let opponents_trump_count = state.count_opponents_trump_cards();
-
-                    if our_trump_count >= opponents_trump_count && dds_move.card.suit == trump_suit {
-                        dds_move.priority += 100 + suit_weight;
-                    }
-                }
+            if dds_move.sequence_length >= 3 {
+                dds_move.priority += 50 + suit_weight;
             }
         }
     }
@@ -66,7 +50,7 @@ impl MoveGenerator {
     fn prioritize_moves_for_leading_trump<const N: usize>(
         moves: &mut [DdsMove],
         state: &VirtualState<N>,
-        _trump_suit: Suit,
+        trump_suit: Suit,
     ) {
         let suit_weights = Self::calculate_suit_weights_for_leading(state);
         let player = state.next_to_play();
@@ -74,24 +58,15 @@ impl MoveGenerator {
             let _is_winning_move = dds_move.card.rank == VirtualRank::Ace
                 || state.partner_has_higher_cards_than_opponent(dds_move.card.suit, player);
             let suit_weight = suit_weights[dds_move.card.suit as usize];
-            match state.trumps() {
-                None => {
-                    if dds_move.sequence_length >= 3 {
-                        dds_move.priority += 50 + suit_weight;
-                    }
-                }
-                Some(trump_suit) => {
-                    if dds_move.sequence_length >= 2 {
-                        dds_move.priority += 50 + suit_weight;
-                    }
+            if dds_move.sequence_length >= 2 {
+                dds_move.priority += 50 + suit_weight;
+            }
 
-                    let our_trump_count = state.count_this_sides_trump_cards();
-                    let opponents_trump_count = state.count_opponents_trump_cards();
+            let our_trump_count = state.count_this_sides_trump_cards();
+            let opponents_trump_count = state.count_opponents_trump_cards();
 
-                    if our_trump_count >= opponents_trump_count && dds_move.card.suit == trump_suit {
-                        dds_move.priority += 100 + suit_weight;
-                    }
-                }
+            if our_trump_count >= opponents_trump_count && dds_move.card.suit == trump_suit {
+                dds_move.priority += 100 + suit_weight;
             }
         }
     }

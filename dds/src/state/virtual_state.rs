@@ -31,7 +31,12 @@ impl<const N: usize> VirtualState<N> {
         self.game.suit_to_follow()
     }
 
-    fn generate_card_distribution(&self) -> [u32; 4] {
+    fn generate_distribution_field(&self) -> [u32; 4] {
+        let card_mapping = self.generate_card_mapping();
+        Self::card_mapping_to_distribution_field(&card_mapping)
+    }
+
+    fn generate_card_mapping(&self) -> Vec<(VirtualCard, Seat)> {
         let mut output = vec![];
         for player in Seat::iter() {
             let players_cards = self.remaining_cards_for_player(player);
@@ -39,10 +44,10 @@ impl<const N: usize> VirtualState<N> {
                 output.push((*card, player));
             }
         }
-        Self::generate_distribution_field(&output)
+        output
     }
 
-    fn generate_distribution_field(input: &[(VirtualCard, Seat)]) -> [u32; 4] {
+    fn card_mapping_to_distribution_field(input: &[(VirtualCard, Seat)]) -> [u32; 4] {
         let mut fields = [0u32; 4];
         for &(card, seat) in input {
             let offset = 2 * card.rank as usize;
@@ -61,7 +66,7 @@ impl<const N: usize> VirtualState<N> {
             tricks_left: self.tricks_left(),
             trumps: self.trumps(),
             lead: self.next_to_play(),
-            remaining_cards: self.generate_card_distribution(),
+            remaining_cards: self.generate_distribution_field(),
         }
     }
 
@@ -149,19 +154,19 @@ impl<const N: usize> VirtualState<N> {
             .collect_vec()
     }
 
-    pub fn owner_of_winning_rank_in(&self, suit: Suit) -> Seat {
-        for seat in Seat::iter() {
-            if self
-                .remaining_cards_for_player_in_suit(seat, suit)
+    pub fn owner_of(&self, card: VirtualCard) -> Option<Seat> {
+        let card_mapping = self.generate_card_mapping();
+        card_mapping.iter().find(|(c, _)| *c == card).map(|(_, s)| *s)
+    }
+
+    pub fn owner_of_winning_rank_in(&self, suit: Suit) -> Option<Seat> {
+        Seat::iter().find(|&seat| {
+            self.remaining_cards_for_player_in_suit(seat, suit)
                 .contains(&VirtualCard {
                     suit,
                     rank: VirtualRank::Ace,
                 })
-            {
-                return seat;
-            }
-        }
-        unreachable!()
+        })
     }
 
     pub fn is_owner_of_winning_rank_in(&self, suit: Suit, player: Seat) -> bool {
@@ -172,19 +177,14 @@ impl<const N: usize> VirtualState<N> {
             })
     }
 
-    pub fn owner_of_runner_up_in(&self, suit: Suit) -> Seat {
-        for seat in Seat::iter() {
-            if self
-                .remaining_cards_for_player_in_suit(seat, suit)
+    pub fn owner_of_runner_up_in(&self, suit: Suit) -> Option<Seat> {
+        Seat::iter().find(|&seat| {
+            self.remaining_cards_for_player_in_suit(seat, suit)
                 .contains(&VirtualCard {
                     suit,
                     rank: VirtualRank::King,
                 })
-            {
-                return seat;
-            }
-        }
-        unreachable!()
+        })
     }
 
     pub fn is_owner_of_runner_up_in(&self, suit: Suit, player: Seat) -> bool {
