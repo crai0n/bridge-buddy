@@ -8,8 +8,8 @@ pub struct MoveGenerator {}
 
 impl MoveGenerator {
     pub fn generate_moves<const N: usize>(state: &VirtualState<N>, move_ordering: bool) -> Vec<DdsMove> {
-        let valid_moves = state.valid_moves();
-        let mut unique_moves = Self::select_one_move_per_sequence(&valid_moves);
+        let valid_moves = state.valid_moves().map(DdsMove::new);
+        let mut unique_moves = Self::select_one_move_per_sequence(valid_moves);
         if move_ordering {
             Self::move_priority(&mut unique_moves, state);
             Self::sort_moves_by_priority_descending(&mut unique_moves);
@@ -48,8 +48,8 @@ impl MoveGenerator {
             let suit = dds_move.card.suit;
 
             if we_can_win_trick_by_force {
-                if state.owner_of_runner_up_in(&suit) == Some(rho) {
-                    if state.cards_of(rho).has_singleton_in(&suit) {
+                if state.owner_of_runner_up_in(suit) == Some(rho) {
+                    if state.cards_of(rho).has_singleton_in(suit) {
                         // encourage, because we can catch runner-up
                         dds_move.priority += suit_weight + 13;
                     } else {
@@ -102,18 +102,18 @@ impl MoveGenerator {
         let suit_bonus = SUIT_ARRAY.map(|suit| {
             let mut bonus = 0;
 
-            if rhos_hand.contains_winning_rank_in(&suit) || rhos_hand.contains_runner_up_in(&suit) {
+            if rhos_hand.contains_winning_rank_in(suit) || rhos_hand.contains_runner_up_in(suit) {
                 bonus -= 18;
             }
             if let Some(trump_suit) = state.trump_suit() {
-                let lho_can_ruff = lhos_hand.is_void_in(&suit) && lhos_hand.has_cards_in(&trump_suit);
+                let lho_can_ruff = lhos_hand.is_void_in(suit) && lhos_hand.has_cards_in(trump_suit);
                 if lho_can_ruff {
                     bonus -= 10;
                 }
                 let i_can_ruff_partners_return = suit != trump_suit
-                    && my_hand.has_singleton_in(&suit)
-                    && my_hand.has_cards_in(&trump_suit)
-                    && partners_hand.count_cards_in(&suit) >= 2;
+                    && my_hand.has_singleton_in(suit)
+                    && my_hand.has_cards_in(trump_suit)
+                    && partners_hand.count_cards_in(suit) >= 2;
                 if i_can_ruff_partners_return {
                     bonus += 16
                 }
@@ -123,7 +123,7 @@ impl MoveGenerator {
 
         let [count_lho, count_rho] = [lho, rho].map(|opponent| {
             SUIT_ARRAY.map(|suit| {
-                let count = state.cards_of(opponent).count_cards_in(&suit);
+                let count = state.cards_of(opponent).count_cards_in(suit);
                 match count {
                     0 => state.count_played_cards() as isize + 4,
                     _ => count as isize * 4,
@@ -139,12 +139,12 @@ impl MoveGenerator {
         let player = state.next_to_play();
         let my_hand = state.cards_of(player);
         SUIT_ARRAY.map(|suit| {
-            if my_hand.has_doubleton_runner_up_in(&suit) {
+            if my_hand.has_doubleton_runner_up_in(suit) {
                 1
-            } else if my_hand.has_singleton_winner_in(&suit) {
+            } else if my_hand.has_singleton_winner_in(suit) {
                 0
             } else {
-                my_hand.count_cards_in(&suit) as isize * 64 / 36
+                my_hand.count_cards_in(suit) as isize * 64 / 36
             }
         })
     }
@@ -207,9 +207,9 @@ impl MoveGenerator {
         moves.sort_unstable_by(|a, b| b.priority.cmp(&a.priority));
     }
 
-    fn select_one_move_per_sequence(moves: &[DdsMove]) -> Vec<DdsMove> {
+    fn select_one_move_per_sequence(moves: impl Iterator<Item = DdsMove>) -> Vec<DdsMove> {
         let mut output: Vec<DdsMove> = vec![];
-        for &candidate_move in moves {
+        for candidate_move in moves {
             if let Some(last) = output.last_mut() {
                 if candidate_move.card.touches(&last.card) {
                     last.sequence_length += 1;

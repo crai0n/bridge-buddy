@@ -3,7 +3,6 @@ use crate::card_manager::CardManager;
 use bridge_buddy_core::game::trick_manager::TrickManager;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::{Card, Hand, Suit};
-use itertools::Itertools;
 
 pub struct DoubleDummyState<const N: usize> {
     trick_manager: TrickManager<N>,
@@ -53,7 +52,7 @@ impl<const N: usize> DoubleDummyState<N> {
             && self.player_has_higher_cards_in_suit_than_other(leader + 2, suit, leader + 3)
     }
 
-    pub fn remaining_cards_of(&self, player: Seat) -> Vec<Card> {
+    pub fn remaining_cards_of(&self, player: Seat) -> impl Iterator<Item = Card> + '_ {
         self.card_manager.remaining_cards_of(player)
     }
 
@@ -61,7 +60,7 @@ impl<const N: usize> DoubleDummyState<N> {
         self.card_manager.remaining_cards_for_player(player)
     }
 
-    pub fn remaining_cards_of_player_in_suit(&self, player: Seat, suit: Suit) -> Vec<Card> {
+    pub fn remaining_cards_of_player_in_suit(&self, player: Seat, suit: Suit) -> impl Iterator<Item = Card> + '_ {
         self.card_manager.remaining_cards_of_player_in_suit(player, suit)
     }
 
@@ -144,27 +143,11 @@ impl<const N: usize> DoubleDummyState<N> {
     }
 
     pub fn valid_moves_for(&self, player: Seat) -> Vec<Card> {
-        let moves = self.card_manager.remaining_cards_of(player);
-        self.only_valid(moves)
+        self.cards_of(player).valid_moves(self.suit_to_follow())
     }
 
-    pub fn valid_non_equivalent_moves_for(&self, player: Seat) -> Vec<Card> {
-        let non_equivalent_moves = self.card_manager.non_equivalent_moves_for(player);
-        self.only_valid(non_equivalent_moves)
-    }
-
-    pub fn only_valid(&self, moves: Vec<Card>) -> Vec<Card> {
-        match self.trick_manager.suit_to_follow() {
-            None => moves,
-            Some(suit) => {
-                let filtered = moves.iter().filter(|x| x.suit == suit).copied().collect_vec();
-                if filtered.is_empty() {
-                    moves
-                } else {
-                    filtered
-                }
-            }
-        }
+    pub fn valid_moves(&self) -> Vec<Card> {
+        self.valid_moves_for(self.next_to_play())
     }
 
     pub fn list_played_cards(&self) -> &[Card] {
@@ -176,64 +159,64 @@ impl<const N: usize> DoubleDummyState<N> {
     }
 }
 
-#[cfg(test)]
-mod test {
-    use super::DoubleDummyState;
-    use crate::card_manager::card_tracker::CardTracker;
-    use crate::card_manager::CardManager;
-    use bridge_buddy_core::game::trick_manager::TrickManager;
-    use bridge_buddy_core::primitives::card::Rank;
-    use bridge_buddy_core::primitives::deal::Seat;
-    use bridge_buddy_core::primitives::{Card, Suit};
-    use itertools::Itertools;
-    use test_case::test_case;
+// #[cfg(test)]
+// mod test {
+//     use super::DoubleDummyState;
+//     use crate::card_manager::card_tracker::CardTracker;
+//     use crate::card_manager::CardManager;
+//     use bridge_buddy_core::game::trick_manager::TrickManager;
+//     use bridge_buddy_core::primitives::card::Rank;
+//     use bridge_buddy_core::primitives::deal::Seat;
+//     use bridge_buddy_core::primitives::{Card, Suit};
+//     use itertools::Itertools;
+//     use test_case::test_case;
 
-    #[test_case("JT5", "KQ8743", "J5")] // 0001100001000, 0110001100110, 0001000001000
-    #[test_case("JT52", "KQ8743", "J5")] // 0001100001001, 0110001100110, 0001000001000
-    #[test_case("JT9643", "AK52", "J6")] // 0001110010110, 1100000001001, 0001000010000
-    fn available_moves(my_cards: &str, played_cards: &str, expected: &str) {
-        let my_cards = my_cards
-            .chars()
-            .map(|c| Rank::from_char(c).unwrap())
-            .map(|d| Card {
-                rank: d,
-                suit: Suit::Spades,
-            })
-            .collect_vec();
-        let played_cards = played_cards
-            .chars()
-            .map(|c| Rank::from_char(c).unwrap())
-            .map(|d| Card {
-                rank: d,
-                suit: Suit::Spades,
-            })
-            .collect_vec();
-        let mut expected = expected
-            .chars()
-            .map(|c| Rank::from_char(c).unwrap())
-            .map(|d| Card {
-                rank: d,
-                suit: Suit::Spades,
-            })
-            .collect_vec();
-
-        let state: DoubleDummyState<13> = DoubleDummyState {
-            trick_manager: TrickManager::new(Seat::North, None),
-            card_manager: CardManager {
-                played_cards: CardTracker::from_cards(&played_cards),
-                remaining_cards: [
-                    CardTracker::from_cards(&my_cards),
-                    CardTracker::empty(),
-                    CardTracker::empty(),
-                    CardTracker::empty(),
-                ],
-            },
-        };
-
-        let moves = state.valid_non_equivalent_moves_for(Seat::North);
-
-        expected.sort_unstable();
-
-        assert_eq!(expected, moves)
-    }
-}
+// #[test_case("JT5", "KQ8743", "J5")] // 0001100001000, 0110001100110, 0001000001000
+// #[test_case("JT52", "KQ8743", "J5")] // 0001100001001, 0110001100110, 0001000001000
+// #[test_case("JT9643", "AK52", "J6")] // 0001110010110, 1100000001001, 0001000010000
+// fn available_moves(my_cards: &str, played_cards: &str, expected: &str) {
+//     let my_cards = my_cards
+//         .chars()
+//         .map(|c| Rank::from_char(c).unwrap())
+//         .map(|d| Card {
+//             rank: d,
+//             suit: Suit::Spades,
+//         })
+//         .collect_vec();
+//     let played_cards = played_cards
+//         .chars()
+//         .map(|c| Rank::from_char(c).unwrap())
+//         .map(|d| Card {
+//             rank: d,
+//             suit: Suit::Spades,
+//         })
+//         .collect_vec();
+//     let mut expected = expected
+//         .chars()
+//         .map(|c| Rank::from_char(c).unwrap())
+//         .map(|d| Card {
+//             rank: d,
+//             suit: Suit::Spades,
+//         })
+//         .collect_vec();
+//
+//     let state: DoubleDummyState<13> = DoubleDummyState {
+//         trick_manager: TrickManager::new(Seat::North, None),
+//         card_manager: CardManager {
+//             played_cards: CardTracker::from_cards(&played_cards),
+//             remaining_cards: [
+//                 CardTracker::from_cards(&my_cards),
+//                 CardTracker::empty(),
+//                 CardTracker::empty(),
+//                 CardTracker::empty(),
+//             ],
+//         },
+//     };
+//
+//     let moves = state.valid_non_equivalent_moves_for(Seat::North);
+//
+//     expected.sort_unstable();
+//
+//     assert_eq!(expected, moves)
+// }
+// }

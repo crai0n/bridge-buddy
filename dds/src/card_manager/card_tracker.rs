@@ -1,6 +1,7 @@
 use super::suit_field::SuitField;
 
 use bridge_buddy_core::primitives::{Card, Hand, Suit};
+
 use itertools::Itertools;
 use std::fmt::Debug;
 use strum::IntoEnumIterator;
@@ -11,17 +12,17 @@ pub struct CardTracker([SuitField; 4]);
 pub const SUIT_ARRAY: [Suit; 4] = [Suit::Clubs, Suit::Diamonds, Suit::Hearts, Suit::Spades];
 
 impl CardTracker {
-    pub fn suit_state(&self, suit: &Suit) -> &SuitField {
-        &self.0[*suit as usize]
+    pub fn suit_state(&self, suit: Suit) -> &SuitField {
+        &self.0[suit as usize]
     }
 
     pub fn has_higher_cards_in_suit_than(&self, suit: Suit, other: &Self) -> bool {
-        self.suit_state(&suit)
-            .has_higher_ranks_than_other(other.suit_state(&suit))
+        self.suit_state(suit)
+            .has_higher_ranks_than_other(other.suit_state(suit))
     }
 
-    pub fn suit_state_mut(&mut self, suit: &Suit) -> &mut SuitField {
-        &mut self.0[*suit as usize]
+    pub fn suit_state_mut(&mut self, suit: Suit) -> &mut SuitField {
+        &mut self.0[suit as usize]
     }
 
     pub fn empty() -> Self {
@@ -51,7 +52,7 @@ impl CardTracker {
 
     #[allow(dead_code)]
     pub fn union(&self, other: &Self) -> Self {
-        let new = SUIT_ARRAY.map(|suit| self.suit_state(&suit).union(other.suit_state(&suit)));
+        let new = SUIT_ARRAY.map(|suit| self.suit_state(suit).union(other.suit_state(suit)));
         Self(new)
     }
 
@@ -75,28 +76,28 @@ impl CardTracker {
         tracker
     }
 
-    pub fn count_cards_in(&self, suit: &Suit) -> usize {
+    pub fn count_cards_in(&self, suit: Suit) -> usize {
         self.suit_state(suit).count_cards()
     }
 
     #[allow(dead_code)]
     pub fn count_cards(&self) -> usize {
-        Suit::iter().fold(0, |result, suit| self.suit_state(&suit).count_cards() + result)
+        Suit::iter().fold(0, |result, suit| self.suit_state(suit).count_cards() + result)
     }
 
-    pub fn is_void_in(&self, suit: &Suit) -> bool {
+    pub fn is_void_in(&self, suit: Suit) -> bool {
         self.count_cards_in(suit) == 0
     }
 
-    pub fn has_cards_in(&self, suit: &Suit) -> bool {
+    pub fn has_cards_in(&self, suit: Suit) -> bool {
         !self.is_void_in(suit)
     }
 
-    pub fn has_singleton_in(&self, suit: &Suit) -> bool {
+    pub fn has_singleton_in(&self, suit: Suit) -> bool {
         self.count_cards_in(suit) == 1
     }
 
-    pub fn has_doubleton_in(&self, suit: &Suit) -> bool {
+    pub fn has_doubleton_in(&self, suit: Suit) -> bool {
         self.count_cards_in(suit) == 2
     }
 
@@ -106,46 +107,47 @@ impl CardTracker {
     }
 
     pub fn add_card(&mut self, card: Card) {
-        self.suit_state_mut(&card.suit).add_rank(card.rank)
+        self.suit_state_mut(card.suit).add_rank(card.rank)
     }
 
     pub fn remove_card(&mut self, card: Card) {
-        self.suit_state_mut(&card.suit).remove_rank(card.rank)
+        self.suit_state_mut(card.suit).remove_rank(card.rank)
     }
 
     #[allow(dead_code)]
     pub fn contains(&self, card: &Card) -> bool {
-        self.suit_state(&card.suit).contains_rank(card.rank)
+        self.suit_state(card.suit).contains_rank(card.rank)
     }
 
-    pub fn all_cards(&self) -> Vec<Card> {
-        Suit::iter()
-            .flat_map(|suit| {
-                self.suit_state(&suit)
-                    .all_contained_ranks()
-                    .into_iter()
-                    .map(move |rank| Card { suit, rank })
-            })
-            .collect_vec()
+    pub fn all_cards(&self) -> impl Iterator<Item = Card> + '_ {
+        Suit::iter().flat_map(|suit| {
+            self.suit_state(suit)
+                .all_contained_ranks()
+                .into_iter()
+                .map(move |rank| Card { suit, rank })
+        })
     }
 
-    pub fn cards_in(&self, suit: &Suit) -> Vec<Card> {
+    pub fn cards_in(&self, suit: Suit) -> impl Iterator<Item = Card> + '_ {
         self.suit_state(suit)
             .all_contained_ranks()
-            .iter()
-            .map(|&rank| Card { suit: *suit, rank })
-            .collect_vec()
+            .into_iter()
+            .map(move |rank| Card { suit, rank })
     }
 
-    pub fn non_equivalent_moves(&self, played_cards: &CardTracker) -> Vec<Card> {
-        Suit::iter()
-            .flat_map(|suit| {
-                self.suit_state(&suit)
-                    .non_equivalent_moves(played_cards.suit_state(&suit))
-                    .into_iter()
-                    .map(move |rank| Card { suit, rank })
-            })
-            .collect_vec()
+    pub fn valid_moves(&self, lead_suit: Option<Suit>) -> Vec<Card> {
+        match lead_suit {
+            None => self.all_cards().collect_vec(),
+            Some(lead_suit) => {
+                let (cards_in_suit, other_cards): (Vec<_>, Vec<_>) =
+                    self.all_cards().partition(|card| card.suit == lead_suit);
+                if cards_in_suit.is_empty() {
+                    other_cards
+                } else {
+                    cards_in_suit
+                }
+            }
+        }
     }
 }
 
@@ -189,13 +191,16 @@ mod test {
         assert_eq!(tracker, CardTracker::from_u64(expected));
     }
 
-    #[test_case("H:AQ,C:AQJ", &Suit::Hearts)]
-    #[test_case("H:AKQ,D:AT", &Suit::Diamonds)]
-    #[test_case("H:AKQT,S:T", &Suit::Spades)]
-    fn contained_cards_in_suit(hand_str: &str, suit: &Suit) {
+    #[test_case("H:AQ,C:AQJ", Suit::Hearts)]
+    #[test_case("H:AKQ,D:AT", Suit::Diamonds)]
+    #[test_case("H:AKQT,S:T", Suit::Spades)]
+    fn contained_cards_in_suit(hand_str: &str, suit: Suit) {
         let hand = Hand::<5>::from_str(hand_str).unwrap();
         let tracker = CardTracker::from_hand(hand);
-        assert_eq!(tracker.all_cards(), hand.cards().copied().collect_vec());
-        assert_eq!(tracker.cards_in(suit), hand.cards_in(*suit).copied().collect_vec())
+        assert_eq!(tracker.all_cards().collect_vec(), hand.cards().copied().collect_vec());
+        assert_eq!(
+            tracker.cards_in(suit).collect_vec(),
+            hand.cards_in(suit).copied().collect_vec()
+        )
     }
 }

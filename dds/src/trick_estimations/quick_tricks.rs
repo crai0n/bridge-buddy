@@ -11,7 +11,7 @@ fn nt_quick_tricks_for_leader<const N: usize>(state: &VirtualState<N>) -> usize 
     // For this, we need to look at both hands combined
     let player = state.next_to_play();
     let players = [player, player + 1, player + 2, player + 3];
-    let cards = players.map(|x| state.cards_of(x).all_cards());
+    let cards = players.map(|x| state.cards_of(x).all_cards().collect_vec());
 
     let [my_cards, _lhos_cards, partners_cards, _rhos_cards] = &cards;
 
@@ -27,7 +27,7 @@ fn trump_quick_tricks_for_leader<const N: usize>(state: &VirtualState<N>, trump_
     // For this, we need to look at both hands combined
     let player = state.next_to_play();
     let players = [player, player + 1, player + 2, player + 3];
-    let cards = players.map(|x| state.cards_of(x).all_cards());
+    let cards = players.map(|x| state.cards_of(x).all_cards().collect_vec());
 
     let [my_cards, lhos_cards, partners_cards, rhos_cards] = &cards;
 
@@ -50,7 +50,7 @@ pub fn quick_tricks_for_second_hand<const N: usize>(state: &VirtualState<N>) -> 
 
     let player = state.next_to_play();
     let players = [player, player + 1, player + 2, player + 3];
-    let cards = players.map(|x| state.cards_of(x).all_cards());
+    let cards = players.map(|x| state.cards_of(x).all_cards().collect_vec());
 
     let [my_cards, lhos_cards, partners_cards, _rhos_cards] = &cards;
 

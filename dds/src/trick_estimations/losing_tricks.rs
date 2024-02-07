@@ -3,6 +3,7 @@ use crate::primitives::VirtualCard;
 use crate::state::VirtualState;
 use bridge_buddy_core::primitives::card::virtual_rank::VirtualRank;
 use bridge_buddy_core::primitives::Suit;
+use itertools::Itertools;
 use std::cmp::{max, min, Ordering};
 use strum::IntoEnumIterator;
 
@@ -17,7 +18,7 @@ fn trump_losing_tricks<const N: usize>(state: &VirtualState<N>, trump_suit: Suit
     // this routine is inspired heavily by Bo Haglund's Double Dummy Solver
     let player = state.next_to_play();
     let players = [player, player + 1, player + 2, player + 3];
-    let cards = players.map(|x| state.cards_of(x).all_cards());
+    let cards = players.map(|x| state.cards_of(x).all_cards().collect_vec());
 
     let [my_cards, lhos_cards, partners_cards, rhos_cards] = &cards;
 
@@ -71,7 +72,7 @@ fn nt_losing_tricks<const N: usize>(state: &VirtualState<N>) -> usize {
     // this routine is inspired heavily by Bo Haglund's Double Dummy Solver
     let player = state.next_to_play();
     let players = [player, player + 1, player + 2, player + 3];
-    let cards = players.map(|x| state.cards_of(x).all_cards());
+    let cards = players.map(|x| state.cards_of(x).all_cards().collect_vec());
 
     let [my_cards, lhos_cards, partners_cards, rhos_cards] = &cards;
 

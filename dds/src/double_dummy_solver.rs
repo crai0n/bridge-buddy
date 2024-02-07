@@ -278,7 +278,7 @@ impl<const N: usize> DoubleDummySolver<N> {
 
     fn play_last_trick(state: &mut VirtualState<N>) {
         for _ in 0..4 {
-            let last_card_of_player = state.valid_moves().first().unwrap().card;
+            let last_card_of_player = state.valid_moves().next().unwrap();
             state.play(last_card_of_player).unwrap();
         }
     }

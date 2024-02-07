@@ -1,7 +1,7 @@
 use super::double_dummy_state::DoubleDummyState;
 use crate::card_manager::card_tracker::CardTracker;
 use crate::card_manager::suit_field::SuitField;
-use crate::primitives::DdsMove;
+
 use crate::primitives::VirtualCard;
 use crate::state::virtual_card_tracker::VirtualCardTracker;
 use crate::state::virtualizer::Virtualizer;
@@ -9,7 +9,7 @@ use crate::transposition_table::TTKey;
 use bridge_buddy_core::error::BBError;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::{Card, Hand, Suit};
-use itertools::Itertools;
+
 use strum::IntoEnumIterator;
 
 pub struct VirtualState<const N: usize> {
@@ -40,9 +40,8 @@ impl<const N: usize> VirtualState<N> {
     fn generate_card_mapping(&self) -> Vec<(VirtualCard, Seat)> {
         let mut output = vec![];
         for player in Seat::iter() {
-            let players_cards = self.cards_of(player).all_cards();
-            for card in players_cards.iter() {
-                output.push((*card, player));
+            for card in self.cards_of(player).all_cards() {
+                output.push((card, player));
             }
         }
         output
@@ -89,7 +88,7 @@ impl<const N: usize> VirtualState<N> {
         let played_cards = self.game.out_of_play_cards();
         let tracker = CardTracker::from_cards(played_cards);
         for suit in Suit::iter() {
-            self.played[suit as usize] = *tracker.suit_state(&suit);
+            self.played[suit as usize] = *tracker.suit_state(suit);
         }
     }
 
@@ -114,29 +113,29 @@ impl<const N: usize> VirtualState<N> {
         card_mapping.iter().find(|(c, _)| *c == card).map(|(_, s)| *s)
     }
 
-    pub fn owner_of_winning_rank_in(&self, suit: &Suit) -> Option<Seat> {
+    pub fn owner_of_winning_rank_in(&self, suit: Suit) -> Option<Seat> {
         Seat::iter().find(|&seat| self.cards_of(seat).contains_winning_rank_in(suit))
     }
 
-    pub fn owner_of_runner_up_in(&self, suit: &Suit) -> Option<Seat> {
+    pub fn owner_of_runner_up_in(&self, suit: Suit) -> Option<Seat> {
         Seat::iter().find(|&seat| self.cards_of(seat).contains_runner_up_in(suit))
     }
 
-    pub fn player_can_ruff_suit(&self, suit: &Suit, player: Seat) -> bool {
+    pub fn player_can_ruff_suit(&self, suit: Suit, player: Seat) -> bool {
         match self.trump_suit() {
             None => false,
-            Some(trump_suit) => {
-                self.cards_of(player).is_void_in(suit) && !self.cards_of(player).is_void_in(&trump_suit)
-            }
+            Some(trump_suit) => self.cards_of(player).is_void_in(suit) && !self.cards_of(player).is_void_in(trump_suit),
         }
     }
 
-    fn valid_moves_for(&self, player: Seat) -> Vec<DdsMove> {
-        let move_cards = self.cards_of(player).valid_moves(&self.suit_to_follow());
-        move_cards.into_iter().map(DdsMove::new).collect_vec()
+    fn valid_moves_for(&self, player: Seat) -> impl Iterator<Item = VirtualCard> + '_ {
+        self.game
+            .valid_moves_for(player)
+            .into_iter()
+            .filter_map(|x| self.absolute_to_virtual(x))
     }
 
-    pub fn valid_moves(&self) -> Vec<DdsMove> {
+    pub fn valid_moves(&self) -> impl Iterator<Item = VirtualCard> + '_ {
         self.valid_moves_for(self.next_to_play())
     }
 
@@ -163,7 +162,7 @@ impl<const N: usize> VirtualState<N> {
     pub fn count_trump_cards_for_player(&self, player: Seat) -> usize {
         match self.trump_suit() {
             None => 0,
-            Some(trump_suit) => self.cards_of(player).count_cards_in(&trump_suit),
+            Some(trump_suit) => self.cards_of(player).count_cards_in(trump_suit),
         }
     }
 
