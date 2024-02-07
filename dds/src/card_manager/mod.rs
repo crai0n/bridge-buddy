@@ -37,16 +37,16 @@ impl CardManager {
         self.remaining_cards[player as usize].add_card(card);
     }
 
-    pub fn remaining_cards_for_player(&self, player: Seat) -> CardTracker {
-        self.remaining_cards[player as usize]
+    pub fn remaining_cards_for_player(&self, player: Seat) -> &CardTracker {
+        &self.remaining_cards[player as usize]
     }
 
     pub fn remaining_cards_of(&self, player: Seat) -> Vec<Card> {
-        self.remaining_cards_for_player(player).all_contained_cards()
+        self.remaining_cards_for_player(player).all_cards()
     }
 
     pub fn remaining_cards_of_player_in_suit(&self, player: Seat, suit: Suit) -> Vec<Card> {
-        self.remaining_cards_for_player(player).contained_cards_in_suit(&suit)
+        self.remaining_cards_for_player(player).cards_in(&suit)
     }
 
     pub fn non_equivalent_moves_for(&self, player: Seat) -> Vec<Card> {
@@ -64,7 +64,7 @@ impl CardManager {
     }
 
     pub fn count_cards_in_suit_for_player(&self, suit: Suit, player: Seat) -> usize {
-        self.remaining_cards_for_player(player).count_cards_in_suit(&suit) as usize
+        self.remaining_cards_for_player(player).count_cards_in(&suit)
     }
 }
 

@@ -57,6 +57,10 @@ impl<const N: usize> DoubleDummyState<N> {
         self.card_manager.remaining_cards_of(player)
     }
 
+    pub fn cards_of(&self, player: Seat) -> &CardTracker {
+        self.card_manager.remaining_cards_for_player(player)
+    }
+
     pub fn remaining_cards_of_player_in_suit(&self, player: Seat, suit: Suit) -> Vec<Card> {
         self.card_manager.remaining_cards_of_player_in_suit(player, suit)
     }

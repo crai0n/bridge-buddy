@@ -7,7 +7,7 @@ use std::cmp::{max, min, Ordering};
 use strum::IntoEnumIterator;
 
 pub fn losing_tricks_for_leader<const N: usize>(state: &VirtualState<N>) -> usize {
-    match state.trumps() {
+    match state.trump_suit() {
         None => nt_losing_tricks(state),
         Some(trump_suit) => trump_losing_tricks(state, trump_suit),
     }
@@ -17,7 +17,7 @@ fn trump_losing_tricks<const N: usize>(state: &VirtualState<N>, trump_suit: Suit
     // this routine is inspired heavily by Bo Haglund's Double Dummy Solver
     let player = state.next_to_play();
     let players = [player, player + 1, player + 2, player + 3];
-    let cards = players.map(|x| state.remaining_cards_for_player(x));
+    let cards = players.map(|x| state.cards_of(x).all_cards());
 
     let [my_cards, lhos_cards, partners_cards, rhos_cards] = &cards;
 
@@ -71,7 +71,7 @@ fn nt_losing_tricks<const N: usize>(state: &VirtualState<N>) -> usize {
     // this routine is inspired heavily by Bo Haglund's Double Dummy Solver
     let player = state.next_to_play();
     let players = [player, player + 1, player + 2, player + 3];
-    let cards = players.map(|x| state.remaining_cards_for_player(x));
+    let cards = players.map(|x| state.cards_of(x).all_cards());
 
     let [my_cards, lhos_cards, partners_cards, rhos_cards] = &cards;
 

@@ -11,7 +11,7 @@ fn nt_quick_tricks_for_leader<const N: usize>(state: &VirtualState<N>) -> usize 
     // For this, we need to look at both hands combined
     let player = state.next_to_play();
     let players = [player, player + 1, player + 2, player + 3];
-    let cards = players.map(|x| state.remaining_cards_for_player(x));
+    let cards = players.map(|x| state.cards_of(x).all_cards());
 
     let [my_cards, _lhos_cards, partners_cards, _rhos_cards] = &cards;
 
@@ -27,7 +27,7 @@ fn trump_quick_tricks_for_leader<const N: usize>(state: &VirtualState<N>, trump_
     // For this, we need to look at both hands combined
     let player = state.next_to_play();
     let players = [player, player + 1, player + 2, player + 3];
-    let cards = players.map(|x| state.remaining_cards_for_player(x));
+    let cards = players.map(|x| state.cards_of(x).all_cards());
 
     let [my_cards, lhos_cards, partners_cards, rhos_cards] = &cards;
 
@@ -39,7 +39,7 @@ fn trump_quick_tricks_for_leader<const N: usize>(state: &VirtualState<N>, trump_
     min(high_card_tricks.iter().sum(), my_cards_per_suit.iter().sum())
 }
 pub fn quick_tricks_for_leader<const N: usize>(state: &VirtualState<N>) -> usize {
-    match state.trumps() {
+    match state.trump_suit() {
         None => nt_quick_tricks_for_leader(state),
         Some(trump_suit) => trump_quick_tricks_for_leader(state, trump_suit),
     }
@@ -50,7 +50,7 @@ pub fn quick_tricks_for_second_hand<const N: usize>(state: &VirtualState<N>) -> 
 
     let player = state.next_to_play();
     let players = [player, player + 1, player + 2, player + 3];
-    let cards = players.map(|x| state.remaining_cards_for_player(x));
+    let cards = players.map(|x| state.cards_of(x).all_cards());
 
     let [my_cards, lhos_cards, partners_cards, _rhos_cards] = &cards;
 
@@ -61,7 +61,7 @@ pub fn quick_tricks_for_second_hand<const N: usize>(state: &VirtualState<N>) -> 
     let my_simple_high_card_count = count_high_cards_per_suit(my_cards);
     let partners_simple_high_card_count = count_high_cards_per_suit(partners_cards);
 
-    match state.trumps() {
+    match state.trump_suit() {
         None => {
             if my_simple_high_card_count[lead_suit as usize] > 0 {
                 my_simple_high_card_count.iter().sum()

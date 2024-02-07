@@ -3,9 +3,9 @@ use crate::card_manager::card_tracker::CardTracker;
 use crate::card_manager::suit_field::SuitField;
 use crate::primitives::DdsMove;
 use crate::primitives::VirtualCard;
+use crate::state::virtual_card_tracker::VirtualCardTracker;
 use crate::transposition_table::TTKey;
 use bridge_buddy_core::error::BBError;
-use bridge_buddy_core::primitives::card::virtual_rank::VirtualRank;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::{Card, Hand, Suit};
 use itertools::Itertools;
@@ -39,7 +39,7 @@ impl<const N: usize> VirtualState<N> {
     fn generate_card_mapping(&self) -> Vec<(VirtualCard, Seat)> {
         let mut output = vec![];
         for player in Seat::iter() {
-            let players_cards = self.remaining_cards_for_player(player);
+            let players_cards = self.cards_of(player).all_cards();
             for card in players_cards.iter() {
                 output.push((*card, player));
             }
@@ -64,7 +64,7 @@ impl<const N: usize> VirtualState<N> {
     pub fn generate_tt_key(&self) -> TTKey {
         TTKey {
             tricks_left: self.tricks_left(),
-            trumps: self.trumps(),
+            trumps: self.trump_suit(),
             lead: self.next_to_play(),
             remaining_cards: self.generate_distribution_field(),
         }
@@ -108,106 +108,31 @@ impl<const N: usize> VirtualState<N> {
         self.game.next_to_play()
     }
 
-    fn virtual_to_absolute(&self, virtual_card: VirtualCard) -> Option<Card> {
-        let suit = virtual_card.suit;
-        let suit_field = self.played[suit as usize];
-        let absolute_rank = suit_field.try_find_absolute(virtual_card.rank);
-        absolute_rank.map(|rank| Card { rank, suit })
-    }
-
-    pub fn count_cards_in_suit_for_player(&self, suit: Suit, player: Seat) -> usize {
-        self.game.count_cards_in_suit_for_player(suit, player)
-    }
-
-    pub fn player_is_void_in(&self, suit: Suit, player: Seat) -> bool {
-        self.game.player_is_void_in(suit, player)
-    }
-
-    pub fn player_has_singleton_in(&self, suit: Suit, player: Seat) -> bool {
-        self.game.player_has_singleton_in(suit, player)
-    }
-
-    pub fn player_has_doubleton_in(&self, suit: Suit, player: Seat) -> bool {
-        self.game.player_has_doubleton_in(suit, player)
-    }
-
-    fn absolute_to_virtual(&self, card: Card) -> Option<VirtualCard> {
-        let suit = card.suit;
-        let suit_field = self.played[suit as usize];
-        let virtual_rank = suit_field.try_find_relative(card.rank);
-        virtual_rank.map(|rank| VirtualCard { rank, suit })
-    }
-
-    pub fn remaining_cards_for_player(&self, player: Seat) -> Vec<VirtualCard> {
-        self.game
-            .remaining_cards_of(player)
-            .iter()
-            .map(|x| self.absolute_to_virtual(*x).unwrap())
-            .collect_vec()
-    }
-
-    pub fn remaining_cards_for_player_in_suit(&self, player: Seat, suit: Suit) -> Vec<VirtualCard> {
-        self.game
-            .remaining_cards_of_player_in_suit(player, suit)
-            .iter()
-            .map(|x| self.absolute_to_virtual(*x).unwrap())
-            .collect_vec()
-    }
-
     pub fn owner_of(&self, card: VirtualCard) -> Option<Seat> {
         let card_mapping = self.generate_card_mapping();
         card_mapping.iter().find(|(c, _)| *c == card).map(|(_, s)| *s)
     }
 
-    pub fn owner_of_winning_rank_in(&self, suit: Suit) -> Option<Seat> {
-        Seat::iter().find(|&seat| {
-            self.remaining_cards_for_player_in_suit(seat, suit)
-                .contains(&VirtualCard {
-                    suit,
-                    rank: VirtualRank::Ace,
-                })
-        })
+    pub fn owner_of_winning_rank_in(&self, suit: &Suit) -> Option<Seat> {
+        Seat::iter().find(|&seat| self.cards_of(seat).contains_winning_rank_in(suit))
     }
 
-    pub fn is_owner_of_winning_rank_in(&self, suit: Suit, player: Seat) -> bool {
-        self.remaining_cards_for_player_in_suit(player, suit)
-            .contains(&VirtualCard {
-                suit,
-                rank: VirtualRank::Ace,
-            })
+    pub fn owner_of_runner_up_in(&self, suit: &Suit) -> Option<Seat> {
+        Seat::iter().find(|&seat| self.cards_of(seat).contains_runner_up_in(suit))
     }
 
-    pub fn owner_of_runner_up_in(&self, suit: Suit) -> Option<Seat> {
-        Seat::iter().find(|&seat| {
-            self.remaining_cards_for_player_in_suit(seat, suit)
-                .contains(&VirtualCard {
-                    suit,
-                    rank: VirtualRank::King,
-                })
-        })
-    }
-
-    pub fn is_owner_of_runner_up_in(&self, suit: Suit, player: Seat) -> bool {
-        self.remaining_cards_for_player_in_suit(player, suit)
-            .contains(&VirtualCard {
-                suit,
-                rank: VirtualRank::King,
-            })
-    }
-
-    pub fn player_can_ruff_suit(&self, suit: Suit, player: Seat) -> bool {
-        match self.trumps() {
+    pub fn player_can_ruff_suit(&self, suit: &Suit, player: Seat) -> bool {
+        match self.trump_suit() {
             None => false,
-            Some(trump_suit) => self.player_is_void_in(suit, player) && !self.player_is_void_in(trump_suit, player),
+            Some(trump_suit) => {
+                self.cards_of(player).is_void_in(suit) && !self.cards_of(player).is_void_in(&trump_suit)
+            }
         }
     }
 
     fn valid_moves_for(&self, player: Seat) -> Vec<DdsMove> {
-        let absolute_moves = self.game.valid_moves_for(player);
-        absolute_moves
-            .into_iter()
-            .map(|x| DdsMove::new(self.absolute_to_virtual(x).unwrap()))
-            .collect_vec()
+        let move_cards = self.cards_of(player).valid_moves(&self.suit_to_follow());
+        move_cards.into_iter().map(DdsMove::new).collect_vec()
     }
 
     pub fn valid_moves(&self) -> Vec<DdsMove> {
@@ -230,16 +155,15 @@ impl<const N: usize> VirtualState<N> {
         self.game.count_cards_in_current_trick()
     }
 
-    pub fn trumps(&self) -> Option<Suit> {
+    pub fn trump_suit(&self) -> Option<Suit> {
         self.game.trump_suit()
     }
 
     pub fn count_trump_cards_for_player(&self, player: Seat) -> usize {
-        self.game.count_trump_cards_for_player(player)
-    }
-
-    pub fn player_has_trumps(&self, player: Seat) -> bool {
-        self.count_trump_cards_for_player(player) != 0
+        match self.trump_suit() {
+            None => 0,
+            Some(trump_suit) => self.cards_of(player).count_cards_in(&trump_suit),
+        }
     }
 
     pub fn count_trump_cards_for_axis(&self, player: Seat) -> usize {
@@ -266,6 +190,20 @@ impl<const N: usize> VirtualState<N> {
         }
     }
 
+    fn absolute_to_virtual(&self, card: Card) -> Option<VirtualCard> {
+        let suit = card.suit;
+        let suit_field = self.played[suit as usize];
+        let virtual_rank = suit_field.try_find_relative(card.rank);
+        virtual_rank.map(|rank| VirtualCard { rank, suit })
+    }
+
+    fn virtual_to_absolute(&self, virtual_card: VirtualCard) -> Option<Card> {
+        let suit = virtual_card.suit;
+        let suit_field = self.played[suit as usize];
+        let absolute_rank = suit_field.try_find_absolute(virtual_card.rank);
+        absolute_rank.map(|rank| Card { rank, suit })
+    }
+
     pub fn partner_has_higher_cards_than_opponent(&self, suit: Suit, leader: Seat) -> bool {
         self.game.partner_has_higher_cards_than_opponent(suit, leader)
     }
@@ -277,5 +215,10 @@ impl<const N: usize> VirtualState<N> {
 
     pub fn last_trick_winner(&self) -> Option<Seat> {
         self.game.last_trick_winner()
+    }
+
+    pub fn cards_of(&self, player: Seat) -> VirtualCardTracker {
+        let card_tracker = self.game.cards_of(player);
+        VirtualCardTracker::from_card_tracker(card_tracker, self.played)
     }
 }

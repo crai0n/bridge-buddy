@@ -43,8 +43,8 @@ impl SuitField {
         self.0 & Self::u16_from_rank(rank) != 0
     }
 
-    pub fn count_cards(&self) -> u8 {
-        self.0.count_ones() as u8
+    pub fn count_cards(&self) -> usize {
+        self.0.count_ones() as usize
     }
 
     fn count_high_cards(&self) -> u8 {

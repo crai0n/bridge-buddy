@@ -15,7 +15,7 @@ impl CardTracker {
         &self.0[*suit as usize]
     }
 
-    pub fn has_higher_cards_in_suit_than(&self, suit: Suit, other: Self) -> bool {
+    pub fn has_higher_cards_in_suit_than(&self, suit: Suit, other: &Self) -> bool {
         self.suit_state(&suit)
             .has_higher_ranks_than_other(other.suit_state(&suit))
     }
@@ -75,12 +75,33 @@ impl CardTracker {
         tracker
     }
 
-    pub fn count_cards_in_suit(&self, suit: &Suit) -> u8 {
+    pub fn count_cards_in(&self, suit: &Suit) -> usize {
         self.suit_state(suit).count_cards()
     }
 
     #[allow(dead_code)]
-    pub fn cards_per_suit(&self) -> [u8; 4] {
+    pub fn count_cards(&self) -> usize {
+        Suit::iter().fold(0, |result, suit| self.suit_state(&suit).count_cards() + result)
+    }
+
+    pub fn is_void_in(&self, suit: &Suit) -> bool {
+        self.count_cards_in(suit) == 0
+    }
+
+    pub fn has_cards_in(&self, suit: &Suit) -> bool {
+        !self.is_void_in(suit)
+    }
+
+    pub fn has_singleton_in(&self, suit: &Suit) -> bool {
+        self.count_cards_in(suit) == 1
+    }
+
+    pub fn has_doubleton_in(&self, suit: &Suit) -> bool {
+        self.count_cards_in(suit) == 2
+    }
+
+    #[allow(dead_code)]
+    pub fn count_cards_per_suit(&self) -> [usize; 4] {
         self.0.map(|suit| suit.count_cards())
     }
 
@@ -93,11 +114,11 @@ impl CardTracker {
     }
 
     #[allow(dead_code)]
-    pub fn contains_card(&self, card: &Card) -> bool {
+    pub fn contains(&self, card: &Card) -> bool {
         self.suit_state(&card.suit).contains_rank(card.rank)
     }
 
-    pub fn all_contained_cards(&self) -> Vec<Card> {
+    pub fn all_cards(&self) -> Vec<Card> {
         Suit::iter()
             .flat_map(|suit| {
                 self.suit_state(&suit)
@@ -108,8 +129,7 @@ impl CardTracker {
             .collect_vec()
     }
 
-    #[allow(dead_code)]
-    pub fn contained_cards_in_suit(&self, suit: &Suit) -> Vec<Card> {
+    pub fn cards_in(&self, suit: &Suit) -> Vec<Card> {
         self.suit_state(suit)
             .all_contained_ranks()
             .iter()
@@ -175,10 +195,7 @@ mod test {
     fn contained_cards_in_suit(hand_str: &str, suit: &Suit) {
         let hand = Hand::<5>::from_str(hand_str).unwrap();
         let tracker = CardTracker::from_hand(hand);
-        assert_eq!(tracker.all_contained_cards(), hand.cards().copied().collect_vec());
-        assert_eq!(
-            tracker.contained_cards_in_suit(suit),
-            hand.cards_in(*suit).copied().collect_vec()
-        )
+        assert_eq!(tracker.all_cards(), hand.cards().copied().collect_vec());
+        assert_eq!(tracker.cards_in(suit), hand.cards_in(*suit).copied().collect_vec())
     }
 }
