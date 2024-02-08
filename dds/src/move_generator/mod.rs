@@ -56,11 +56,11 @@ impl MoveGenerator {
         }
     }
 
-    fn win_as_cheaply_as_possible<const N: usize>(state: &VirtualState<N>, dds_move: &mut DdsMove) {
-        if dds_move.card.rank > state.currently_winning_card().unwrap().rank {
-            dds_move.priority += 50 - dds_move.card.rank as isize;
+    fn win_as_cheaply_as_possible<const N: usize>(state: &VirtualState<N>, candidate: &mut DdsMove) {
+        if candidate.card.rank > state.currently_winning_card().unwrap().rank {
+            candidate.priority += 50 - candidate.card.rank as isize;
         } else {
-            dds_move.priority -= dds_move.card.rank as isize;
+            candidate.priority -= candidate.card.rank as isize;
         }
     }
 

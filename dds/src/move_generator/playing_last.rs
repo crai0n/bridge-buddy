@@ -32,11 +32,11 @@ impl MoveGenerator {
             .zip(my_high_cards)
             .any(|(&can_lead, high_card_count)| can_lead && high_card_count > 0);
 
-        for dds_move in moves {
+        for candidate in moves {
             if opponents_are_winning || i_have_high_cards_to_run && !partner_can_reach_me {
-                Self::win_as_cheaply_as_possible(state, dds_move);
+                Self::win_as_cheaply_as_possible(state, candidate);
             } else {
-                dds_move.priority -= dds_move.card.rank as isize;
+                candidate.priority -= candidate.card.rank as isize;
             }
         }
     }
@@ -48,12 +48,12 @@ impl MoveGenerator {
     ) {
         let opponents_are_winning = state.current_trick_winner() != state.next_to_play().partner();
         let trick_has_not_been_ruffed = state.currently_winning_card().unwrap().suit != trump_suit;
-        for dds_move in moves {
+        for candidate in moves {
             if trick_has_not_been_ruffed && opponents_are_winning {
-                Self::win_as_cheaply_as_possible(state, dds_move);
+                Self::win_as_cheaply_as_possible(state, candidate);
             } else {
                 // no way to win, play as low as possible
-                dds_move.priority -= dds_move.card.rank as isize;
+                candidate.priority -= candidate.card.rank as isize;
             }
         }
     }

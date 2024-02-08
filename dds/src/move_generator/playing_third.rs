@@ -19,9 +19,9 @@ impl MoveGenerator {
     }
 
     pub fn calc_priority_playing_third_nt_not_void<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
-        for dds_move in moves {
-            if dds_move.card > state.currently_winning_card().unwrap() {
-                dds_move.priority += dds_move.card.rank as isize;
+        for candidate in moves {
+            if candidate.card > state.currently_winning_card().unwrap() {
+                candidate.priority += candidate.card.rank as isize;
             }
         }
     }
@@ -31,9 +31,9 @@ impl MoveGenerator {
         state: &VirtualState<N>,
         _trump_suit: Suit,
     ) {
-        for dds_move in moves {
-            if dds_move.card > state.currently_winning_card().unwrap() {
-                dds_move.priority += dds_move.card.rank as isize;
+        for candidate in moves {
+            if candidate.card > state.currently_winning_card().unwrap() {
+                candidate.priority += candidate.card.rank as isize;
             }
         }
     }
@@ -43,9 +43,9 @@ impl MoveGenerator {
         state: &VirtualState<N>,
         _trump_suit: Suit,
     ) {
-        for dds_move in moves {
-            if dds_move.card > state.currently_winning_card().unwrap() {
-                dds_move.priority += dds_move.card.rank as isize;
+        for candidate in moves {
+            if candidate.card > state.currently_winning_card().unwrap() {
+                candidate.priority += candidate.card.rank as isize;
             }
         }
     }

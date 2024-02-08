@@ -20,26 +20,26 @@ impl MoveGenerator {
         let _partner = player + 2;
         let _lho = player + 1;
         let rho = player + 3;
-        for dds_move in moves {
-            let we_can_win_trick_by_force = dds_move.card.rank == VirtualRank::Ace
-                || state.partner_has_higher_cards_than_opponent(dds_move.card.suit, player);
-            let suit_weight = suit_weights[dds_move.card.suit as usize];
-            let suit = dds_move.card.suit;
+        for candidate in moves {
+            let we_can_win_trick_by_force = candidate.card.rank == VirtualRank::Ace
+                || state.partner_has_higher_cards_than_opponent(candidate.card.suit, player);
+            let suit_weight = suit_weights[candidate.card.suit as usize];
+            let suit = candidate.card.suit;
 
             if we_can_win_trick_by_force {
                 if state.owner_of_runner_up_in(suit) == Some(rho) {
                     if state.cards_of(rho).has_singleton_in(suit) {
                         // encourage, because we can catch runner-up
-                        dds_move.priority += suit_weight + 13;
+                        candidate.priority += suit_weight + 13;
                     } else {
                         // discourage, because we cannot catch runner-up
-                        dds_move.priority += suit_weight - 13;
+                        candidate.priority += suit_weight - 13;
                     }
                 }
             }
 
-            if dds_move.sequence_length >= 3 {
-                dds_move.priority += 50 + suit_weight;
+            if candidate.sequence_length >= 3 {
+                candidate.priority += 50 + suit_weight;
             }
         }
     }
@@ -47,19 +47,19 @@ impl MoveGenerator {
     fn calc_priority_leading_trump<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>, trump_suit: Suit) {
         let suit_weights = Self::suit_weights_for_leading(state);
         let player = state.next_to_play();
-        for dds_move in moves {
-            let _is_winning_move = dds_move.card.rank == VirtualRank::Ace
-                || state.partner_has_higher_cards_than_opponent(dds_move.card.suit, player);
-            let suit_weight = suit_weights[dds_move.card.suit as usize];
-            if dds_move.sequence_length >= 2 {
-                dds_move.priority += 50 + suit_weight;
+        for candidate in moves {
+            let _is_winning_move = candidate.card.rank == VirtualRank::Ace
+                || state.partner_has_higher_cards_than_opponent(candidate.card.suit, player);
+            let suit_weight = suit_weights[candidate.card.suit as usize];
+            if candidate.sequence_length >= 2 {
+                candidate.priority += 50 + suit_weight;
             }
 
             let our_trump_count = state.count_this_sides_trump_cards();
             let opponents_trump_count = state.count_opponents_trump_cards();
 
-            if our_trump_count >= opponents_trump_count && dds_move.card.suit == trump_suit {
-                dds_move.priority += 100 + suit_weight;
+            if our_trump_count >= opponents_trump_count && candidate.card.suit == trump_suit {
+                candidate.priority += 100 + suit_weight;
             }
         }
     }
