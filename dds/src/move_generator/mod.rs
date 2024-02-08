@@ -45,6 +45,17 @@ impl MoveGenerator {
         })
     }
 
+    pub fn calc_priority_nt_discard<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
+        let suit_weights = Self::suit_weights_for_discarding(state);
+
+        for candidate in moves.iter_mut() {
+            let suit = candidate.card.suit;
+            let suit_weight = suit_weights[suit as usize];
+
+            candidate.priority += suit_weight - candidate.card.rank as isize;
+        }
+    }
+
     fn win_as_cheaply_as_possible<const N: usize>(state: &VirtualState<N>, dds_move: &mut DdsMove) {
         if dds_move.card.rank > state.currently_winning_card().unwrap().rank {
             dds_move.priority += 50 - dds_move.card.rank as isize;
