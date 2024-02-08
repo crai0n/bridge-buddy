@@ -101,7 +101,6 @@ impl CardTracker {
         self.count_cards_in(suit) == 2
     }
 
-    #[allow(dead_code)]
     pub fn count_cards_per_suit(&self) -> [usize; 4] {
         self.0.map(|suit| suit.count_cards())
     }
@@ -119,7 +118,7 @@ impl CardTracker {
         self.suit_state(card.suit).contains_rank(card.rank)
     }
 
-    pub fn all_cards(&self) -> impl Iterator<Item = Card> + '_ {
+    pub fn all_cards(&self) -> impl DoubleEndedIterator<Item = Card> + '_ {
         Suit::iter().flat_map(|suit| {
             self.suit_state(suit)
                 .all_contained_ranks()
@@ -128,7 +127,7 @@ impl CardTracker {
         })
     }
 
-    pub fn cards_in(&self, suit: Suit) -> impl Iterator<Item = Card> + '_ {
+    pub fn cards_in(&self, suit: Suit) -> impl DoubleEndedIterator<Item = Card> + '_ {
         self.suit_state(suit)
             .all_contained_ranks()
             .into_iter()

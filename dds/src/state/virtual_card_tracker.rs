@@ -1,8 +1,10 @@
-use crate::card_manager::card_tracker::CardTracker;
+use crate::card_manager::card_tracker::{CardTracker, SUIT_ARRAY};
 use crate::primitives::VirtualCard;
 use crate::state::virtualizer::Virtualizer;
 use bridge_buddy_core::primitives::card::virtual_rank::VirtualRank;
 use bridge_buddy_core::primitives::{Card, Suit};
+
+use strum::IntoEnumIterator;
 
 pub struct VirtualCardTracker<'a> {
     card_tracker: &'a CardTracker,
@@ -72,6 +74,10 @@ impl<'a> VirtualCardTracker<'a> {
         self.card_tracker.count_cards_in(suit)
     }
 
+    pub fn count_cards_per_suit(&self) -> [usize; 4] {
+        self.card_tracker.count_cards_per_suit()
+    }
+
     fn absolute_to_virtual(&self, card: Card) -> Option<VirtualCard> {
         self.virtualizer.absolute_to_virtual(card)
     }
@@ -80,16 +86,26 @@ impl<'a> VirtualCardTracker<'a> {
         self.virtualizer.virtual_to_absolute(virtual_card)
     }
 
-    pub fn all_cards(&self) -> impl Iterator<Item = VirtualCard> + '_ {
+    pub fn all_cards(&self) -> impl DoubleEndedIterator<Item = VirtualCard> + '_ {
         self.card_tracker
             .all_cards()
             .map(|x| self.absolute_to_virtual(x).unwrap())
     }
 
     #[allow(dead_code)]
-    pub fn cards_in(&self, suit: Suit) -> impl Iterator<Item = VirtualCard> + '_ {
+    pub fn cards_in(&self, suit: Suit) -> impl DoubleEndedIterator<Item = VirtualCard> + '_ {
         self.card_tracker
             .cards_in(suit)
             .map(|x| self.absolute_to_virtual(x).unwrap())
+    }
+
+    pub fn count_high_cards_per_suit(&self) -> [usize; 4] {
+        SUIT_ARRAY.map(|suit| {
+            self.cards_in(suit)
+                .rev()
+                .zip(VirtualRank::iter().rev())
+                .take_while(|(card, high_rank)| card.rank == *high_rank)
+                .count()
+        })
     }
 }
