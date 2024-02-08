@@ -29,13 +29,13 @@ impl MoveGenerator {
 
     fn move_priority_for_leading<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
         match state.trump_suit() {
-            None => Self::move_priority_for_leading_no_trump(moves, state),
-            Some(trump_suit) => Self::move_priority_for_leading_trump(moves, state, trump_suit),
+            None => Self::move_priority_for_leading_in_no_trump_contract(moves, state),
+            Some(trump_suit) => Self::move_priority_for_leading_in_trump_contract(moves, state, trump_suit),
         }
     }
 
     #[allow(clippy::collapsible_if)]
-    fn move_priority_for_leading_no_trump<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
+    fn move_priority_for_leading_in_no_trump_contract<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
         let suit_weights = Self::suit_weights_for_leading(state);
         let player = state.next_to_play();
         let _partner = player + 2;
@@ -65,7 +65,7 @@ impl MoveGenerator {
         }
     }
 
-    fn move_priority_for_leading_trump<const N: usize>(
+    fn move_priority_for_leading_in_trump_contract<const N: usize>(
         moves: &mut [DdsMove],
         state: &VirtualState<N>,
         trump_suit: Suit,
@@ -171,17 +171,21 @@ impl MoveGenerator {
     }
     fn move_priority_for_playing_last<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
         if moves.first().unwrap().card.suit != state.suit_to_follow().unwrap() {
-            Self::prioritize_cards_if_void(moves, state);
+            Self::prioritize_cards_playing_last_if_void(moves, state);
         } else {
+            let opponents_are_winning = state.current_trick_winner() != state.next_to_play().partner();
+            let trick_has_not_been_ruffed = state.currently_winning_card().map(|c| c.suit) != state.trump_suit();
             for dds_move in moves {
-                if state.current_trick_winner() == state.next_to_play().partner() {
-                    dds_move.priority -= dds_move.card.rank as isize;
+                if opponents_are_winning && trick_has_not_been_ruffed {
+                    if dds_move.card.rank > state.currently_winning_card().unwrap().rank {
+                        // win as cheaply as possible
+                        dds_move.priority += 50 - dds_move.card.rank as isize;
+                    } else {
+                        dds_move.priority -= dds_move.card.rank as isize;
+                    }
                 } else {
-                    dds_move.priority += dds_move.card.rank as isize;
-                }
-
-                if dds_move.card > state.currently_winning_card().unwrap() {
-                    break;
+                    // no way to win, play as low as possible
+                    dds_move.priority -= dds_move.card.rank as isize;
                 }
             }
         }
@@ -199,6 +203,48 @@ impl MoveGenerator {
             } else {
                 let suit_weight = suit_weights[candidate.card.suit as usize];
                 candidate.priority += suit_weight - candidate.card.rank as isize;
+            }
+        }
+    }
+
+    fn prioritize_cards_playing_last_if_void<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
+        let suit_weights = Self::suit_weights_for_discarding(state);
+
+        let me = state.next_to_play();
+
+        for candidate in moves.iter_mut() {
+            let suit = candidate.card.suit;
+            let suit_weight = suit_weights[suit as usize];
+
+            if state.current_trick_winner() == me.partner() {
+                // discourage ruffing, encourage discarding
+                if Some(candidate.card.suit) == state.trump_suit() {
+                    candidate.priority += -50 - candidate.card.rank as isize;
+                } else {
+                    candidate.priority += suit_weight - candidate.card.rank as isize;
+                }
+            } else if state.currently_winning_card().map(|c| c.suit) == state.trump_suit() {
+                // opponents are winning because they ruffed (or because trump was led)
+                if Some(candidate.card.suit) == state.trump_suit() {
+                    // we could ruff, too
+                    if Some(candidate.card.rank) > state.currently_winning_card().map(|c| c.rank) {
+                        // overruff as cheaply as possible
+                        candidate.priority += 50 - candidate.card.rank as isize;
+                    } else {
+                        // underruffing is unwise
+                        candidate.priority += -20 - candidate.card.rank as isize;
+                    }
+                } else {
+                    // discard as low as possible
+                    candidate.priority += suit_weight - candidate.card.rank as isize;
+                }
+            } else {
+                // opponents are winning without ruffing, encourage roughing, if possible
+                if Some(candidate.card.suit) == state.trump_suit() {
+                    candidate.priority += 50 - candidate.card.rank as isize;
+                } else {
+                    candidate.priority += suit_weight - candidate.card.rank as isize;
+                }
             }
         }
     }
