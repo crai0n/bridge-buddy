@@ -8,17 +8,17 @@ impl MoveGenerator {
         if moves.first().unwrap().card.suit != state.suit_to_follow().unwrap() {
             match state.trump_suit() {
                 None => Self::calc_priority_nt_discard(moves, state),
-                Some(trump_suit) => Self::calc_priority_last_trump_void(moves, state, trump_suit),
+                Some(trump_suit) => Self::calc_priority_playing_last_trump_void(moves, state, trump_suit),
             }
         } else {
             match state.trump_suit() {
-                None => Self::calc_priority_last_nt_not_void(moves, state),
-                Some(trump_suit) => Self::calc_priority_last_trump_not_void(moves, state, trump_suit),
+                None => Self::calc_priority_playing_last_nt_not_void(moves, state),
+                Some(trump_suit) => Self::calc_priority_playing_last_trump_not_void(moves, state, trump_suit),
             }
         }
     }
 
-    fn calc_priority_last_nt_not_void<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
+    fn calc_priority_playing_last_nt_not_void<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
         let opponents_are_winning = state.current_trick_winner() != state.next_to_play().partner();
 
         let my_cards = state.cards_of(state.next_to_play());
@@ -34,14 +34,14 @@ impl MoveGenerator {
 
         for candidate in moves {
             if opponents_are_winning || i_have_high_cards_to_run && !partner_can_reach_me {
-                Self::win_as_cheaply_as_possible(state, candidate);
+                Self::try_to_win_as_cheaply_as_possible(state, candidate);
             } else {
                 candidate.priority -= candidate.card.rank as isize;
             }
         }
     }
 
-    fn calc_priority_last_trump_not_void<const N: usize>(
+    fn calc_priority_playing_last_trump_not_void<const N: usize>(
         moves: &mut [DdsMove],
         state: &VirtualState<N>,
         trump_suit: Suit,
@@ -50,7 +50,7 @@ impl MoveGenerator {
         let trick_has_not_been_ruffed = state.currently_winning_card().unwrap().suit != trump_suit;
         for candidate in moves {
             if trick_has_not_been_ruffed && opponents_are_winning {
-                Self::win_as_cheaply_as_possible(state, candidate);
+                Self::try_to_win_as_cheaply_as_possible(state, candidate);
             } else {
                 // no way to win, play as low as possible
                 candidate.priority -= candidate.card.rank as isize;
@@ -58,7 +58,11 @@ impl MoveGenerator {
         }
     }
 
-    fn calc_priority_last_trump_void<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>, trump_suit: Suit) {
+    fn calc_priority_playing_last_trump_void<const N: usize>(
+        moves: &mut [DdsMove],
+        state: &VirtualState<N>,
+        trump_suit: Suit,
+    ) {
         let suit_weights = Self::suit_weights_for_discarding(state);
 
         let me = state.next_to_play();

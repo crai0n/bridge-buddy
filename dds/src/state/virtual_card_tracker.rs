@@ -99,6 +99,18 @@ impl<'a> VirtualCardTracker<'a> {
             .map(|x| self.absolute_to_virtual(x).unwrap())
     }
 
+    pub fn highest_card_in(&self, suit: Suit) -> Option<VirtualCard> {
+        self.card_tracker
+            .highest_card_in(suit)
+            .map(|x| self.absolute_to_virtual(x).unwrap())
+    }
+    #[allow(dead_code)]
+    pub fn lowest_card_in(&self, suit: Suit) -> Option<VirtualCard> {
+        self.card_tracker
+            .lowest_card_in(suit)
+            .map(|x| self.absolute_to_virtual(x).unwrap())
+    }
+
     pub fn count_high_cards_per_suit(&self) -> [usize; 4] {
         SUIT_ARRAY.map(|suit| {
             self.cards_in(suit)
