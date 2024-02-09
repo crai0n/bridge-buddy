@@ -86,11 +86,23 @@ impl SuitField {
         let mask = Self::u16_from_rank(rank) - 1;
         Self(mask)
     }
+    #[allow(dead_code)]
+    pub fn cards_lower_than(&self, rank: Rank) -> Self {
+        let mask = 2 * Self::u16_from_rank(rank) - 1;
+        Self(mask & self.0)
+    }
 
     pub fn all_higher_than(rank: Rank) -> Self {
         let mask = 2 * Self::u16_from_rank(rank) - 1;
         let mask = Self::ALL_RANKS & !mask;
         Self(mask)
+    }
+
+    #[allow(dead_code)]
+    pub fn cards_higher_than(&self, rank: Rank) -> Self {
+        let mask = 2 * Self::u16_from_rank(rank) - 1;
+        let mask = Self::ALL_RANKS & !mask;
+        Self(mask & self.0)
     }
 
     pub fn win_rank_mask(&self) -> u32 {

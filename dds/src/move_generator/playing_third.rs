@@ -2,6 +2,7 @@ use crate::move_generator::MoveGenerator;
 use crate::primitives::DdsMove;
 use crate::state::VirtualState;
 use bridge_buddy_core::primitives::Suit;
+use std::cmp::max;
 
 impl MoveGenerator {
     pub fn calc_priority_playing_third<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
@@ -19,24 +20,82 @@ impl MoveGenerator {
     }
 
     pub fn calc_priority_playing_third_nt_not_void<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
-        let opponents_are_winning = state.current_trick_winner() != state.next_to_play().partner();
+        let me = state.next_to_play();
+        let lead_suit = state.suit_to_follow().unwrap();
+        let currently_winning_card = state.currently_winning_card().unwrap();
 
-        let my_cards = state.cards_of(state.next_to_play());
-        let my_high_cards = my_cards.count_high_cards_per_suit();
-        let i_have_high_cards_to_run = my_high_cards.iter().fold(0, |sum, item| sum + *item) > 0;
+        let partner_is_winning = state.current_trick_winner() == me.partner();
+        let rho_is_winning = !partner_is_winning;
 
-        let partners_cards = state.cards_of(state.next_to_play().partner());
-        let partners_leadable_suits = partners_cards.count_cards_per_suit().map(|c| c != 0);
-        let partner_can_reach_me = partners_leadable_suits
-            .iter()
-            .zip(my_high_cards)
-            .any(|(&can_lead, high_card_count)| can_lead && high_card_count > 0);
+        let my_cards = state.cards_of(me);
+        let my_highest_card = my_cards.highest_card_in(lead_suit).unwrap();
 
-        for candidate in moves {
-            if opponents_are_winning || i_have_high_cards_to_run && !partner_can_reach_me {
-                Self::try_to_win_as_cheaply_as_possible(state, candidate);
-            } else {
+        let lhos_cards = state.cards_of(me + 1);
+        let rhos_cards = state.cards_of(me + 3);
+        let lhos_highest_card = lhos_cards.highest_card_in(lead_suit);
+        let lhos_lowest_card = lhos_cards.lowest_card_in(lead_suit);
+
+        let lho_can_still_win = match lhos_highest_card {
+            None => false,
+            Some(card) => card > currently_winning_card,
+        };
+
+        let my_cards_do_not_matter = match lhos_lowest_card {
+            None => my_highest_card < currently_winning_card,
+            Some(lowest_card) => my_highest_card < currently_winning_card && my_highest_card < lowest_card,
+        };
+
+        if my_cards_do_not_matter {
+            // play low
+            for candidate in moves {
                 candidate.priority -= candidate.card.rank as isize;
+            }
+        } else if lho_can_still_win {
+            let mut already_beaten_cards = 0;
+            for candidate in moves {
+                let beats = lhos_cards.count_cards_lower_than(candidate.card);
+                if beats > already_beaten_cards {
+                    // give a bonus to every card that beats more of lho's cards,
+                    // so we will try winning, then forcing the ace, etc.
+                    // otherwise play as cheap as possible
+                    candidate.priority += 5 * beats as isize - candidate.card.rank as isize;
+                    already_beaten_cards = beats;
+                } else {
+                    candidate.priority -= candidate.card.rank as isize;
+                }
+            }
+        } else if rho_is_winning {
+            let mut win_bonus = 20;
+            for candidate in moves {
+                if candidate.card > currently_winning_card {
+                    // win as cheaply as possible
+                    candidate.priority += win_bonus - candidate.card.rank as isize;
+                    win_bonus = 0;
+                } else {
+                    // if we can't beat RHO, play low
+                    candidate.priority -= candidate.card.rank as isize;
+                }
+            }
+        } else {
+            // partner will beat LHO anyways
+            // it might be worth it to overtake if we can run the suit afterwards
+
+            let my_high_card_count = my_cards.count_high_cards_per_suit()[lead_suit as usize];
+            let opponents_length = max(
+                lhos_cards.count_cards_in(lead_suit),
+                rhos_cards.count_cards_in(lead_suit) + 1,
+            );
+
+            if my_high_card_count >= opponents_length {
+                // play high!
+                for candidate in moves {
+                    candidate.priority += candidate.card.rank as isize;
+                }
+            } else {
+                // play low
+                for candidate in moves {
+                    candidate.priority -= candidate.card.rank as isize;
+                }
             }
         }
     }
@@ -108,8 +167,18 @@ impl MoveGenerator {
     pub fn calc_priority_playing_third_trump_not_void<const N: usize>(
         moves: &mut [DdsMove],
         state: &VirtualState<N>,
-        _trump_suit: Suit,
+        trump_suit: Suit,
     ) {
+        let lead_suit = state.suit_to_follow().unwrap();
+        let me = state.next_to_play();
+
+        let my_cards = state.cards_of(me);
+        let lhos_cards = state.cards_of(me + 1);
+
+        let _lhos_highest_card = lhos_cards.highest_card_in(lead_suit);
+        let _my_highest_card = my_cards.highest_card_in(lead_suit);
+        let _lhos_highest_trump_card = lhos_cards.highest_card_in(trump_suit);
+
         for candidate in moves {
             if candidate.card > state.currently_winning_card().unwrap() {
                 candidate.priority += candidate.card.rank as isize;

@@ -141,6 +141,15 @@ impl CardTracker {
     pub fn lowest_card_in(&self, suit: Suit) -> Option<Card> {
         self.suit_state(suit).lowest_rank().map(|rank| Card { suit, rank })
     }
+    #[allow(dead_code)]
+    pub fn count_cards_lower_than(&self, card: Card) -> usize {
+        self.suit_state(card.suit).cards_lower_than(card.rank).count_cards()
+    }
+
+    #[allow(dead_code)]
+    pub fn count_cards_higher_than(&self, card: Card) -> usize {
+        self.suit_state(card.suit).cards_higher_than(card.rank).count_cards()
+    }
 
     pub fn valid_moves(&self, lead_suit: Option<Suit>) -> Vec<Card> {
         match lead_suit {

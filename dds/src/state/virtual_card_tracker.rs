@@ -120,4 +120,21 @@ impl<'a> VirtualCardTracker<'a> {
                 .count()
         })
     }
+
+    #[allow(dead_code)]
+    pub fn count_cards_higher_than(&self, card: VirtualCard) -> usize {
+        let abs_card = self.virtualizer.virtual_to_absolute(card);
+        match abs_card {
+            Some(abs_card) => self.card_tracker.count_cards_higher_than(abs_card),
+            None => 0,
+        }
+    }
+
+    pub fn count_cards_lower_than(&self, card: VirtualCard) -> usize {
+        let abs_card = self.virtualizer.virtual_to_absolute(card);
+        match abs_card {
+            Some(abs_card) => self.card_tracker.count_cards_lower_than(abs_card),
+            None => 0,
+        }
+    }
 }
