@@ -358,9 +358,9 @@ mod test {
 
         let mean = mean(&node_counts).unwrap() / 20f32;
 
-        let std_dev = std_deviation(&node_counts).unwrap() / 20f32;
+        let std_err = std_error(&node_counts).unwrap() / 20f32;
 
-        println!("Expanded {} +- {} nodes on average", mean, std_dev);
+        println!("Expanded {} +- {} nodes on average", mean, std_err);
     }
 
     fn mean(data: &[i32]) -> Option<f32> {
@@ -373,7 +373,7 @@ mod test {
         }
     }
 
-    fn std_deviation(data: &[i32]) -> Option<f32> {
+    fn std_error(data: &[i32]) -> Option<f32> {
         match (mean(data), data.len()) {
             (Some(data_mean), count) if count > 0 => {
                 let variance = data
@@ -384,6 +384,7 @@ mod test {
                         diff * diff
                     })
                     .sum::<f32>()
+                    / count as f32
                     / count as f32;
 
                 Some(variance.sqrt())
