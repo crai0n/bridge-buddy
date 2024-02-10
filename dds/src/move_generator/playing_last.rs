@@ -64,34 +64,35 @@ impl MoveGenerator {
         trump_suit: Suit,
     ) {
         let suit_weights = Self::suit_weights_for_discarding(state);
-
         let me = state.next_to_play();
+
+        let partner_is_winning = state.current_trick_winner() == me.partner();
+        let opponents_have_ruffed = state.currently_winning_card().unwrap().suit == trump_suit;
 
         for candidate in moves.iter_mut() {
             let suit = candidate.card.suit;
             let suit_weight = if suit == trump_suit {
-                // ruffing move
-                if state.current_trick_winner() == me.partner() {
-                    // discourage ruffing
-                    -50
-                } else if state.currently_winning_card().unwrap().suit == trump_suit {
-                    // opponents are winning because they ruffed
-                    // overruffs are good, underruffs are bad
-                    if candidate.card.rank > state.currently_winning_card().unwrap().rank {
-                        50
-                    } else {
-                        -50
-                    }
-                } else {
-                    // opponents are winning without ruffing, encourage ruffing
-                    50
-                }
+                -20 // generally we want to keep our trumps
             } else {
-                // normal discard
                 suit_weights[suit as usize]
             };
-
             candidate.priority += suit_weight - candidate.card.rank as isize;
+        }
+
+        // bonuses for specific ruffing situations
+        if opponents_have_ruffed {
+            // try cheapest overruff first, then try discards
+            for candidate in moves.iter_mut().filter(|candidate| candidate.card.suit == trump_suit) {
+                if candidate.card.rank > state.currently_winning_card().unwrap().rank {
+                    candidate.priority += 50;
+                    break;
+                }
+            }
+        } else if !partner_is_winning {
+            // opponents are winning without ruffing, try a cheap ruff, then try discards
+            if let Some(candidate) = moves.iter_mut().find(|candidate| candidate.card.suit == trump_suit) {
+                candidate.priority += 50;
+            }
         }
     }
 }
