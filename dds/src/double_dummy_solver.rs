@@ -22,6 +22,8 @@ pub struct DoubleDummySolver<const N: usize> {
     config: DdsConfig,
     transposition_table: TranspositionTable,
     node_count: usize,
+    n_first_moves: usize,
+    n_first_move_is_best: usize,
 }
 
 impl<const N: usize> Default for DoubleDummySolver<N> {
@@ -36,6 +38,8 @@ impl<const N: usize> DoubleDummySolver<N> {
             config,
             transposition_table: TranspositionTable::new(),
             node_count: 0,
+            n_first_moves: 0,
+            n_first_move_is_best: 0,
         }
     }
 
@@ -44,7 +48,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         //     println!("{}:\n{}", seat, hand)
         // }
 
-        self.node_count = 0;
+        self.reset_statistics();
 
         let mut result = DoubleDummyResult::new();
 
@@ -59,6 +63,12 @@ impl<const N: usize> DoubleDummySolver<N> {
 
         // println!("Expanded {} nodes", self.node_count);
         result
+    }
+
+    fn reset_statistics(&mut self) {
+        self.node_count = 0;
+        self.n_first_moves = 0;
+        self.n_first_move_is_best = 0;
     }
 
     fn get_initial_estimate(deal: Deal<N>, strain: Strain, opening_leader: Seat) -> usize {
@@ -124,7 +134,12 @@ impl<const N: usize> DoubleDummySolver<N> {
         // println!("generating possible moves!");
         let available_moves = MoveGenerator::generate_moves(state, self.config.move_ordering);
         let mut highest_score = 0;
-        for candidate_move in available_moves {
+        let mut first_move_is_best = true;
+        for (moves_tried, candidate_move) in available_moves.into_iter().enumerate() {
+            if moves_tried == 0 {
+                self.n_first_moves += 1;
+            }
+
             // println!("trying card {} for {}!", candidate_move, state.next_to_play());
             let current_player = state.next_to_play();
 
@@ -142,16 +157,26 @@ impl<const N: usize> DoubleDummySolver<N> {
                     let add_tricks = score - state.tricks_won_by_axis(state.next_to_play());
                     self.store_lower_bound_in_tt(state, add_tricks);
                 }
+                if moves_tried == 0 {
+                    self.n_first_move_is_best += 1;
+                }
                 return score;
             } else if score > highest_score {
                 // if we cannot reach estimate, we need the highest score found
                 highest_score = score;
+                if moves_tried >= 1 {
+                    first_move_is_best = false;
+                }
             }
         }
 
         if self.config.use_transposition_table && state.player_is_leading() {
             let add_tricks = highest_score - state.tricks_won_by_axis(state.next_to_play());
             self.store_upper_bound_in_tt(state, add_tricks);
+        }
+
+        if first_move_is_best {
+            self.n_first_move_is_best += 1;
         }
 
         highest_score
@@ -292,6 +317,16 @@ impl<const N: usize> DoubleDummySolver<N> {
         self.node_count
     }
 
+    pub fn get_first_move_best_ratio(&self) -> Option<f32> {
+        match self.n_first_moves {
+            0 => None,
+            i => {
+                // println!("best first moves: {} out of {}", self.n_first_move_is_best, i);
+                Some(self.n_first_move_is_best as f32 / i as f32)
+            }
+        }
+    }
+
     fn undo_last_trick(state: &mut VirtualState<N>) {
         for _ in 0..4 {
             state.undo();
@@ -343,28 +378,50 @@ mod test {
 
     #[test]
     fn node_count() {
-        const N_AVERAGE: usize = 5000;
-        const N_TRICKS: usize = 5;
+        const N_AVERAGE: usize = 100;
+        const N_TRICKS: usize = 7;
         // let expected_plys = (N_TRICKS - 1) * 4 + 1;
         let mut dds = DoubleDummySolver::default();
 
         let mut node_counts = vec![];
+        let mut first_move_best_percentages = vec![];
 
         for _ in 0..N_AVERAGE {
             let deal: Deal<N_TRICKS> = Deal::new();
             let _dds_result = dds.solve(deal);
             node_counts.push(dds.get_node_count() as i32);
+            if let Some(ratio) = dds.get_first_move_best_ratio() {
+                // println!("First move was best in {}% of nodes.", ratio * 100.0);
+                first_move_best_percentages.push(ratio);
+            }
         }
 
-        let mean = mean(&node_counts).unwrap() / 20f32;
+        let mean_val = mean(&node_counts).unwrap() / 20f32;
 
         let std_err = std_error(&node_counts).unwrap() / 20f32;
 
-        println!("Expanded {} +- {} nodes on average", mean, std_err);
+        let best_mean = mean_f32(&first_move_best_percentages);
+
+        println!("Expanded {} +- {} nodes on average", mean_val, std_err);
+
+        match best_mean {
+            Some(ratio) => println!("First move was best in {}% of tries.", ratio * 100.0),
+            _ => println!("No statistics on move ordering"),
+        };
     }
 
     fn mean(data: &[i32]) -> Option<f32> {
         let sum = data.iter().sum::<i32>() as f32;
+        let count = data.len();
+
+        match count {
+            positive if positive > 0 => Some(sum / count as f32),
+            _ => None,
+        }
+    }
+
+    fn mean_f32(data: &[f32]) -> Option<f32> {
+        let sum = data.iter().sum::<f32>();
         let count = data.len();
 
         match count {
