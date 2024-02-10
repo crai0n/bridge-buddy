@@ -58,7 +58,7 @@ impl MoveGenerator {
                     // give a bonus to every card that beats more of lho's cards,
                     // so we will try winning, then forcing the ace, etc.
                     // otherwise play as cheap as possible
-                    candidate.priority += 5 * beats as isize - candidate.card.rank as isize;
+                    candidate.priority += 10 * beats as isize - candidate.card.rank as isize;
                     already_beaten_cards = beats;
                 } else {
                     candidate.priority -= candidate.card.rank as isize;
@@ -167,17 +167,60 @@ impl MoveGenerator {
     pub fn calc_priority_playing_third_trump_not_void<const N: usize>(
         moves: &mut [DdsMove],
         state: &VirtualState<N>,
-        trump_suit: Suit,
+        _trump_suit: Suit,
     ) {
-        let lead_suit = state.suit_to_follow().unwrap();
-        let me = state.next_to_play();
+        // let lead_suit = state.suit_to_follow().unwrap();
+        // let me = state.next_to_play();
+        //
+        // let my_cards = state.cards_of(me);
+        // let lhos_cards = state.cards_of(me + 1);
+        //
+        // let partner_is_winning = state.current_trick_winner() == me.partner();
+        // let rho_is_winning = !partner_is_winning;
 
-        let my_cards = state.cards_of(me);
-        let lhos_cards = state.cards_of(me + 1);
+        // let lhos_highest_card = lhos_cards.highest_card_in(lead_suit);
+        // let lhos_lowest_card = lhos_cards.lowest_card_in(lead_suit);
+        // let my_highest_card = my_cards.highest_card_in(lead_suit).unwrap();
+        // let _lhos_highest_trump_card = lhos_cards.highest_card_in(trump_suit);
+        //
+        // let lho_can_ruff = lhos_cards.is_void_in(lead_suit) && !lhos_cards.is_void_in(trump_suit);
 
-        let _lhos_highest_card = lhos_cards.highest_card_in(lead_suit);
-        let _my_highest_card = my_cards.highest_card_in(lead_suit);
-        let _lhos_highest_trump_card = lhos_cards.highest_card_in(trump_suit);
+        // let currently_winning_card = state.currently_winning_card().unwrap();
+
+        // let rho_has_ruffed = lead_suit != trump_suit && currently_winning_card.suit == trump_suit;
+
+        // let lho_can_still_win = match lhos_highest_card {
+        //     Some(high_card) => high_card > currently_winning_card,
+        //     None => lho_can_ruff
+        // };
+        //
+        // let my_cards_do_not_matter = match lhos_lowest_card {
+        //     None => my_highest_card < currently_winning_card,
+        //     Some(lowest_card) => my_highest_card < currently_winning_card && my_highest_card < lowest_card,
+        // };
+
+        // if lead_suit == trump_suit {
+        //     if my_cards_do_not_matter {
+        //         // just play low
+        //         for candidate in moves {
+        //             candidate.priority -= candidate.card.rank as isize;
+        //         }
+        //     } else if rho_is_winning {
+        //
+        //
+        //     } else if lho_can_still_win {
+        //
+        //     }
+        // } else {
+        //     if rho_has_ruffed || my_cards_do_not_matter {
+        //         // just play low
+        //         for candidate in moves {
+        //             candidate.priority -= candidate.card.rank as isize;
+        //         }
+        //     } else if rho_is_winning {
+        //
+        //     }
+        // }
 
         for candidate in moves {
             if candidate.card > state.currently_winning_card().unwrap() {

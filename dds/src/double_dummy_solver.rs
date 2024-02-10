@@ -21,6 +21,7 @@ use strum::IntoEnumIterator;
 pub struct DoubleDummySolver<const N: usize> {
     config: DdsConfig,
     transposition_table: TranspositionTable,
+    node_count: usize,
 }
 
 impl<const N: usize> Default for DoubleDummySolver<N> {
@@ -34,6 +35,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         Self {
             config,
             transposition_table: TranspositionTable::new(),
+            node_count: 0,
         }
     }
 
@@ -41,6 +43,8 @@ impl<const N: usize> DoubleDummySolver<N> {
         // for (seat, hand) in Seat::iter().zip(deal.hands) {
         //     println!("{}:\n{}", seat, hand)
         // }
+
+        self.node_count = 0;
 
         let mut result = DoubleDummyResult::new();
 
@@ -53,7 +57,7 @@ impl<const N: usize> DoubleDummySolver<N> {
             }
         }
 
-        // println!("{}", result);
+        // println!("Expanded {} nodes", self.node_count);
         result
     }
 
@@ -108,6 +112,7 @@ impl<const N: usize> DoubleDummySolver<N> {
     }
 
     fn score_node(&mut self, state: &mut VirtualState<N>, estimate: usize) -> usize {
+        self.node_count += 1;
         if let Some(early_score) = self.try_early_node_score(state, estimate) {
             return early_score;
         }
@@ -283,6 +288,10 @@ impl<const N: usize> DoubleDummySolver<N> {
         }
     }
 
+    pub fn get_node_count(&self) -> usize {
+        self.node_count
+    }
+
     fn undo_last_trick(state: &mut VirtualState<N>) {
         for _ in 0..4 {
             state.undo();
@@ -330,6 +339,57 @@ mod test {
         let dds_result = dds.solve(deal);
         // println!("{}", dds_result);
         assert_eq!(dds_result.max_tricks, expected);
+    }
+
+    #[test]
+    fn node_count() {
+        const N_AVERAGE: usize = 5000;
+        const N_TRICKS: usize = 5;
+        // let expected_plys = (N_TRICKS - 1) * 4 + 1;
+        let mut dds = DoubleDummySolver::default();
+
+        let mut node_counts = vec![];
+
+        for _ in 0..N_AVERAGE {
+            let deal: Deal<N_TRICKS> = Deal::new();
+            let _dds_result = dds.solve(deal);
+            node_counts.push(dds.get_node_count() as i32);
+        }
+
+        let mean = mean(&node_counts).unwrap() / 20f32;
+
+        let std_dev = std_deviation(&node_counts).unwrap() / 20f32;
+
+        println!("Expanded {} +- {} nodes on average", mean, std_dev);
+    }
+
+    fn mean(data: &[i32]) -> Option<f32> {
+        let sum = data.iter().sum::<i32>() as f32;
+        let count = data.len();
+
+        match count {
+            positive if positive > 0 => Some(sum / count as f32),
+            _ => None,
+        }
+    }
+
+    fn std_deviation(data: &[i32]) -> Option<f32> {
+        match (mean(data), data.len()) {
+            (Some(data_mean), count) if count > 0 => {
+                let variance = data
+                    .iter()
+                    .map(|value| {
+                        let diff = data_mean - (*value as f32);
+
+                        diff * diff
+                    })
+                    .sum::<f32>()
+                    / count as f32;
+
+                Some(variance.sqrt())
+            }
+            _ => None,
+        }
     }
 
     #[test_case( 30u64, [1, 2, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0]; "Test A")]
