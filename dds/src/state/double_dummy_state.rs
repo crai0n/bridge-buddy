@@ -47,7 +47,7 @@ impl<const N: usize> DoubleDummyState<N> {
             .has_higher_cards_in_suit_than_other(player, suit, other)
     }
 
-    pub fn partner_has_higher_cards_than_opponent(&self, suit: Suit, leader: Seat) -> bool {
+    pub fn partner_has_higher_cards_than_opponents(&self, suit: Suit, leader: Seat) -> bool {
         self.player_has_higher_cards_in_suit_than_other(leader + 2, suit, leader + 1)
             && self.player_has_higher_cards_in_suit_than_other(leader + 2, suit, leader + 3)
     }

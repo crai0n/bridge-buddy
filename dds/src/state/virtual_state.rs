@@ -202,8 +202,8 @@ impl<const N: usize> VirtualState<N> {
         self.create_virtualizer().virtual_to_absolute(virtual_card)
     }
 
-    pub fn partner_has_higher_cards_than_opponent(&self, suit: Suit, leader: Seat) -> bool {
-        self.game.partner_has_higher_cards_than_opponent(suit, leader)
+    pub fn partner_has_higher_cards_than_opponents(&self, suit: Suit, leader: Seat) -> bool {
+        self.game.partner_has_higher_cards_than_opponents(suit, leader)
     }
 
     pub fn would_win_over_current_winner(&self, card: VirtualCard) -> bool {
