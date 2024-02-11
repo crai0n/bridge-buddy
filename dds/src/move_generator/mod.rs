@@ -6,6 +6,7 @@ mod playing_third;
 use crate::card_manager::card_tracker::SUIT_ARRAY;
 use crate::primitives::DdsMove;
 use crate::state::VirtualState;
+use rand::Rng;
 
 pub struct MoveGenerator {}
 
@@ -16,8 +17,17 @@ impl MoveGenerator {
         if move_ordering {
             Self::calc_priority(&mut unique_moves, state);
             Self::sort_moves_by_priority_descending(&mut unique_moves);
+        } else {
+            Self::randomize_priority(&mut unique_moves);
         }
         unique_moves
+    }
+
+    fn randomize_priority(moves: &mut [DdsMove]) {
+        let mut rng = rand::thread_rng();
+        for candidate in moves {
+            candidate.priority = rng.gen();
+        }
     }
 
     fn calc_priority<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
@@ -45,7 +55,7 @@ impl MoveGenerator {
         })
     }
 
-    pub fn calc_priority_nt_discard<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
+    pub fn calc_priority_nt_void<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
         let suit_weights = Self::suit_weights_for_discarding(state);
 
         for candidate in moves.iter_mut() {

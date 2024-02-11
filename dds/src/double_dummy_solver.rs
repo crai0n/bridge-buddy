@@ -220,15 +220,15 @@ impl<const N: usize> DoubleDummySolver<N> {
             }
         }
 
-        if self.config.check_quick_tricks {
-            if let Some(qt_score) = self.try_score_using_quick_tricks(state, estimate) {
-                return Some(qt_score);
-            }
-        }
-
         if self.config.check_losing_tricks && state.player_is_leading() {
             if let Some(lt_score) = self.try_score_using_losing_tricks(state, estimate) {
                 return Some(lt_score);
+            }
+        }
+
+        if self.config.check_quick_tricks {
+            if let Some(qt_score) = self.try_score_using_quick_tricks(state, estimate) {
+                return Some(qt_score);
             }
         }
 
@@ -378,8 +378,8 @@ mod test {
 
     #[test]
     fn node_count() {
-        const N_AVERAGE: usize = 100;
-        const N_TRICKS: usize = 7;
+        const N_AVERAGE: usize = 20000;
+        const N_TRICKS: usize = 5;
         // let expected_plys = (N_TRICKS - 1) * 4 + 1;
         let mut dds = DoubleDummySolver::default();
 
@@ -405,7 +405,7 @@ mod test {
         println!("Expanded {} +- {} nodes on average", mean_val, std_err);
 
         match best_mean {
-            Some(ratio) => println!("First move was best in {}% of tries.", ratio * 100.0),
+            Some(ratio) => println!("First move was not best in {}% of tries.", (1.0 - ratio) * 100.0),
             _ => println!("No statistics on move ordering"),
         };
     }

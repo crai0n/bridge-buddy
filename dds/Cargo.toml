@@ -14,6 +14,7 @@ strum = { version = "0.25.0", features = [] }
 enum-iterator = "1.5.0"
 itertools = "0.11.0"
 lazy_static = "1.4.0"
+rand = "0.8.5"
 
 [dev-dependencies]
 test-case = "3.3.1"

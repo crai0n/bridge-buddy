@@ -7,7 +7,7 @@ impl MoveGenerator {
     pub fn calc_priority_playing_last<const N: usize>(moves: &mut [DdsMove], state: &VirtualState<N>) {
         if moves.first().unwrap().card.suit != state.suit_to_follow().unwrap() {
             match state.trump_suit() {
-                None => Self::calc_priority_nt_discard(moves, state),
+                None => Self::calc_priority_nt_void(moves, state),
                 Some(trump_suit) => Self::calc_priority_playing_last_trump_void(moves, state, trump_suit),
             }
         } else {
