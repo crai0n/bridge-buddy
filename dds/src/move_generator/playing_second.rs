@@ -159,33 +159,182 @@ impl MoveGenerator {
     fn calc_priority_playing_second_trump_not_void<const N: usize>(
         moves: &mut [DdsMove],
         state: &VirtualState<N>,
-        _trump_suit: Suit,
+        trump_suit: Suit,
     ) {
-        // let me = state.next_to_play();
-        // let partner = me + 2;
-        // let lho = me + 1;
-        // let lhos_cards = state.cards_of(lho);
-        // let partners_cards = state.cards_of(partner);
-        // let lead_card = state.currently_winning_card().unwrap();
-        // let lead_suit = lead_card.suit;
-        //
-        // let partners_highest = partners_cards.highest_card_in(lead_suit);
-        // let lhos_highest = lhos_cards.highest_card_in(lead_suit);
-        //
-        // let _partner_is_void = partners_highest.is_none();
-        // let lho_is_void = lhos_highest.is_none();
-        //
-        // if lead_suit == trump_suit {
-        //     // just pitch
-        //     for candidate in moves {
-        //         candidate.priority -= candidate.card.rank as isize;
-        //     }
-        // } else {
-        // }
+        let me = state.next_to_play();
+        let partner = me + 2;
+        let lho = me + 1;
+        let lhos_cards = state.cards_of(lho);
+        let partners_cards = state.cards_of(partner);
+        let lead_card = state.currently_winning_card().unwrap();
+        let lead_suit = lead_card.suit;
 
-        for candidate in moves {
-            if candidate.card > state.currently_winning_card().unwrap() {
-                candidate.priority += candidate.card.rank as isize;
+        let partners_highest = partners_cards.highest_card_in(lead_suit);
+        let lhos_highest = lhos_cards.highest_card_in(lead_suit);
+
+        let partner_is_void = partners_highest.is_none();
+        let lho_is_void = lhos_highest.is_none();
+
+        if lead_suit == trump_suit {
+            // find cheapest win if possible
+            if lho_is_void && partner_is_void {
+                for candidate in moves {
+                    if candidate.card > lead_card {
+                        candidate.priority += 20 - candidate.card.rank as isize;
+                    } else {
+                        candidate.priority -= candidate.card.rank as isize;
+                    }
+                }
+            } else if partner_is_void {
+                // try to win the trick and force lho's hand
+                let mut already_beaten_cards = 0;
+                for candidate in moves {
+                    let beats = lhos_cards.count_cards_lower_than(candidate.card);
+                    if beats > already_beaten_cards {
+                        // give a bonus to every card that beats more of lho's cards,
+                        // so we will try winning, then forcing the ace, etc.
+                        // otherwise play as cheap as possible
+                        candidate.priority += 10 * beats as isize + candidate.card.rank as isize;
+                        already_beaten_cards = beats;
+                    } else {
+                        candidate.priority += candidate.card.rank as isize;
+                    }
+                }
+            } else if lho_is_void {
+                // we only care about lead_card
+                if partners_highest.unwrap() > lead_card {
+                    // play low
+                    for candidate in moves {
+                        candidate.priority -= candidate.card.rank as isize;
+                    }
+                } else {
+                    for candidate in moves {
+                        if candidate.card > lead_card {
+                            candidate.priority += 20 - candidate.card.rank as isize;
+                        } else {
+                            candidate.priority -= candidate.card.rank as isize;
+                        }
+                    }
+                }
+            } else {
+                // no one is void
+                if partners_highest.unwrap() > lhos_highest.unwrap() {
+                    // play low
+                    for candidate in moves {
+                        candidate.priority -= candidate.card.rank as isize;
+                    }
+                } else {
+                    // try to win the trick and force lho's hand
+                    let mut already_beaten_cards = 0;
+                    for candidate in moves {
+                        let beats = lhos_cards.count_cards_lower_than(candidate.card);
+                        if beats > already_beaten_cards {
+                            // give a bonus to every card that beats more of lho's cards,
+                            // so we will try winning, then forcing the ace, etc.
+                            // otherwise play as cheap as possible
+                            candidate.priority += 10 * beats as isize + candidate.card.rank as isize;
+                            already_beaten_cards = beats;
+                        } else {
+                            candidate.priority += candidate.card.rank as isize;
+                        }
+                    }
+                }
+            }
+        } else {
+            // side-suit has been led
+            let lho_can_ruff = lho_is_void && !lhos_cards.is_void_in(trump_suit);
+            let partner_can_ruff = partner_is_void && !partners_cards.is_void_in(lead_suit);
+
+            if lho_can_ruff {
+                if partner_can_ruff {
+                    let partner_can_overruff = partners_cards.highest_card_in(trump_suit).unwrap()
+                        > lhos_cards.highest_card_in(trump_suit).unwrap();
+                    if partner_can_overruff {
+                        // try to win the trick and force lho's hand
+                        let mut already_beaten_cards = 0;
+                        for candidate in moves {
+                            let beats = lhos_cards.count_cards_lower_than(candidate.card);
+                            if beats > already_beaten_cards {
+                                // give a bonus to every card that beats more of lho's cards,
+                                // so we will try winning, then forcing the ace, etc.
+                                // otherwise play as cheap as possible
+                                candidate.priority += 10 * beats as isize + candidate.card.rank as isize;
+                                already_beaten_cards = beats;
+                            } else {
+                                candidate.priority += candidate.card.rank as isize;
+                            }
+                        }
+                    } else {
+                        // play low
+                        for candidate in moves {
+                            candidate.priority += candidate.card.rank as isize;
+                        }
+                    }
+                } else {
+                    // lho will ruff if necessary
+                    // play low
+                    for candidate in moves {
+                        candidate.priority += candidate.card.rank as isize;
+                    }
+                }
+            } else if partner_can_ruff {
+                // force lho to play as high as possible
+                let mut already_beaten_cards = 0;
+                for candidate in moves {
+                    let beats = lhos_cards.count_cards_lower_than(candidate.card);
+                    if beats > already_beaten_cards {
+                        // give a bonus to every card that beats more of lho's cards,
+                        // so we will try winning, then forcing the ace, etc.
+                        // otherwise play as cheap as possible
+                        candidate.priority += 10 * beats as isize + candidate.card.rank as isize;
+                        already_beaten_cards = beats;
+                    } else {
+                        candidate.priority += candidate.card.rank as isize;
+                    }
+                }
+            } else {
+                // no one can ruff
+                if lho_is_void && partner_is_void {
+                    // try winning as cheaply as possible
+                    if let Some(candidate) = moves.iter_mut().find(|cand| cand.card > lead_card) {
+                        // bonus for winning
+                        candidate.priority += 20;
+                    }
+                    for candidate in moves {
+                        candidate.priority += candidate.card.rank as isize;
+                    }
+                } else if lho_is_void {
+                    // try winning as cheaply as possible,
+                    for candidate in moves {
+                        if candidate.card > lead_card && candidate.card < partners_highest.unwrap() {
+                            // it's cheaper when we win
+                            candidate.priority += 20 + candidate.card.rank as isize;
+                        } else {
+                            // partner has cheaper win, just play low
+                            candidate.priority += candidate.card.rank as isize;
+                        }
+                    }
+                } else if partner_is_void {
+                    // playing from a sequence might establish a winner
+                    for candidate in moves {
+                        candidate.priority += 5 * candidate.sequence_length as isize + candidate.card.rank as isize;
+                    }
+                } else if partners_highest.unwrap() > lhos_highest.unwrap() {
+                    for candidate in moves {
+                        if candidate.card > lhos_highest.unwrap() && candidate.card < partners_highest.unwrap() {
+                            // it's cheaper when we win
+                            candidate.priority += 20 + candidate.card.rank as isize;
+                        } else {
+                            // partner has cheapest win, just play low
+                            candidate.priority += candidate.card.rank as isize;
+                        }
+                    }
+                } else {
+                    // playing from a sequence might establish a winner
+                    for candidate in moves {
+                        candidate.priority += 5 * candidate.sequence_length as isize + candidate.card.rank as isize;
+                    }
+                }
             }
         }
     }
