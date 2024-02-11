@@ -91,69 +91,117 @@ impl MoveGenerator {
     fn calc_priority_playing_second_trump_void<const N: usize>(
         moves: &mut [DdsMove],
         state: &VirtualState<N>,
-        _trump_suit: Suit,
+        trump_suit: Suit,
     ) {
         let suit_weights = Self::suit_weights_for_discarding(state);
 
-        // let me = state.next_to_play();
-        // let partner = me + 2;
-        // let lho = me + 1;
-        // let lhos_cards = state.cards_of(lho);
-        // let partners_cards = state.cards_of(partner);
-        // let lead_card = state.currently_winning_card().unwrap();
-        // let lead_suit = lead_card.suit;
+        let me = state.next_to_play();
+        let partner = me + 2;
+        let lho = me + 1;
+        let lhos_cards = state.cards_of(lho);
+        let partners_cards = state.cards_of(partner);
+        let lead_card = state.currently_winning_card().unwrap();
+        let lead_suit = lead_card.suit;
 
-        // let partners_highest = partners_cards.highest_card_in(lead_suit);
-        // let lhos_highest = lhos_cards.highest_card_in(lead_suit);
+        let partners_highest = partners_cards.highest_card_in(lead_suit);
+        let lhos_highest = lhos_cards.highest_card_in(lead_suit);
 
-        // let partner_is_void = partners_highest.is_none();
-        // let lho_is_void = lhos_highest.is_none();
+        let partner_is_void = partners_highest.is_none();
+        let lho_is_void = lhos_highest.is_none();
 
-        // let partner_can_ruff = partner_is_void && !partners_cards.is_void_in(trump_suit);
-        // let lho_can_ruff = lho_is_void && !lhos_cards.is_void_in(trump_suit);
+        let partner_can_ruff = partner_is_void && !partners_cards.is_void_in(trump_suit);
+        let lho_can_ruff = lho_is_void && !lhos_cards.is_void_in(trump_suit);
 
         for candidate in moves {
             let suit = candidate.card.suit;
             let suit_weight = suit_weights[suit as usize];
-            candidate.priority -= suit_weight - candidate.card.rank as isize;
-        }
 
-        // if lead_suit == trump_suit {
-        //     // we don't make a difference, just pitch from side-suits
-        //     for candidate in moves {
-        //         let suit = candidate.card.suit;
-        //         let suit_weight = suit_weights[suit as usize];
-        //         candidate.priority -= suit_weight - candidate.card.rank as isize;
-        //     }
-        // } else if lho_is_void && partner_is_void {
-        //     // everyone is void
-        //     if lho_can_ruff && partner_can_ruff {
-        //         // they can both ruff
-        //     } else if lho_can_ruff {
-        //     } else if partner_can_ruff {
-        //     } else {
-        //         // they can't ruff
-        //     }
-        //
-        //     for candidate in moves {
-        //         if candidate.card > state.currently_winning_card().unwrap() {
-        //             candidate.priority += candidate.card.rank as isize;
-        //         }
-        //     }
-        // } else if lho_is_void {
-        //     if lho_can_ruff {
-        //     } else {
-        //     }
-        //     // lho could ruff
-        // } else if partner_is_void {
-        //     // partner can ruff
-        //     if partner_can_ruff {
-        //     } else {
-        //     }
-        // } else {
-        //     // we are the only one void
-        // }
-        // //
+            if lead_suit == trump_suit {
+                // we don't make a difference, just pitch from side-suits
+                candidate.priority += suit_weight - candidate.card.rank as isize;
+            } else if lho_is_void && partner_is_void {
+                // everyone is void
+                if lho_can_ruff && partner_can_ruff {
+                    // they can both ruff
+                    if partners_cards.highest_card_in(trump_suit) > lhos_cards.highest_card_in(trump_suit) {
+                        // partner can win trick
+                        candidate.priority += suit_weight - candidate.card.rank as isize;
+                    } else if candidate.card.suit == trump_suit
+                        && candidate.card > lhos_cards.highest_card_in(trump_suit).unwrap()
+                    {
+                        // this card is better than lhos
+                        candidate.priority += 50 - candidate.card.rank as isize;
+                    } else {
+                        candidate.priority += suit_weight - candidate.card.rank as isize;
+                    }
+                } else if lho_can_ruff {
+                    // partner is out of the game
+                    if candidate.card.suit == trump_suit {
+                        // ruffing is good
+                        candidate.priority += 20 - candidate.card.rank as isize;
+                    } else {
+                        candidate.priority += suit_weight - candidate.card.rank as isize;
+                    }
+                } else if partner_can_ruff {
+                    // discard cheaply
+                    if candidate.card.suit == trump_suit {
+                        // ruffing is bad
+                        candidate.priority += -20 - candidate.card.rank as isize;
+                    } else {
+                        candidate.priority += suit_weight - candidate.card.rank as isize;
+                    }
+                } else {
+                    // they can't ruff
+                    if candidate.card.suit == trump_suit {
+                        // ruffing is good
+                        candidate.priority += 20 - candidate.card.rank as isize;
+                    } else {
+                        candidate.priority += suit_weight - candidate.card.rank as isize;
+                    }
+                }
+            } else if lho_is_void {
+                // lho could ruff
+                if lho_can_ruff {
+                    candidate.priority += candidate.card.rank as isize;
+                } else if partners_highest.unwrap() > lead_card {
+                    if candidate.card.suit == trump_suit {
+                        // ruffing is bad
+                        candidate.priority += -20 - candidate.card.rank as isize;
+                    } else {
+                        candidate.priority += suit_weight - candidate.card.rank as isize;
+                    }
+                } else if candidate.card.suit == trump_suit {
+                    // ruffing is good
+                    candidate.priority += 20 - candidate.card.rank as isize;
+                } else {
+                    candidate.priority += suit_weight - candidate.card.rank as isize;
+                }
+            } else if partner_is_void {
+                if partner_can_ruff {
+                    if candidate.card.suit == trump_suit {
+                        // ruffing is bad
+                        candidate.priority += -20 - candidate.card.rank as isize;
+                    } else {
+                        candidate.priority += suit_weight - candidate.card.rank as isize;
+                    }
+                } else {
+                    if candidate.card.suit == trump_suit {
+                        // ruffing is good
+                        candidate.priority += 20 - candidate.card.rank as isize;
+                    } else {
+                        candidate.priority += suit_weight - candidate.card.rank as isize;
+                    }
+                }
+            } else {
+                // we are the only one void
+                if candidate.card.suit == trump_suit {
+                    // ruffing is good
+                    candidate.priority += 20 - candidate.card.rank as isize;
+                } else {
+                    candidate.priority += suit_weight - candidate.card.rank as isize;
+                }
+            }
+        }
     }
 
     fn calc_priority_playing_second_trump_not_void<const N: usize>(
