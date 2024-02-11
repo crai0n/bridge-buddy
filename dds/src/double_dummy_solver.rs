@@ -378,8 +378,8 @@ mod test {
 
     #[test]
     fn node_count() {
-        const N_AVERAGE: usize = 20000;
-        const N_TRICKS: usize = 5;
+        const N_AVERAGE: usize = 2000;
+        const N_TRICKS: usize = 6;
         // let expected_plys = (N_TRICKS - 1) * 4 + 1;
         let mut dds = DoubleDummySolver::default();
 
