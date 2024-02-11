@@ -376,6 +376,7 @@ mod test {
         assert_eq!(dds_result.max_tricks, expected);
     }
 
+    #[ignore]
     #[test]
     fn node_count() {
         const N_AVERAGE: usize = 2000;

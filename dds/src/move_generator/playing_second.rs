@@ -184,13 +184,11 @@ impl MoveGenerator {
                     } else {
                         candidate.priority += suit_weight - candidate.card.rank as isize;
                     }
+                } else if candidate.card.suit == trump_suit {
+                    // ruffing is good
+                    candidate.priority += 20 - candidate.card.rank as isize;
                 } else {
-                    if candidate.card.suit == trump_suit {
-                        // ruffing is good
-                        candidate.priority += 20 - candidate.card.rank as isize;
-                    } else {
-                        candidate.priority += suit_weight - candidate.card.rank as isize;
-                    }
+                    candidate.priority += suit_weight - candidate.card.rank as isize;
                 }
             } else {
                 // we are the only one void
