@@ -1,9 +1,14 @@
+use crate::primitives::Suit;
 pub use board::Board;
 pub use deck::Deck;
 pub use hand::Hand;
+use itertools::Itertools;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 pub use seat::Seat;
+use std::cmp::max;
+use std::fmt::{Display, Formatter};
+use strum::IntoEnumIterator;
 pub use vulnerability::Vulnerability;
 
 pub mod axis;
@@ -70,6 +75,66 @@ impl<const N: usize> Deal<N> {
     }
 }
 
+impl<const N: usize> Display for Deal<N> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let max_lengths: [usize; 4] = Seat::iter()
+            .map(|seat| {
+                let mut max_length = 0;
+                for suit in Suit::iter() {
+                    let length = self.hand_of(seat).length_in(suit);
+                    if length > max_length {
+                        max_length = length
+                    }
+                }
+                max_length as usize
+            })
+            .collect_vec()
+            .try_into()
+            .unwrap();
+        let west_buffer = format!("{:<1$}", " ", max_lengths[3] + 1);
+        let north_buffer = format!("{:<1$}", " ", max(max_lengths[0], max_lengths[2]));
+
+        // north's hand
+        for suit in Suit::iter().rev() {
+            write!(f, "{}{}", west_buffer, suit)?;
+            for card in self.hands[0].cards_in(suit).rev() {
+                write!(f, "{}", card.rank)?;
+            }
+            writeln!(f)?;
+        }
+
+        // west and east's hands
+        for suit in Suit::iter().rev() {
+            write!(f, "{}", suit)?;
+            for card in self.hands[3].cards_in(suit).rev() {
+                write!(f, "{}", card.rank)?;
+            }
+            write!(
+                f,
+                "{:<1$}",
+                " ",
+                max_lengths[3] - self.hands[3].length_in(suit) as usize + 1
+            )?;
+            write!(f, "{}{}", north_buffer, suit)?;
+            for card in self.hands[1].cards_in(suit).rev() {
+                write!(f, "{}", card.rank)?;
+            }
+            writeln!(f)?;
+        }
+
+        // north's hand
+        for suit in Suit::iter().rev() {
+            write!(f, "{}{}", west_buffer, suit)?;
+            for card in self.hands[2].cards_in(suit).rev() {
+                write!(f, "{}", card.rank)?;
+            }
+            writeln!(f)?;
+        }
+
+        Ok(())
+    }
+}
+
 impl<const N: usize> Default for Deal<N> {
     fn default() -> Self {
         Deal::new()
@@ -99,5 +164,12 @@ mod tests {
             deal.hands.first().unwrap().cards().last().unwrap(),
             &Card::from_str(highest_card).unwrap()
         );
+    }
+
+    #[ignore]
+    #[test]
+    fn display() {
+        let deal = Deal::<13>::new();
+        println!("{}", deal)
     }
 }
