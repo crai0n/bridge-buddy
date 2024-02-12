@@ -11,10 +11,10 @@ use crate::dds_config::DdsConfig;
 use crate::double_dummy_solver::dds_statistics::DdsStatistics;
 use crate::double_dummy_solver::double_dummy_runner::DoubleDummyRunner;
 
+use bridge_buddy_core::primitives::contract::strain::STRAIN_ARRAY;
 use bridge_buddy_core::primitives::contract::Strain;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::Deal;
-use bridge_buddy_core::primitives::Suit::{Clubs, Diamonds, Hearts, Spades};
 use enum_iterator::all;
 use rayon::prelude::*;
 use strum::IntoEnumIterator;
@@ -79,22 +79,14 @@ impl DoubleDummySolver {
 
         // let time = SystemTime::now();
 
-        let runner_result: Vec<_> = [
-            Strain::Trump(Clubs),
-            Strain::Trump(Diamonds),
-            Strain::Trump(Hearts),
-            Strain::Trump(Spades),
-            Strain::NoTrump,
-        ]
-        .map(|strain| (strain, self.config.clone()))
-        .into_par_iter()
-        .map(|(strain, config)| {
-            let mut strain_runner = DoubleDummyRunner::with_config(config);
-            let sub_results = strain_runner.solve_for_all_declarers(deal, strain);
-
-            (strain, sub_results, strain_runner.get_statistics())
-        })
-        .collect();
+        let runner_result: Vec<_> = STRAIN_ARRAY
+            .into_par_iter()
+            .map(|strain| {
+                let mut strain_runner = DoubleDummyRunner::with_config(self.config.clone());
+                let sub_results = strain_runner.solve_for_all_declarers(deal, strain);
+                (strain, sub_results, strain_runner.get_statistics())
+            })
+            .collect();
 
         // println!("time elapsed after starting threads: {:?}", time.elapsed().unwrap());
 
