@@ -48,18 +48,23 @@ impl DoubleDummySolver {
 
         let mut result = DoubleDummyResult::new();
 
-        for strain in all::<Strain>() {
+        let mut strain_results = [[0usize; 4]; 5];
+        let mut strain_statistics = [DdsStatistics::default(); 5];
+
+        for (index, strain) in all::<Strain>().enumerate() {
             self.transposition_table.clear();
             let mut strain_runner = self.new_runner();
-            for declarer in Seat::iter() {
-                let opening_leader = declarer + 1;
-                let defenders_tricks = strain_runner.solve_initial_position(deal, strain, opening_leader);
-                result.set_tricks_for_declarer_in_strain(N - defenders_tricks, declarer, strain);
-                self.update_statistics(strain_runner.get_statistics());
-            }
+            strain_results[index] = strain_runner.solve_for_all_declarers(deal, strain);
+            strain_statistics[index] = strain_runner.get_statistics();
         }
 
-        // println!("Expanded {} nodes", self.node_count);
+        for (index, strain) in all::<Strain>().enumerate() {
+            for declarer in Seat::iter() {
+                result.set_tricks_for_declarer_in_strain(strain_results[index][declarer as usize], declarer, strain)
+            }
+            self.update_statistics(&strain_statistics[index]);
+        }
+
         result
     }
 
@@ -67,8 +72,8 @@ impl DoubleDummySolver {
         self.statistics = DdsStatistics::default()
     }
 
-    fn update_statistics(&mut self, new: DdsStatistics) {
-        self.statistics.merge(&new)
+    fn update_statistics(&mut self, new: &DdsStatistics) {
+        self.statistics.merge(new)
     }
 
     pub fn get_statistics(&self) -> DdsStatistics {
