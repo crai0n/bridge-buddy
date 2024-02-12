@@ -1,3 +1,4 @@
+#[derive(Clone)]
 pub struct DdsConfig {
     pub move_ordering: bool,
     pub check_quick_tricks: bool,

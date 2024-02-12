@@ -3,6 +3,7 @@ use bridge_buddy_core::primitives::Suit;
 use std::cmp::{max, min};
 use std::collections::BTreeMap;
 
+#[derive(Default)]
 pub struct TranspositionTable {
     inner: BTreeMap<TTKey, TTValue>,
 }
