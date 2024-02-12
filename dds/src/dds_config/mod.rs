@@ -7,7 +7,6 @@ pub struct DdsConfig {
     pub check_losing_tricks: bool,
     pub pre_estimate: bool,
     pub multi_threading: bool,
-    // fail_soft: bool,
 }
 
 impl Default for DdsConfig {
@@ -19,7 +18,7 @@ impl Default for DdsConfig {
             use_transposition_table: true,
             check_losing_tricks: true,
             pre_estimate: false,
-            multi_threading: false,
+            multi_threading: true,
         }
     }
 }

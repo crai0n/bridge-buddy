@@ -1,5 +1,5 @@
+use crate::move_generator::DdsMove;
 use crate::move_generator::MoveGenerator;
-use crate::primitives::DdsMove;
 use crate::state::VirtualState;
 use bridge_buddy_core::primitives::Suit;
 

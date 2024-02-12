@@ -1,11 +1,12 @@
+mod dds_move;
 mod leading;
 mod playing_last;
 mod playing_second;
 mod playing_third;
 
 use crate::card_manager::card_tracker::SUIT_ARRAY;
-use crate::primitives::DdsMove;
 use crate::state::VirtualState;
+pub use dds_move::DdsMove;
 use rand::Rng;
 
 pub struct MoveGenerator {}

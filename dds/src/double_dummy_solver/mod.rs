@@ -1,8 +1,10 @@
 mod dds_statistics;
+mod double_dummy_result;
 mod double_dummy_runner;
 
+pub use double_dummy_result::DoubleDummyResult;
+
 use crate::dds_config::DdsConfig;
-use crate::primitives::DoubleDummyResult;
 use std::thread;
 // use std::time::SystemTime;
 
@@ -165,8 +167,8 @@ mod test {
     #[ignore]
     #[test]
     fn node_count() {
-        const N_AVERAGE: usize = 20;
-        const N_TRICKS: usize = 6;
+        const N_AVERAGE: usize = 5;
+        const N_TRICKS: usize = 13;
         // let expected_plys = (N_TRICKS - 1) * 4 + 1;
         let mut dds = DoubleDummySolver::default();
 

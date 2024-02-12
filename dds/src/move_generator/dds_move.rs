@@ -1,4 +1,4 @@
-use crate::primitives::VirtualCard;
+use crate::state::virtual_card::VirtualCard;
 
 #[derive(Debug, Clone, Copy)]
 pub struct DdsMove {

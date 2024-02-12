@@ -1,5 +1,5 @@
+use super::virtual_card::VirtualCard;
 use crate::card_manager::suit_field::SuitField;
-use crate::primitives::VirtualCard;
 use bridge_buddy_core::primitives::card::virtual_rank::VirtualRank;
 use bridge_buddy_core::primitives::card::Rank;
 use bridge_buddy_core::primitives::{Card, Suit};

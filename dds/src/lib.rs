@@ -1,7 +1,6 @@
 mod card_manager;
 mod dds_config;
 mod move_generator;
-mod primitives;
 mod state;
 mod transposition_table;
 

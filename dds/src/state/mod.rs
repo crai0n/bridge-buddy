@@ -1,4 +1,5 @@
 mod double_dummy_state;
+pub mod virtual_card;
 mod virtual_card_tracker;
 mod virtual_state;
 mod virtualizer;

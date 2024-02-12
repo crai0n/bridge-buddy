@@ -1,5 +1,5 @@
 use super::quick_tricks::*;
-use crate::primitives::VirtualCard;
+use crate::state::virtual_card::VirtualCard;
 use crate::state::VirtualState;
 use bridge_buddy_core::primitives::card::virtual_rank::VirtualRank;
 use bridge_buddy_core::primitives::Suit;

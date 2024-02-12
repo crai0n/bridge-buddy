@@ -2,7 +2,7 @@ use super::double_dummy_state::DoubleDummyState;
 use crate::card_manager::card_tracker::CardTracker;
 use crate::card_manager::suit_field::SuitField;
 
-use crate::primitives::VirtualCard;
+use super::virtual_card::VirtualCard;
 use crate::state::virtual_card_tracker::VirtualCardTracker;
 use crate::state::virtualizer::Virtualizer;
 use crate::transposition_table::TTKey;
