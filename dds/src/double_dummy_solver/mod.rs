@@ -18,7 +18,7 @@ use strum::IntoEnumIterator;
 // mod transposition_table;
 // mod double_dummy_solver;
 
-pub struct DoubleDummySolver<const N: usize> {
+pub struct DoubleDummySolver {
     config: DdsConfig,
     transposition_table: TranspositionTable,
     node_count: usize,
@@ -26,13 +26,13 @@ pub struct DoubleDummySolver<const N: usize> {
     n_first_move_is_best: usize,
 }
 
-impl<const N: usize> Default for DoubleDummySolver<N> {
+impl Default for DoubleDummySolver {
     fn default() -> Self {
         Self::new(DdsConfig::default())
     }
 }
 
-impl<const N: usize> DoubleDummySolver<N> {
+impl DoubleDummySolver {
     pub fn new(config: DdsConfig) -> Self {
         Self {
             config,
@@ -43,7 +43,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         }
     }
 
-    pub fn solve(&mut self, deal: Deal<N>) -> DoubleDummyResult {
+    pub fn solve<const N: usize>(&mut self, deal: Deal<N>) -> DoubleDummyResult {
         // for (seat, hand) in Seat::iter().zip(deal.hands) {
         //     println!("{}:\n{}", seat, hand)
         // }
@@ -71,7 +71,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         self.n_first_move_is_best = 0;
     }
 
-    fn get_initial_estimate(deal: Deal<N>, strain: Strain, opening_leader: Seat) -> usize {
+    fn get_initial_estimate<const N: usize>(deal: Deal<N>, strain: Strain, opening_leader: Seat) -> usize {
         let my_hand = deal.hand_of(opening_leader);
         let partners_hand = deal.hand_of(opening_leader + 2);
         match strain {
@@ -89,7 +89,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         }
     }
 
-    fn solve_initial_position(&mut self, deal: Deal<N>, strain: Strain, opening_leader: Seat) -> usize {
+    fn solve_initial_position<const N: usize>(&mut self, deal: Deal<N>, strain: Strain, opening_leader: Seat) -> usize {
         let mut at_least = 0;
         let mut at_most = N; // at_most = b - 1;
 
@@ -121,7 +121,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         at_least
     }
 
-    fn score_node(&mut self, state: &mut VirtualState<N>, estimate: usize) -> usize {
+    fn score_node<const N: usize>(&mut self, state: &mut VirtualState<N>, estimate: usize) -> usize {
         self.node_count += 1;
         if let Some(early_score) = self.try_early_node_score(state, estimate) {
             return early_score;
@@ -182,7 +182,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         highest_score
     }
 
-    fn try_find_node_in_tt(&self, state: &VirtualState<N>, estimate: usize) -> Option<usize> {
+    fn try_find_node_in_tt<const N: usize>(&self, state: &VirtualState<N>, estimate: usize) -> Option<usize> {
         let tt_key = state.generate_tt_key();
         match self.transposition_table.lookup(&tt_key) {
             None => None,
@@ -201,7 +201,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         }
     }
 
-    fn try_early_node_score(&mut self, state: &mut VirtualState<N>, estimate: usize) -> Option<usize> {
+    fn try_early_node_score<const N: usize>(&mut self, state: &mut VirtualState<N>, estimate: usize) -> Option<usize> {
         let current_tricks = Self::current_tricks(state);
         if current_tricks >= estimate {
             // storing in TT doesn't make sense as we can never improve lower bound here
@@ -235,7 +235,11 @@ impl<const N: usize> DoubleDummySolver<N> {
         None
     }
 
-    fn try_score_using_losing_tricks(&mut self, state: &VirtualState<N>, estimate: usize) -> Option<usize> {
+    fn try_score_using_losing_tricks<const N: usize>(
+        &mut self,
+        state: &VirtualState<N>,
+        estimate: usize,
+    ) -> Option<usize> {
         let losing_tricks = losing_tricks_for_leader(state);
         let total_with_losing_tricks = Self::maximum_achievable_tricks(state) - losing_tricks;
         if total_with_losing_tricks < estimate {
@@ -247,7 +251,11 @@ impl<const N: usize> DoubleDummySolver<N> {
         None
     }
 
-    fn try_score_using_quick_tricks(&mut self, state: &VirtualState<N>, estimate: usize) -> Option<usize> {
+    fn try_score_using_quick_tricks<const N: usize>(
+        &mut self,
+        state: &VirtualState<N>,
+        estimate: usize,
+    ) -> Option<usize> {
         let quick_tricks = match state.count_cards_in_current_trick() {
             0 => quick_tricks_for_leader(state),
             1 if self.config.quick_tricks_in_second_hand => quick_tricks_for_second_hand(state),
@@ -263,25 +271,25 @@ impl<const N: usize> DoubleDummySolver<N> {
         None
     }
 
-    fn store_lower_bound_in_tt(&mut self, state: &VirtualState<N>, bound: usize) {
+    fn store_lower_bound_in_tt<const N: usize>(&mut self, state: &VirtualState<N>, bound: usize) {
         let tt_key = state.generate_tt_key();
         self.transposition_table.update_lower_bound(&tt_key, bound)
     }
 
-    fn store_upper_bound_in_tt(&mut self, state: &VirtualState<N>, bound: usize) {
+    fn store_upper_bound_in_tt<const N: usize>(&mut self, state: &VirtualState<N>, bound: usize) {
         let tt_key = state.generate_tt_key();
         self.transposition_table.update_upper_bound(&tt_key, bound)
     }
 
-    fn maximum_achievable_tricks(state: &VirtualState<{ N }>) -> usize {
+    fn maximum_achievable_tricks<const N: usize>(state: &VirtualState<N>) -> usize {
         state.tricks_left() + state.tricks_won_by_axis(state.next_to_play())
     }
 
-    fn current_tricks(state: &VirtualState<{ N }>) -> usize {
+    fn current_tricks<const N: usize>(state: &VirtualState<N>) -> usize {
         state.tricks_won_by_axis(state.next_to_play())
     }
 
-    fn score_terminal_node(&mut self, state: &mut VirtualState<N>) -> usize {
+    fn score_terminal_node<const N: usize>(&mut self, state: &mut VirtualState<N>) -> usize {
         let lead = state.next_to_play();
 
         Self::play_last_trick(state);
@@ -298,7 +306,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         score
     }
 
-    fn store_terminal_node_in_tt(&mut self, state: &VirtualState<N>, winner_of_last_trick: Seat) {
+    fn store_terminal_node_in_tt<const N: usize>(&mut self, state: &VirtualState<N>, winner_of_last_trick: Seat) {
         if winner_of_last_trick.same_axis(&state.next_to_play()) {
             self.store_lower_bound_in_tt(state, 1);
         } else {
@@ -306,7 +314,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         }
     }
 
-    fn play_last_trick(state: &mut VirtualState<N>) {
+    fn play_last_trick<const N: usize>(state: &mut VirtualState<N>) {
         for _ in 0..4 {
             let last_card_of_player = state.valid_moves().next().unwrap();
             state.play(last_card_of_player).unwrap();
@@ -327,7 +335,7 @@ impl<const N: usize> DoubleDummySolver<N> {
         }
     }
 
-    fn undo_last_trick(state: &mut VirtualState<N>) {
+    fn undo_last_trick<const N: usize>(state: &mut VirtualState<N>) {
         for _ in 0..4 {
             state.undo();
         }
