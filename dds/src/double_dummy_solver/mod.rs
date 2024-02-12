@@ -3,6 +3,7 @@ mod double_dummy_runner;
 
 use crate::dds_config::DdsConfig;
 use crate::primitives::DoubleDummyResult;
+use std::time::SystemTime;
 
 use crate::double_dummy_solver::dds_statistics::DdsStatistics;
 use crate::double_dummy_solver::double_dummy_runner::DoubleDummyRunner;
@@ -41,6 +42,8 @@ impl DoubleDummySolver {
         //     println!("{}:\n{}", seat, hand)
         // }
 
+        let time = SystemTime::now();
+
         self.reset_statistics();
 
         let mut result = DoubleDummyResult::new();
@@ -60,6 +63,8 @@ impl DoubleDummySolver {
             }
             self.update_statistics(&strain_statistics[index]);
         }
+
+        println!("time elapsed in total: {:?}", time.elapsed().unwrap());
 
         result
     }
@@ -85,6 +90,7 @@ mod test {
     use bridge_buddy_core::primitives::deal::{Board, Seat};
     use bridge_buddy_core::primitives::{Deal, Hand, Suit};
     use std::str::FromStr;
+    use std::time::SystemTime;
     use test_case::test_case;
 
     #[test_case( 30u64, [1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0]; "Test A")]
@@ -123,13 +129,15 @@ mod test {
     #[ignore]
     #[test]
     fn node_count() {
-        const N_AVERAGE: usize = 2000;
+        const N_AVERAGE: usize = 20;
         const N_TRICKS: usize = 6;
         // let expected_plys = (N_TRICKS - 1) * 4 + 1;
         let mut dds = DoubleDummySolver::default();
 
         let mut node_counts = vec![];
         let mut first_move_best_percentages = vec![];
+
+        let time = SystemTime::now();
 
         for _ in 0..N_AVERAGE {
             let deal: Deal<N_TRICKS> = Deal::new();
@@ -154,6 +162,8 @@ mod test {
             Some(ratio) => println!("First move was not best in {}% of tries.", (1.0 - ratio) * 100.0),
             _ => println!("No statistics on move ordering"),
         };
+
+        println!("Full run took {:?}", time.elapsed().unwrap())
     }
 
     fn mean(data: &[i32]) -> Option<f32> {
