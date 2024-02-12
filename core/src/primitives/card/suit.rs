@@ -1,8 +1,10 @@
 use crate::error::BBError;
 use crate::primitives::Card;
+use enum_iterator::Sequence;
 use strum::{Display, EnumIter};
 
-#[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
+pub const N_SUITS: usize = 4;
+#[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter, Sequence)]
 pub enum Suit {
     #[strum(serialize = "♣")]
     Clubs = 0,
@@ -12,6 +14,17 @@ pub enum Suit {
     Hearts = 2,
     #[strum(serialize = "♠")]
     Spades = 3,
+}
+
+impl From<u16> for Suit {
+    fn from(value: u16) -> Self {
+        match value {
+            0 => Suit::Clubs,
+            1 => Suit::Diamonds,
+            2 => Suit::Hearts,
+            3.. => Suit::Spades,
+        }
+    }
 }
 
 impl Suit {

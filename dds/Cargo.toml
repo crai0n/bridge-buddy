@@ -1,0 +1,26 @@
+[package]
+name = "bridge-buddy-dds"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+phf = "0.11.2"
+phf_codegen = "0.11.2"
+bridge-buddy-core = { path = "../core" }
+strum = { version = "0.25.0", features = [] }
+enum-iterator = "1.5.0"
+itertools = "0.11.0"
+lazy_static = "1.4.0"
+rand = "0.8.5"
+
+[dev-dependencies]
+test-case = "3.3.1"
+
+
+[build-dependencies]
+phf_codegen = { version = "0.11.2", features = [] }
+bridge-buddy-core = { path = "../core" }
+strum = { version = "0.25.0", features = [] }

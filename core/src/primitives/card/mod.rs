@@ -4,6 +4,9 @@ pub use suit::Suit;
 
 pub mod rank;
 pub mod suit;
+pub mod virtual_rank;
+
+pub const N_CARDS: usize = rank::N_RANKS * suit::N_SUITS;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Card {
@@ -32,6 +35,10 @@ impl Card {
     fn split_string(string: &str) -> Result<[char; 2], BBError> {
         let chars = string.chars().collect::<Vec<char>>();
         chars.try_into().or(Err(BBError::UnknownCard(string.into())))
+    }
+
+    pub fn touches(&self, other: &Card) -> bool {
+        self.suit == other.suit && self.rank.touches(&other.rank)
     }
 }
 

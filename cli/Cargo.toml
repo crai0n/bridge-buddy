@@ -8,4 +8,6 @@ publish.workspace = true
 
 [dependencies]
 bridge-buddy-core = { path = "../core" }
+bridge-buddy-dds = { path = "../dds" }
 clap = { version = "4.2.7", features = ["derive"] }
+strum = "0.25.0"

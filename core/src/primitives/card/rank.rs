@@ -1,11 +1,14 @@
 use crate::error::BBError;
 use crate::primitives::Card;
+use std::cmp::Ordering;
 use strum::{Display, EnumIter};
 
-#[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
+pub const N_RANKS: usize = 13;
+
+#[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter, Hash)]
 pub enum Rank {
     #[strum(serialize = "2")]
-    Two,
+    Two = 0,
     #[strum(serialize = "3")]
     Three,
     #[strum(serialize = "4")]
@@ -38,6 +41,27 @@ impl From<Card> for Rank {
     }
 }
 
+impl From<u16> for Rank {
+    fn from(value: u16) -> Rank {
+        match value {
+            0 => Rank::Two,
+            1 => Rank::Three,
+            2 => Rank::Four,
+            3 => Rank::Five,
+            4 => Rank::Six,
+            5 => Rank::Seven,
+            6 => Rank::Eight,
+            7 => Rank::Nine,
+            8 => Rank::Ten,
+            9 => Rank::Jack,
+            10 => Rank::Queen,
+            11 => Rank::King,
+            12 => Rank::Ace,
+            _ => panic!("Not a valid rank!"),
+        }
+    }
+}
+
 impl Rank {
     pub fn from_char(char: char) -> Result<Rank, BBError> {
         match char {
@@ -60,6 +84,15 @@ impl Rank {
             '3' => Ok(Rank::Three),
             '2' => Ok(Rank::Two),
             c => Err(BBError::UnknownRank(c.into())),
+        }
+    }
+
+    pub fn touches(&self, other: &Rank) -> bool {
+        // println!("testing {} and {}", self, other);
+        match self.cmp(other) {
+            Ordering::Less => *other as usize - *self as usize == 1,
+            Ordering::Greater => *self as usize - *other as usize == 1,
+            Ordering::Equal => false,
         }
     }
 }
@@ -204,5 +237,15 @@ mod tests {
     #[test_case(Card { suit: Suit::Spades, rank: King}, Rank::King; "King of Spades is a King")]
     fn from_card(card: Card, expected: Rank) {
         assert_eq!(expected, card.into())
+    }
+
+    #[test_case("A", "K", true)]
+    #[test_case("K", "A", true)]
+    #[test_case("Q", "J", true)]
+    #[test_case("Q", "T", false)]
+    fn touches(one: &str, other: &str, expected: bool) {
+        let one = Rank::from_str(one).unwrap();
+        let other = Rank::from_str(other).unwrap();
+        assert_eq!(one.touches(&other), expected);
     }
 }

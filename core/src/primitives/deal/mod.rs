@@ -31,6 +31,11 @@ impl<const N: usize> Deal<N> {
         Self::from_rng(&mut rng)
     }
 
+    pub fn from_hands(hands: [Hand<N>; 4]) -> Self {
+        let board = Board::from_number(1);
+        Deal { board, hands }
+    }
+
     pub fn from_rng(rng: &mut impl Rng) -> Self {
         let board_number = rng.gen_range(1..=Board::MAX_NUMBER);
         Self::from_rng_with_board_number(board_number, rng)

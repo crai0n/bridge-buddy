@@ -1,7 +1,10 @@
 use crate::error::BBError;
 use crate::primitives::Suit;
+use enum_iterator::Sequence;
 
-#[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy)]
+pub const N_STRAINS: usize = 5;
+
+#[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Sequence)]
 pub enum Strain {
     Trump(Suit),
     NoTrump,

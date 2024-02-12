@@ -46,6 +46,10 @@ impl<const N: usize> TrickManager<N> {
         }
     }
 
+    pub fn trump_suit(&self) -> Option<Suit> {
+        self.trumps
+    }
+
     pub fn next_to_play(&self) -> Seat {
         self.next_to_play
     }
@@ -71,7 +75,7 @@ impl<const N: usize> TrickManager<N> {
     }
 
     fn move_to_next_trick(&mut self) {
-        let winner = self.trick_winner();
+        let winner = self.current_trick_winner();
         // println!("The real winner is {}", winner);
         self.next_to_play = winner;
         self.winners.push(winner);
@@ -81,31 +85,51 @@ impl<const N: usize> TrickManager<N> {
         self.winners.last().copied()
     }
 
-    fn trick_winner(&self) -> Seat {
+    pub fn current_trick_winner(&self) -> Seat {
         let n_cards = self.played_cards.len();
-        let cards = &self.played_cards[n_cards - 4..];
-        let winner_card = self.winner_card(cards);
-        let winner_index = cards.iter().position(|card| *card == winner_card).unwrap();
-        let leader = self.last_leader();
-        // println!("leader was {}, winner_index is {}", leader, winner_index);
-        leader + winner_index
-    }
-
-    fn winner_card(&self, cards: &[Card]) -> Card {
-        let mut cards = cards.iter();
-        let mut winning_card = cards.next().unwrap();
-        for card in cards {
-            if let Some(trump) = self.trumps {
-                if card.suit == trump && winning_card.suit != trump {
-                    winning_card = card;
-                }
-            }
-            if card.suit == winning_card.suit && card.rank > winning_card.rank {
-                winning_card = card;
+        let n_cards_in_trick = (n_cards - 1) % 4 + 1;
+        let cards = &self.played_cards[n_cards - n_cards_in_trick..];
+        let winning_card = self.currently_winning_card();
+        match winning_card {
+            None => self.last_leader(),
+            Some(winning_card) => {
+                let winner_index = cards.iter().position(|card| *card == winning_card).unwrap();
+                let leader = self.last_leader();
+                // println!("leader was {}, winner_index is {}", leader, winner_index);
+                leader + winner_index
             }
         }
-        // println!("The winning card is {}", winner_card);
-        *winning_card
+    }
+
+    pub fn currently_winning_card(&self) -> Option<Card> {
+        let n_cards = self.played_cards.len();
+        let n_cards_in_trick = (n_cards - 1) % 4 + 1;
+        let cards = &self.played_cards[n_cards - n_cards_in_trick..];
+        cards.iter().fold(None, |previous, card| {
+            if self.would_win_over(card, previous) {
+                Some(*card)
+            } else {
+                previous
+            }
+        })
+    }
+
+    pub fn would_win_over_current_winner(&self, card: &Card) -> bool {
+        let current_winner = self.currently_winning_card();
+        self.would_win_over(card, current_winner)
+    }
+
+    pub fn would_win_over(&self, card: &Card, previous: Option<Card>) -> bool {
+        match previous {
+            None => true,
+            Some(previous) => {
+                if card.suit == previous.suit {
+                    card.rank > previous.rank
+                } else {
+                    self.trump_suit() == Some(card.suit)
+                }
+            }
+        }
     }
 
     pub fn tricks_won_by_player(&self, player: Seat) -> usize {
@@ -132,8 +156,20 @@ impl<const N: usize> TrickManager<N> {
             .collect_vec()
     }
 
+    /// A card is played once it leaves a player's hand
     pub fn played_cards(&self) -> &[Card] {
         &self.played_cards
+    }
+
+    /// A card is out of play once it is turned over after a trick
+    pub fn out_of_play_cards(&self) -> &[Card] {
+        let length = self.played_cards.len();
+        let cards_in_current_trick = length % 4;
+        &self.played_cards[..length - cards_in_current_trick]
+    }
+
+    pub fn count_cards_in_current_trick(&self) -> usize {
+        self.played_cards.len() % 4
     }
 
     pub fn play(&mut self, card: Card) {
@@ -145,7 +181,7 @@ impl<const N: usize> TrickManager<N> {
         }
     }
 
-    pub fn undo(&mut self) {
+    pub fn undo(&mut self) -> Option<Card> {
         if !self.played_cards.is_empty() {
             if self.trick_complete() {
                 self.winners.pop();
@@ -153,8 +189,8 @@ impl<const N: usize> TrickManager<N> {
             } else {
                 self.next_to_play = self.next_to_play + 3;
             }
-            self.played_cards.pop();
         }
+        self.played_cards.pop()
     }
 }
 
@@ -189,7 +225,7 @@ mod test {
             let next_to_play = manager.next_to_play();
 
             for _ in 0..undo_count {
-                manager.undo()
+                manager.undo();
             }
             for j in (0..undo_count).rev() {
                 manager.play(cards[i - j])
