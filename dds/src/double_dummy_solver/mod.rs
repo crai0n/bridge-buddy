@@ -3,7 +3,8 @@ mod double_dummy_runner;
 
 use crate::dds_config::DdsConfig;
 use crate::primitives::DoubleDummyResult;
-use std::time::SystemTime;
+use std::thread;
+// use std::time::SystemTime;
 
 use crate::double_dummy_solver::dds_statistics::DdsStatistics;
 use crate::double_dummy_solver::double_dummy_runner::DoubleDummyRunner;
@@ -12,6 +13,7 @@ use bridge_buddy_core::primitives::contract::Strain;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::Deal;
 use enum_iterator::all;
+use itertools::Itertools;
 use strum::IntoEnumIterator;
 
 pub struct DoubleDummySolver {
@@ -38,33 +40,67 @@ impl DoubleDummySolver {
     }
 
     pub fn solve<const N: usize>(&mut self, deal: Deal<N>) -> DoubleDummyResult {
+        match self.config.multi_threading {
+            true => self.solve_multi_threaded(deal),
+            false => self.solve_single_threaded(deal),
+        }
+    }
+
+    pub fn solve_single_threaded<const N: usize>(&mut self, deal: Deal<N>) -> DoubleDummyResult {
+        self.reset_statistics();
+
+        let mut result = DoubleDummyResult::new();
+
+        for strain in all::<Strain>() {
+            let mut strain_runner = self.new_runner();
+            for declarer in Seat::iter() {
+                let opening_leader = declarer + 1;
+                let defenders_tricks = strain_runner.solve_initial_position(deal, strain, opening_leader);
+                result.set_tricks_for_declarer_in_strain(N - defenders_tricks, declarer, strain);
+                self.update_statistics(&strain_runner.get_statistics());
+            }
+        }
+
+        // println!("Expanded {} nodes", self.node_count);
+        result
+    }
+
+    pub fn solve_multi_threaded<const N: usize>(&mut self, deal: Deal<N>) -> DoubleDummyResult {
         // for (seat, hand) in Seat::iter().zip(deal.hands) {
         //     println!("{}:\n{}", seat, hand)
         // }
-
-        let time = SystemTime::now();
 
         self.reset_statistics();
 
         let mut result = DoubleDummyResult::new();
 
-        let mut strain_results = [[0usize; 4]; 5];
-        let mut strain_statistics = [DdsStatistics::default(); 5];
+        // let time = SystemTime::now();
 
-        for (index, strain) in all::<Strain>().enumerate() {
-            let mut strain_runner = self.new_runner();
-            strain_results[index] = strain_runner.solve_for_all_declarers(deal, strain);
-            strain_statistics[index] = strain_runner.get_statistics();
-        }
+        let handles = all::<Strain>()
+            .map(|strain| {
+                let config = self.config.clone();
+                // println!("Starting thread for strain {} after {:?}", strain, time.elapsed());
+                thread::spawn(move || {
+                    let mut strain_runner = DoubleDummyRunner::with_config(config);
+                    let sub_results = strain_runner.solve_for_all_declarers(deal, strain);
 
-        for (index, strain) in all::<Strain>().enumerate() {
+                    (strain, sub_results, strain_runner.get_statistics())
+                })
+            })
+            .collect_vec();
+
+        // println!("time elapsed after starting threads: {:?}", time.elapsed().unwrap());
+
+        for handle in handles {
+            let (strain, sub_results, statistics) = handle.join().unwrap();
+            // println!("Collected thread for strain {} after {:?}", strain, time.elapsed());
             for declarer in Seat::iter() {
-                result.set_tricks_for_declarer_in_strain(strain_results[index][declarer as usize], declarer, strain)
+                result.set_tricks_for_declarer_in_strain(sub_results[declarer as usize], declarer, strain)
             }
-            self.update_statistics(&strain_statistics[index]);
+            self.update_statistics(&statistics);
         }
 
-        println!("time elapsed in total: {:?}", time.elapsed().unwrap());
+        // println!("time elapsed in total: {:?}", time.elapsed().unwrap());
 
         result
     }
