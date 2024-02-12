@@ -5,7 +5,7 @@ mod double_dummy_runner;
 pub use double_dummy_result::DoubleDummyResult;
 
 use crate::dds_config::DdsConfig;
-use std::thread;
+
 // use std::time::SystemTime;
 
 use crate::double_dummy_solver::dds_statistics::DdsStatistics;
@@ -14,8 +14,9 @@ use crate::double_dummy_solver::double_dummy_runner::DoubleDummyRunner;
 use bridge_buddy_core::primitives::contract::Strain;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::Deal;
+use bridge_buddy_core::primitives::Suit::{Clubs, Diamonds, Hearts, Spades};
 use enum_iterator::all;
-use itertools::Itertools;
+use rayon::prelude::*;
 use strum::IntoEnumIterator;
 
 pub struct DoubleDummySolver {
@@ -78,23 +79,27 @@ impl DoubleDummySolver {
 
         // let time = SystemTime::now();
 
-        let handles = all::<Strain>()
-            .map(|strain| {
-                let config = self.config.clone();
-                // println!("Starting thread for strain {} after {:?}", strain, time.elapsed());
-                thread::spawn(move || {
-                    let mut strain_runner = DoubleDummyRunner::with_config(config);
-                    let sub_results = strain_runner.solve_for_all_declarers(deal, strain);
+        let runner_result: Vec<_> = [
+            Strain::Trump(Clubs),
+            Strain::Trump(Diamonds),
+            Strain::Trump(Hearts),
+            Strain::Trump(Spades),
+            Strain::NoTrump,
+        ]
+        .map(|strain| (strain, self.config.clone()))
+        .into_par_iter()
+        .map(|(strain, config)| {
+            let mut strain_runner = DoubleDummyRunner::with_config(config);
+            let sub_results = strain_runner.solve_for_all_declarers(deal, strain);
 
-                    (strain, sub_results, strain_runner.get_statistics())
-                })
-            })
-            .collect_vec();
+            (strain, sub_results, strain_runner.get_statistics())
+        })
+        .collect();
 
         // println!("time elapsed after starting threads: {:?}", time.elapsed().unwrap());
 
-        for handle in handles {
-            let (strain, sub_results, statistics) = handle.join().unwrap();
+        for item in runner_result {
+            let (strain, sub_results, statistics) = item;
             // println!("Collected thread for strain {} after {:?}", strain, time.elapsed());
             for declarer in Seat::iter() {
                 result.set_tricks_for_declarer_in_strain(sub_results[declarer as usize], declarer, strain)
@@ -167,7 +172,7 @@ mod test {
     #[ignore]
     #[test]
     fn node_count() {
-        const N_AVERAGE: usize = 1000;
+        const N_AVERAGE: usize = 10000;
         const N_TRICKS: usize = 6;
         // let expected_plys = (N_TRICKS - 1) * 4 + 1;
         let mut dds = DoubleDummySolver::default();
