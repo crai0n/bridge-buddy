@@ -3,7 +3,6 @@ mod double_dummy_runner;
 
 use crate::dds_config::DdsConfig;
 use crate::primitives::DoubleDummyResult;
-use crate::transposition_table::TranspositionTable;
 
 use crate::double_dummy_solver::dds_statistics::DdsStatistics;
 use crate::double_dummy_solver::double_dummy_runner::DoubleDummyRunner;
@@ -16,7 +15,6 @@ use strum::IntoEnumIterator;
 
 pub struct DoubleDummySolver {
     config: DdsConfig,
-    transposition_table: TranspositionTable,
     statistics: DdsStatistics,
 }
 
@@ -30,7 +28,6 @@ impl DoubleDummySolver {
     pub fn new(config: DdsConfig) -> Self {
         Self {
             config,
-            transposition_table: TranspositionTable::new(),
             statistics: DdsStatistics::default(),
         }
     }
@@ -52,7 +49,6 @@ impl DoubleDummySolver {
         let mut strain_statistics = [DdsStatistics::default(); 5];
 
         for (index, strain) in all::<Strain>().enumerate() {
-            self.transposition_table.clear();
             let mut strain_runner = self.new_runner();
             strain_results[index] = strain_runner.solve_for_all_declarers(deal, strain);
             strain_statistics[index] = strain_runner.get_statistics();

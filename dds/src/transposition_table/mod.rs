@@ -9,10 +9,7 @@ pub struct TranspositionTable {
 }
 
 impl TranspositionTable {
-    pub fn new() -> Self {
-        Self { inner: BTreeMap::new() }
-    }
-
+    #[allow(dead_code)]
     pub fn clear(&mut self) {
         self.inner.clear()
     }
