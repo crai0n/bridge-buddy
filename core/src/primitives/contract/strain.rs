@@ -1,8 +1,17 @@
 use crate::error::BBError;
 use crate::primitives::Suit;
+use crate::primitives::Suit::{Clubs, Diamonds, Hearts, Spades};
 use enum_iterator::Sequence;
 
 pub const N_STRAINS: usize = 5;
+
+pub const STRAIN_ARRAY: [Strain; 5] = [
+    Strain::Trump(Clubs),
+    Strain::Trump(Diamonds),
+    Strain::Trump(Hearts),
+    Strain::Trump(Spades),
+    Strain::NoTrump,
+];
 
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Sequence)]
 pub enum Strain {

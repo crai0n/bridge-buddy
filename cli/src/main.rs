@@ -11,6 +11,7 @@ use clap::{Parser, Subcommand};
 use std::io::stdin;
 use std::process::exit;
 use std::str::FromStr;
+use std::time::SystemTime;
 use strum::IntoEnumIterator;
 
 #[derive(Parser)]
@@ -84,7 +85,11 @@ fn main() {
                 .unwrap();
             let deal = Deal::from_hands(hands);
             let mut dds = DoubleDummySolver::default();
-            dds.solve(deal);
+            println!("{}", deal);
+            let time = SystemTime::now();
+            let result = dds.solve(deal);
+            println!("DDS calculated: \n{}", result);
+            println!("Calculation took {:?}", time.elapsed().unwrap())
         }
         Command::Play => {
             let mut table = Table::empty();
