@@ -88,7 +88,7 @@ impl MoveGenerator {
                 state.owner_of_runner_up_in(suit) == Some(player) && state.owner_of_runner_up_in(suit) == Some(partner);
 
             if partner_owns_both_2nd_and_3rd {
-                bonus += 25;
+                bonus += 26;
             } else if partners_hand.count_cards_in(suit) >= 2
                 && (partner_owns_2nd_and_we_own_3rd || we_own_2nd_and_partner_owns_3rd)
             {
@@ -150,12 +150,11 @@ impl MoveGenerator {
                 }
             } else {
                 // no trump game
-                if rhos_hand.has_singleton_winner_in(suit) || lhos_hand.has_singleton_winner_in(suit) {
-                    if state.owner_of_runner_up_in(suit) == Some(partner)
-                        || state.owner_of_runner_up_in(suit) == Some(player)
-                    {
-                        bonus += 20;
-                    }
+                if (rhos_hand.has_singleton_winner_in(suit) || lhos_hand.has_singleton_winner_in(suit))
+                    && (state.owner_of_runner_up_in(suit) == Some(partner)
+                        || state.owner_of_runner_up_in(suit) == Some(player))
+                {
+                    bonus += 20;
                 }
             }
 

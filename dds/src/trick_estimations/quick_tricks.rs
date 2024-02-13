@@ -132,7 +132,7 @@ fn trump_high_card_tricks_per_suit(
         _partners_blocked_high_card_tricks,
         _my_blocked_high_card_tricks,
         _can_move_to_partner,
-        _can_move_back,
+        mut can_move_back,
     ) = high_card_tricks_per_suit(my_cards, partners_cards);
 
     let lhos_card_count = count_cards_per_suit(lhos_cards);
@@ -143,15 +143,25 @@ fn trump_high_card_tricks_per_suit(
         rhos_card_count[trump_suit as usize],
     ];
 
+    can_move_back[trump_suit as usize] = false;
+
+    let can_run_trumps_first = can_move_back.contains(&true);
+
+    let drawn_trumps = match can_run_trumps_first {
+        true => high_card_tricks[trump_suit as usize],
+        false => 0,
+    };
+
     // TODO: There is a problem if we end up in partners hands after playing trumps. We might be stuck there, so we cannot count our quick tricks in other suits.
     // Example: Spades is trumps, we hold Spades King, and AKQ in a side-suit, Partner has Spades Ace and is void in our side-suit.
     // if opponents can ruff, we are not allowed to count side suit tricks
 
-    match opponents_trump_card_count.map(|num| num.cmp(&0)) {
+    match opponents_trump_card_count.map(|num| num.cmp(&drawn_trumps)) {
         [Ordering::Greater, Ordering::Greater] => {
             // println!("Both opponents have trumps left");
             // both opponents can ruff
             // only count high cards until one is void
+
             let quick_tricks = [0, 1, 2, 3].map(|i| min(rhos_card_count[i], high_card_tricks[i]));
             let mut quick_tricks = [0, 1, 2, 3].map(|i| min(lhos_card_count[i], quick_tricks[i]));
 
