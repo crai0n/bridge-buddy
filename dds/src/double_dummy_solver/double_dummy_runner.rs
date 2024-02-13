@@ -112,6 +112,7 @@ impl DoubleDummyRunner {
         let available_moves = MoveGenerator::generate_moves(state, self.config.move_ordering);
         let mut highest_score = 0;
         let mut first_move_is_best = true;
+        let mut one_of_first_two_moves_is_best = true;
         let n_moves = available_moves.len();
         for (moves_tried, candidate_move) in available_moves.into_iter().enumerate() {
             if moves_tried == 0 && n_moves > 1 {
@@ -137,13 +138,18 @@ impl DoubleDummyRunner {
                 }
                 if moves_tried == 0 && n_moves > 1 {
                     self.statistics.n_first_move_is_best[state.count_cards_in_current_trick()] += 1;
+                    self.statistics.n_one_of_first_two_moves_is_best[state.count_cards_in_current_trick()] += 1;
+                } else if moves_tried == 1 && n_moves > 1 {
+                    self.statistics.n_one_of_first_two_moves_is_best[state.count_cards_in_current_trick()] += 1;
                 }
                 return score;
             } else if score > highest_score {
                 // if we cannot reach estimate, we need the highest score found
                 highest_score = score;
-                if moves_tried >= 1 {
+                if moves_tried == 1 {
                     first_move_is_best = false;
+                } else if moves_tried == 2 {
+                    one_of_first_two_moves_is_best = false;
                 }
             }
         }
@@ -155,6 +161,9 @@ impl DoubleDummyRunner {
 
         if first_move_is_best && n_moves > 1 {
             self.statistics.n_first_move_is_best[state.count_cards_in_current_trick()] += 1;
+            self.statistics.n_one_of_first_two_moves_is_best[state.count_cards_in_current_trick()] += 1;
+        } else if one_of_first_two_moves_is_best && n_moves > 1 {
+            self.statistics.n_one_of_first_two_moves_is_best[state.count_cards_in_current_trick()] += 1;
         }
 
         highest_score

@@ -163,22 +163,50 @@ mod test {
 
     #[ignore]
     #[test]
+    fn node_count_trumps() {
+        node_count_all(Some(Strain::Trump(Suit::Spades)))
+    }
+
+    #[ignore]
+    #[test]
+    fn node_count_nt() {
+        node_count_all(Some(Strain::NoTrump))
+    }
+
+    #[ignore]
+    #[test]
     fn node_count() {
+        node_count_all(None)
+    }
+
+    fn node_count_all(strain: Option<Strain>) {
         const N_AVERAGE: usize = 10000;
         const N_TRICKS: usize = 6;
-        let mut dds = DoubleDummySolver::default();
 
         const ARRAY_REPEAT_VALUE_I32: Vec<i32> = Vec::new();
         const ARRAY_REPEAT_VALUE_F32: Vec<f32> = Vec::new();
         let mut node_counts = [ARRAY_REPEAT_VALUE_I32; 4];
         let mut first_move_best_percentages = [ARRAY_REPEAT_VALUE_F32; 4];
+        let mut one_of_first_two_moves_best_percentages = [ARRAY_REPEAT_VALUE_F32; 4];
 
         let time = SystemTime::now();
 
         for _ in 0..N_AVERAGE {
             let deal: Deal<N_TRICKS> = Deal::new();
-            let _dds_result = dds.solve(deal);
-            let statistics = dds.get_statistics();
+
+            let statistics = match strain {
+                Some(strain) => {
+                    let mut ddr = DoubleDummyRunner::default();
+                    let _dds_result = ddr.solve_for_all_declarers(deal, strain);
+                    ddr.get_statistics()
+                }
+                None => {
+                    let mut dds = DoubleDummySolver::default();
+                    let _dds_result = dds.solve(deal);
+                    dds.get_statistics()
+                }
+            };
+
             for (index, node_count) in node_counts.iter_mut().enumerate() {
                 node_count.push(statistics.get_node_count_per_position()[index] as i32);
             }
@@ -189,27 +217,57 @@ mod test {
                     first_move_best_percentages[index].push(*ratio);
                 }
             }
+            let ratio = statistics.get_one_of_first_two_moves_is_best_ratio_per_position();
+            for (index, maybe_ratio) in ratio.iter().enumerate() {
+                if let Some(ratio) = maybe_ratio {
+                    // println!("First move was best in {}% of nodes.", ratio * 100.0);
+                    one_of_first_two_moves_best_percentages[index].push(*ratio);
+                }
+            }
         }
 
-        let mean_val = [0, 1, 2, 3].map(|i| mean(&node_counts[i]).unwrap() / 20f32);
+        let div = match strain {
+            Some(_) => 4f32,
+            None => 20f32,
+        };
 
-        let std_err = [0, 1, 2, 3].map(|i| std_error(&node_counts[i]).unwrap() / 20f32);
+        let mean_val = [0, 1, 2, 3].map(|i| mean(&node_counts[i]).unwrap() / div);
+
+        let std_err = [0, 1, 2, 3].map(|i| std_error(&node_counts[i]).unwrap() / div);
 
         let best_mean = [0, 1, 2, 3].map(|i| mean_f32(&first_move_best_percentages[i]));
 
         let best_std_err = [0, 1, 2, 3].map(|i| std_error_f32(&first_move_best_percentages[i]));
 
+        let best2_mean = [0, 1, 2, 3].map(|i| mean_f32(&one_of_first_two_moves_best_percentages[i]));
+
+        let best2_std_err = [0, 1, 2, 3].map(|i| std_error_f32(&one_of_first_two_moves_best_percentages[i]));
+
+        if let Some(strain) = strain {
+            println!("Checking only strain {}", strain);
+        } else {
+            println!("Checking all strains");
+        }
         for (index, position) in ["lead", "second", "third", "last"].iter().enumerate() {
             println!(
-                "Expanded {} +- {} nodes in position {} on average",
+                "Expanded {:.1}±{:.1} nodes in {} position on average",
                 mean_val[index], std_err[index], position
             );
             match best_mean[index] {
                 Some(ratio) => println!(
-                    "First move in position {} was not best in {}% +- {}% of tries.",
+                    "            First move in {} position was not best in {:.2}±{:.2}% of tries.",
                     position,
                     (1.0 - ratio) * 100.0,
                     best_std_err[index].unwrap() * 100.0
+                ),
+                _ => println!("No statistics on move ordering in position {}", position),
+            };
+            match best2_mean[index] {
+                Some(ratio2) => println!(
+                    "One of first two moves in {} position was not best in {:.2}±{:.2}% of tries.",
+                    position,
+                    (1.0 - ratio2) * 100.0,
+                    best2_std_err[index].unwrap() * 100.0
                 ),
                 _ => println!("No statistics on move ordering in position {}", position),
             };

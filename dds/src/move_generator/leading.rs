@@ -14,7 +14,25 @@ impl MoveGenerator {
             let suit_weight = suit_weights[suit as usize];
 
             // favor leading from a sequence
-            candidate.priority += suit_weight + 10 * (candidate.sequence_length - 1) as isize;
+            // candidate.priority +=
+            //     suit_weight + 2 * (candidate.sequence_length - 1) as isize + candidate.card.rank as isize;
+
+            match state.trump_suit() {
+                Some(_trump_suit) => {
+                    candidate.priority += if candidate.sequence_length >= 2 {
+                        suit_weight + 50 + candidate.card.rank as isize
+                    } else {
+                        suit_weight + candidate.card.rank as isize
+                    }
+                }
+                None => {
+                    candidate.priority += if candidate.sequence_length >= 3 {
+                        suit_weight + 50 + candidate.card.rank as isize
+                    } else {
+                        suit_weight + candidate.card.rank as isize
+                    }
+                }
+            }
         }
     }
 
@@ -34,7 +52,7 @@ impl MoveGenerator {
             let partner_dominates_suit = state.partner_has_higher_cards_than_opponents(suit, player);
 
             if partner_dominates_suit {
-                bonus += 15;
+                bonus += 25;
             }
 
             if rhos_hand.contains_winning_rank_in(suit) {
@@ -42,7 +60,7 @@ impl MoveGenerator {
             }
 
             if lhos_hand.contains_runner_up_in(suit) && partners_hand.contains_winning_rank_in(suit) {
-                bonus += 18;
+                bonus += 30;
             }
 
             if lhos_hand.contains_winning_rank_in(suit) && partners_hand.contains_runner_up_in(suit) {
@@ -70,7 +88,7 @@ impl MoveGenerator {
                 state.owner_of_runner_up_in(suit) == Some(player) && state.owner_of_runner_up_in(suit) == Some(partner);
 
             if partner_owns_both_2nd_and_3rd {
-                bonus += 35;
+                bonus += 25;
             } else if partners_hand.count_cards_in(suit) >= 2
                 && (partner_owns_2nd_and_we_own_3rd || we_own_2nd_and_partner_owns_3rd)
             {
@@ -90,7 +108,7 @@ impl MoveGenerator {
                         rhos_hand.count_cards_in(trump_suit),
                     );
                     if our_trump_length > opponents_trump_length {
-                        bonus += 10;
+                        bonus += 5;
                     }
                 } else {
                     // side suit
@@ -133,7 +151,11 @@ impl MoveGenerator {
             } else {
                 // no trump game
                 if rhos_hand.has_singleton_winner_in(suit) || lhos_hand.has_singleton_winner_in(suit) {
-                    bonus += 20;
+                    if state.owner_of_runner_up_in(suit) == Some(partner)
+                        || state.owner_of_runner_up_in(suit) == Some(player)
+                    {
+                        bonus += 20;
+                    }
                 }
             }
 
@@ -150,6 +172,6 @@ impl MoveGenerator {
             })
         });
 
-        [0, 1, 2, 3].map(|i| suit_bonus[i] - ((count_lho[i] + count_rho[i]) * 32) / 15)
+        [0, 1, 2, 3].map(|i| suit_bonus[i] - ((count_lho[i] + count_rho[i]) * 16) / 15)
     }
 }
