@@ -112,8 +112,9 @@ impl DoubleDummyRunner {
         let available_moves = MoveGenerator::generate_moves(state, self.config.move_ordering);
         let mut highest_score = 0;
         let mut first_move_is_best = true;
+        let n_moves = available_moves.len();
         for (moves_tried, candidate_move) in available_moves.into_iter().enumerate() {
-            if moves_tried == 0 {
+            if moves_tried == 0 && n_moves > 1 {
                 self.statistics.n_first_moves[state.count_cards_in_current_trick()] += 1;
             }
 
@@ -134,7 +135,7 @@ impl DoubleDummyRunner {
                     let add_tricks = score - state.tricks_won_by_axis(state.next_to_play());
                     self.store_lower_bound_in_tt(state, add_tricks);
                 }
-                if moves_tried == 0 {
+                if moves_tried == 0 && n_moves > 1 {
                     self.statistics.n_first_move_is_best[state.count_cards_in_current_trick()] += 1;
                 }
                 return score;
@@ -152,7 +153,7 @@ impl DoubleDummyRunner {
             self.store_upper_bound_in_tt(state, add_tricks);
         }
 
-        if first_move_is_best {
+        if first_move_is_best && n_moves > 1 {
             self.statistics.n_first_move_is_best[state.count_cards_in_current_trick()] += 1;
         }
 

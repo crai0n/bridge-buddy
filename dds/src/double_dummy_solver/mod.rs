@@ -198,6 +198,8 @@ mod test {
 
         let best_mean = [0, 1, 2, 3].map(|i| mean_f32(&first_move_best_percentages[i]));
 
+        let best_std_err = [0, 1, 2, 3].map(|i| std_error_f32(&first_move_best_percentages[i]));
+
         for (index, position) in ["lead", "second", "third", "last"].iter().enumerate() {
             println!(
                 "Expanded {} +- {} nodes in position {} on average",
@@ -205,12 +207,14 @@ mod test {
             );
             match best_mean[index] {
                 Some(ratio) => println!(
-                    "First move in position {} was not best in {}% of tries.",
+                    "First move in position {} was not best in {}%+-{}% of tries.",
                     position,
-                    (1.0 - ratio) * 100.0
+                    (1.0 - ratio) * 100.0,
+                    best_std_err[index].unwrap() * 100.0
                 ),
                 _ => println!("No statistics on move ordering in position {}", position),
             };
+            println!();
         }
 
         println!("Full run took {:?}", time.elapsed().unwrap())
@@ -238,6 +242,26 @@ mod test {
 
     fn std_error(data: &[i32]) -> Option<f32> {
         match (mean(data), data.len()) {
+            (Some(data_mean), count) if count > 0 => {
+                let variance = data
+                    .iter()
+                    .map(|value| {
+                        let diff = data_mean - (*value as f32);
+
+                        diff * diff
+                    })
+                    .sum::<f32>()
+                    / count as f32
+                    / count as f32;
+
+                Some(variance.sqrt())
+            }
+            _ => None,
+        }
+    }
+
+    fn std_error_f32(data: &[f32]) -> Option<f32> {
+        match (mean_f32(data), data.len()) {
             (Some(data_mean), count) if count > 0 => {
                 let variance = data
                     .iter()
