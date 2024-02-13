@@ -179,14 +179,14 @@ mod test {
             let deal: Deal<N_TRICKS> = Deal::new();
             let _dds_result = dds.solve(deal);
             let statistics = dds.get_statistics();
-            for i in 0..4 {
-                node_counts[i].push(statistics.get_node_count_per_position()[i] as i32);
+            for (index, node_count) in node_counts.iter_mut().enumerate() {
+                node_count.push(statistics.get_node_count_per_position()[index] as i32);
             }
             let ratio = statistics.get_first_move_best_ratio_per_position();
-            for i in 0..4 {
-                if let Some(ratio) = ratio[i] {
+            for (index, maybe_ratio) in ratio.iter().enumerate() {
+                if let Some(ratio) = maybe_ratio {
                     // println!("First move was best in {}% of nodes.", ratio * 100.0);
-                    first_move_best_percentages[i].push(ratio);
+                    first_move_best_percentages[index].push(*ratio);
                 }
             }
         }
@@ -206,7 +206,7 @@ mod test {
             );
             match best_mean[index] {
                 Some(ratio) => println!(
-                    "First move in position {} was not best in {}%+-{}% of tries.",
+                    "First move in position {} was not best in {}% +- {}% of tries.",
                     position,
                     (1.0 - ratio) * 100.0,
                     best_std_err[index].unwrap() * 100.0
