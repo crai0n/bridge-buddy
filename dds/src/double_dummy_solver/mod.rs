@@ -166,11 +166,12 @@ mod test {
     fn node_count() {
         const N_AVERAGE: usize = 10000;
         const N_TRICKS: usize = 6;
-        // let expected_plys = (N_TRICKS - 1) * 4 + 1;
         let mut dds = DoubleDummySolver::default();
 
-        let mut node_counts = vec![];
-        let mut first_move_best_percentages = vec![];
+        const ARRAY_REPEAT_VALUE_I32: Vec<i32> = Vec::new();
+        const ARRAY_REPEAT_VALUE_F32: Vec<f32> = Vec::new();
+        let mut node_counts = [ARRAY_REPEAT_VALUE_I32; 4];
+        let mut first_move_best_percentages = [ARRAY_REPEAT_VALUE_F32; 4];
 
         let time = SystemTime::now();
 
@@ -178,25 +179,42 @@ mod test {
             let deal: Deal<N_TRICKS> = Deal::new();
             let _dds_result = dds.solve(deal);
             let statistics = dds.get_statistics();
-            node_counts.push(statistics.get_node_count() as i32);
-            if let Some(ratio) = statistics.get_first_move_best_ratio() {
-                // println!("First move was best in {}% of nodes.", ratio * 100.0);
-                first_move_best_percentages.push(ratio);
+            for (index, node_count) in node_counts.iter_mut().enumerate() {
+                node_count.push(statistics.get_node_count_per_position()[index] as i32);
+            }
+            let ratio = statistics.get_first_move_best_ratio_per_position();
+            for (index, maybe_ratio) in ratio.iter().enumerate() {
+                if let Some(ratio) = maybe_ratio {
+                    // println!("First move was best in {}% of nodes.", ratio * 100.0);
+                    first_move_best_percentages[index].push(*ratio);
+                }
             }
         }
 
-        let mean_val = mean(&node_counts).unwrap() / 20f32;
+        let mean_val = [0, 1, 2, 3].map(|i| mean(&node_counts[i]).unwrap() / 20f32);
 
-        let std_err = std_error(&node_counts).unwrap() / 20f32;
+        let std_err = [0, 1, 2, 3].map(|i| std_error(&node_counts[i]).unwrap() / 20f32);
 
-        let best_mean = mean_f32(&first_move_best_percentages);
+        let best_mean = [0, 1, 2, 3].map(|i| mean_f32(&first_move_best_percentages[i]));
 
-        println!("Expanded {} +- {} nodes on average", mean_val, std_err);
+        let best_std_err = [0, 1, 2, 3].map(|i| std_error_f32(&first_move_best_percentages[i]));
 
-        match best_mean {
-            Some(ratio) => println!("First move was not best in {}% of tries.", (1.0 - ratio) * 100.0),
-            _ => println!("No statistics on move ordering"),
-        };
+        for (index, position) in ["lead", "second", "third", "last"].iter().enumerate() {
+            println!(
+                "Expanded {} +- {} nodes in position {} on average",
+                mean_val[index], std_err[index], position
+            );
+            match best_mean[index] {
+                Some(ratio) => println!(
+                    "First move in position {} was not best in {}% +- {}% of tries.",
+                    position,
+                    (1.0 - ratio) * 100.0,
+                    best_std_err[index].unwrap() * 100.0
+                ),
+                _ => println!("No statistics on move ordering in position {}", position),
+            };
+            println!();
+        }
 
         println!("Full run took {:?}", time.elapsed().unwrap())
     }
@@ -228,6 +246,26 @@ mod test {
                     .iter()
                     .map(|value| {
                         let diff = data_mean - (*value as f32);
+
+                        diff * diff
+                    })
+                    .sum::<f32>()
+                    / count as f32
+                    / count as f32;
+
+                Some(variance.sqrt())
+            }
+            _ => None,
+        }
+    }
+
+    fn std_error_f32(data: &[f32]) -> Option<f32> {
+        match (mean_f32(data), data.len()) {
+            (Some(data_mean), count) if count > 0 => {
+                let variance = data
+                    .iter()
+                    .map(|value| {
+                        let diff = data_mean - (*value);
 
                         diff * diff
                     })

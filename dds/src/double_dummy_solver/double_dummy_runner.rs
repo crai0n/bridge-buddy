@@ -99,7 +99,7 @@ impl DoubleDummyRunner {
     }
 
     fn score_node<const N: usize>(&mut self, state: &mut VirtualState<N>, estimate: usize) -> usize {
-        self.statistics.node_count += 1;
+        self.statistics.node_count[state.count_cards_in_current_trick()] += 1;
         if let Some(early_score) = self.try_early_node_score(state, estimate) {
             return early_score;
         }
@@ -112,9 +112,10 @@ impl DoubleDummyRunner {
         let available_moves = MoveGenerator::generate_moves(state, self.config.move_ordering);
         let mut highest_score = 0;
         let mut first_move_is_best = true;
+        let n_moves = available_moves.len();
         for (moves_tried, candidate_move) in available_moves.into_iter().enumerate() {
-            if moves_tried == 0 {
-                self.statistics.n_first_moves += 1;
+            if moves_tried == 0 && n_moves > 1 {
+                self.statistics.n_first_moves[state.count_cards_in_current_trick()] += 1;
             }
 
             // println!("trying card {} for {}!", candidate_move, state.next_to_play());
@@ -134,8 +135,8 @@ impl DoubleDummyRunner {
                     let add_tricks = score - state.tricks_won_by_axis(state.next_to_play());
                     self.store_lower_bound_in_tt(state, add_tricks);
                 }
-                if moves_tried == 0 {
-                    self.statistics.n_first_move_is_best += 1;
+                if moves_tried == 0 && n_moves > 1 {
+                    self.statistics.n_first_move_is_best[state.count_cards_in_current_trick()] += 1;
                 }
                 return score;
             } else if score > highest_score {
@@ -152,8 +153,8 @@ impl DoubleDummyRunner {
             self.store_upper_bound_in_tt(state, add_tricks);
         }
 
-        if first_move_is_best {
-            self.statistics.n_first_move_is_best += 1;
+        if first_move_is_best && n_moves > 1 {
+            self.statistics.n_first_move_is_best[state.count_cards_in_current_trick()] += 1;
         }
 
         highest_score
