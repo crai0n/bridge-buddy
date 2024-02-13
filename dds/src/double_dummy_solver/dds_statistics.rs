@@ -42,7 +42,7 @@ impl DdsStatistics {
         self.node_count.iter().sum()
     }
 
-    pub fn get_node_count_per_position(&self) -> [usize;4] {
+    pub fn get_node_count_per_position(&self) -> [usize; 4] {
         self.node_count
     }
 }
