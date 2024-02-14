@@ -56,7 +56,7 @@ impl SuitField {
         let mut tracking_field = self.0;
 
         while tracking_field != 0 {
-            let lowest_bit = tracking_field & (!tracking_field + 1);
+            let lowest_bit = Self::lowest_bit(tracking_field);
             tracking_field &= !lowest_bit;
             let rank = Self::u16_to_rank(lowest_bit).unwrap();
             vec.push(rank)
@@ -110,9 +110,14 @@ impl SuitField {
 
     #[allow(dead_code)]
     pub fn take_highest_rank(&mut self) -> Option<Rank> {
-        let highest_bit_position = 15 - self.0.leading_zeros();
-        self.0 &= !(1 << highest_bit_position);
-        Rank::try_from(highest_bit_position).ok()
+        match self.0.leading_zeros() {
+            0..=15 => {
+                let highest_bit_position = 15 - self.0.leading_zeros();
+                self.0 &= !(1 << highest_bit_position);
+                Rank::try_from(highest_bit_position).ok()
+            }
+            _ => None,
+        }
     }
 
     fn lowest_bit(val: u16) -> u16 {
@@ -158,6 +163,10 @@ impl SuitField {
 
     pub fn has_higher_ranks_than_other(&self, other: &Self) -> bool {
         self.0 > other.0
+    }
+
+    pub fn iter(&self) -> SuitFieldIterator {
+        self.into_iter()
     }
 }
 
@@ -218,9 +227,14 @@ impl<'a> Iterator for SuitFieldIterator<'a> {
 impl<'a> DoubleEndedIterator for SuitFieldIterator<'a> {
     fn next_back(&mut self) -> Option<Self::Item> {
         let masked = self.suit_field.masked(!self.mask);
-        let highest_bit = 1 << (15 - masked.0.leading_zeros());
-        self.mask |= highest_bit;
-        SuitField::u16_to_rank(highest_bit)
+        match masked.0.leading_zeros() {
+            0..=15 => {
+                let highest_bit = 1 << (15 - masked.0.leading_zeros());
+                self.mask |= highest_bit;
+                SuitField::u16_to_rank(highest_bit)
+            }
+            _ => None,
+        }
     }
 }
 
@@ -234,6 +248,37 @@ mod test {
     use bridge_buddy_core::primitives::card::Rank;
 
     use test_case::test_case;
+
+    #[test_case(0b0000_0000_0000_0000, 0b0000_0000_0000_0000)]
+    #[test_case(0b0000_1000_0000_0000, 0b0000_1000_0000_0000)]
+    #[test_case(0b0001_1000_0000_0000, 0b0000_1000_0000_0000)]
+    #[test_case(0b0001_1001_0000_0000, 0b0000_0001_0000_0000)]
+    #[test_case(0b0001_1001_0000_0100, 0b0000_0000_0000_0100)]
+    fn lowest_bit(my_field: u16, expected: u16) {
+        assert_eq!(SuitField::lowest_bit(my_field), expected)
+    }
+
+    #[test_case(0b0000_0000_0000_0000, None, None)]
+    #[test_case(0b0000_1000_0000_0000, Some(Rank::King), None)]
+    #[test_case(0b0001_1000_0000_0000, Some(Rank::Ace), Some(Rank::King))]
+    #[test_case(0b0000_0001_0000_0100, Some(Rank::Ten), Some(Rank::Four))]
+    #[test_case(0b0000_0000_0000_0100, Some(Rank::Four), None)]
+    fn take_highest_rank(my_field: u16, expected1: Option<Rank>, expected2: Option<Rank>) {
+        let mut suit_field = SuitField::from_u16(my_field);
+        assert_eq!(suit_field.take_highest_rank(), expected1);
+        assert_eq!(suit_field.take_highest_rank(), expected2);
+    }
+
+    #[test_case(0b0000_0000_0000_0000, None)]
+    #[test_case(0b0000_1000_0000_0000, Some(Rank::King))]
+    #[test_case(0b0001_1000_0000_0000, Some(Rank::Ace))]
+    #[test_case(0b0000_0001_0000_0100, Some(Rank::Ten))]
+    #[test_case(0b0000_0000_0000_0100, Some(Rank::Four))]
+    fn highest_rank(my_field: u16, expected: Option<Rank>) {
+        let suit_field = SuitField::from_u16(my_field);
+        assert_eq!(suit_field.highest_rank(), expected);
+        assert_eq!(suit_field.highest_rank(), expected);
+    }
 
     #[bench]
     fn is_void(b: &mut Bencher) {
@@ -312,12 +357,52 @@ mod test {
         assert_eq!(suit_field.lowest_rank(), expected);
     }
 
-    #[test_case(0b0000_0011_0000_1000, Some(Rank::Jack))]
-    #[test_case(0b0000_1011_0000_1000, Some(Rank::King))]
-    #[test_case(0b0000_0000_0000_1000, Some(Rank::Five))]
-    fn highest_rank(my_field: u16, expected: Option<Rank>) {
+    #[test_case(0b0000_0011_0000_1010)]
+    #[test_case(0b0001_0000_0000_0101)]
+    #[test_case(0b0000_0011_1000_0001)]
+    #[test_case(0b0001_0011_1000_0010)]
+    #[test_case(0b0000_1011_0000_1000)]
+    fn into_iterator(my_field: u16) {
         let suit_field = SuitField::from_u16(my_field);
-        assert_eq!(suit_field.highest_rank(), expected);
+        itertools::assert_equal(suit_field, suit_field.all_contained_ranks())
+    }
+
+    #[test_case(0b0000_0011_0000_1010)]
+    #[test_case(0b0001_0000_0000_0101)]
+    #[test_case(0b0000_0011_1000_0001)]
+    #[test_case(0b0001_0011_1000_0010)]
+    #[test_case(0b0000_1011_0000_1000)]
+    fn iterator(my_field: u16) {
+        let suit_field = SuitField::from_u16(my_field);
+        itertools::assert_equal(suit_field.iter(), suit_field.all_contained_ranks());
+        println!("suit field is {}", suit_field.0);
+    }
+
+    #[test_case(0b0000_0011_0000_1010)]
+    #[test_case(0b0001_0000_0000_0101)]
+    #[test_case(0b0000_0011_1000_0001)]
+    #[test_case(0b0001_0011_1000_0010)]
+    #[test_case(0b0000_1011_0000_1000)]
+    fn rev_iterator(my_field: u16) {
+        let suit_field = SuitField::from_u16(my_field);
+        itertools::assert_equal(
+            suit_field.iter().rev(),
+            suit_field.all_contained_ranks().into_iter().rev(),
+        );
+        println!("suit field is {}", suit_field.0);
+    }
+
+    #[test_case(0b0000_0011_0000_1010)]
+    #[test_case(0b0001_0000_0000_0101)]
+    #[test_case(0b0000_0011_1000_0001)]
+    #[test_case(0b0001_0011_1000_0010)]
+    #[test_case(0b0000_1011_0000_1000)]
+    fn rev_into_iterator(my_field: u16) {
+        let suit_field = SuitField::from_u16(my_field);
+        itertools::assert_equal(
+            suit_field.into_iter().rev(),
+            suit_field.all_contained_ranks().into_iter().rev(),
+        )
     }
 
     #[test_case(0b0000_0011_0000_1000, Rank::Two, 0b0000_0011_0000_1000)]
