@@ -106,8 +106,7 @@ impl<const N: usize> VirtualState<N> {
     }
 
     pub fn owner_of(&self, card: VirtualCard) -> Option<Seat> {
-        let card_mapping = self.generate_card_mapping();
-        card_mapping.iter().find(|(c, _)| *c == card).map(|(_, s)| *s)
+        Seat::iter().find(|&player| self.cards_of(player).contains(&card))
     }
 
     pub fn owner_of_winning_rank_in(&self, suit: Suit) -> Option<Seat> {
