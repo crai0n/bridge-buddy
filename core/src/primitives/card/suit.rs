@@ -4,7 +4,7 @@ use enum_iterator::Sequence;
 use strum::{Display, EnumIter};
 
 pub const N_SUITS: usize = 4;
-#[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter, Sequence)]
+#[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter, Sequence, Hash)]
 pub enum Suit {
     #[strum(serialize = "♣")]
     Clubs = 0,

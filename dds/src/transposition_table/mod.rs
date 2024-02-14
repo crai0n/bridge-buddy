@@ -47,7 +47,7 @@ impl TranspositionTable {
     }
 }
 
-#[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
+#[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone, Hash)]
 pub struct TTKey {
     pub tricks_left: usize,
     pub trumps: Option<Suit>,

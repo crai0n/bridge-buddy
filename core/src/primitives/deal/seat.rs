@@ -7,7 +7,7 @@ use strum::{Display, EnumIter, EnumString};
 
 pub const N_SEATS: usize = 4;
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Display, EnumIter, EnumString, Ord, PartialOrd)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Display, EnumIter, EnumString, Ord, PartialOrd, Hash)]
 pub enum Seat {
     #[strum(serialize = "n")]
     #[strum(to_string = "N")]
