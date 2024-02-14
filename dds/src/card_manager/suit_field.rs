@@ -50,7 +50,8 @@ impl SuitField {
         self.0.count_ones() as usize
     }
 
-    pub fn all_contained_ranks(&self) -> Vec<Rank> {
+    #[allow(dead_code)]
+    fn all_contained_ranks(&self) -> Vec<Rank> {
         let mut vec = Vec::with_capacity(self.0.count_ones() as usize);
 
         let mut tracking_field = self.0;

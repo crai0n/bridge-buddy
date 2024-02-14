@@ -1,9 +1,8 @@
-use super::quick_tricks::*;
 use crate::state::virtual_card::VirtualCard;
 use crate::state::VirtualState;
 use bridge_buddy_core::primitives::card::virtual_rank::VirtualRank;
 use bridge_buddy_core::primitives::Suit;
-use itertools::Itertools;
+
 use std::cmp::{max, min, Ordering};
 use strum::IntoEnumIterator;
 
@@ -18,19 +17,19 @@ fn trump_losing_tricks<const N: usize>(state: &VirtualState<N>, trump_suit: Suit
     // this routine is inspired heavily by Bo Haglund's Double Dummy Solver
     let player = state.next_to_play();
     let players = [player, player + 1, player + 2, player + 3];
-    let cards = players.map(|x| state.cards_of(x).all_cards().collect_vec());
+    let cards = players.map(|x| state.cards_of(x));
 
     let [my_cards, lhos_cards, partners_cards, rhos_cards] = &cards;
 
-    let my_card_count = count_cards_per_suit(my_cards);
-    let partners_card_count = count_cards_per_suit(partners_cards);
-    let lhos_card_count = count_cards_per_suit(lhos_cards);
-    let rhos_card_count = count_cards_per_suit(rhos_cards);
+    let my_card_count = my_cards.count_cards_per_suit();
+    let partners_card_count = partners_cards.count_cards_per_suit();
+    let lhos_card_count = lhos_cards.count_cards_per_suit();
+    let rhos_card_count = rhos_cards.count_cards_per_suit();
 
-    let my_simple_high_card_count = count_high_cards_per_suit(my_cards);
-    let partners_simple_high_card_count = count_high_cards_per_suit(partners_cards);
-    let lhos_simple_high_card_count = count_high_cards_per_suit(lhos_cards);
-    let rhos_simple_high_card_count = count_high_cards_per_suit(rhos_cards);
+    let my_simple_high_card_count = my_cards.count_high_cards_per_suit();
+    let partners_simple_high_card_count = partners_cards.count_high_cards_per_suit();
+    let lhos_simple_high_card_count = lhos_cards.count_high_cards_per_suit();
+    let rhos_simple_high_card_count = rhos_cards.count_high_cards_per_suit();
 
     if my_card_count[trump_suit as usize] == 0 && partners_card_count[trump_suit as usize] == 0 {
         // opponents have all the trumps
@@ -72,15 +71,15 @@ fn nt_losing_tricks<const N: usize>(state: &VirtualState<N>) -> usize {
     // this routine is inspired heavily by Bo Haglund's Double Dummy Solver
     let player = state.next_to_play();
     let players = [player, player + 1, player + 2, player + 3];
-    let cards = players.map(|x| state.cards_of(x).all_cards().collect_vec());
+    let cards = players.map(|x| state.cards_of(x));
 
     let [my_cards, lhos_cards, partners_cards, rhos_cards] = &cards;
 
-    let my_card_count = count_cards_per_suit(my_cards);
-    let partners_card_count = count_cards_per_suit(partners_cards);
+    let my_card_count = my_cards.count_cards_per_suit();
+    let partners_card_count = partners_cards.count_cards_per_suit();
 
-    let lhos_simple_high_card_count = count_high_cards_per_suit(lhos_cards);
-    let rhos_simple_high_card_count = count_high_cards_per_suit(rhos_cards);
+    let lhos_simple_high_card_count = lhos_cards.count_high_cards_per_suit();
+    let rhos_simple_high_card_count = rhos_cards.count_high_cards_per_suit();
 
     let mut partners_suits = 0;
     let mut lhos_suits = 0;

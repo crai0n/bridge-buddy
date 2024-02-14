@@ -121,6 +121,34 @@ impl<'a> VirtualCardTracker<'a> {
         })
     }
 
+    pub fn count_combined_high_cards_per_suit(&self, other: &Self) -> [[usize; 4]; 2] {
+        let transposed_count = SUIT_ARRAY.map(|suit| {
+            let mut my_iter = self.cards_in(suit).rev().peekable();
+            let mut other_iter = other.cards_in(suit).rev().peekable();
+
+            let mut count = [0usize, 0];
+            for high_rank in VirtualRank::iter().rev() {
+                if my_iter.next_if(|y| y.rank == high_rank).is_some() {
+                    count[0] += 1;
+                } else if other_iter.next_if(|y| y.rank == high_rank).is_some() {
+                    count[1] += 1;
+                } else {
+                    break;
+                }
+            }
+            count
+        });
+        let mut count = [[0; 4]; 2];
+
+        for (index, counts) in transposed_count.iter().enumerate() {
+            for (jndex, single_count) in counts.iter().enumerate() {
+                count[jndex][index] = *single_count;
+            }
+        }
+
+        count
+    }
+
     #[allow(dead_code)]
     pub fn count_cards_higher_than(&self, card: VirtualCard) -> usize {
         let abs_card = self.virtualizer.virtual_to_absolute(card);
