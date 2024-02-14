@@ -14,7 +14,7 @@ use strum::IntoEnumIterator;
 
 pub struct VirtualState<const N: usize> {
     game: DoubleDummyState<N>,
-    played: [SuitField; 4],
+    out_of_play: [SuitField; 4],
 }
 
 #[allow(dead_code)]
@@ -24,17 +24,12 @@ impl<const N: usize> VirtualState<N> {
 
         Self {
             game,
-            played: [SuitField::empty(); 4],
+            out_of_play: [SuitField::empty(); 4],
         }
     }
 
     pub fn suit_to_follow(&self) -> Option<Suit> {
         self.game.suit_to_follow()
-    }
-
-    fn generate_distribution_field(&self) -> [u32; 4] {
-        let card_mapping = self.generate_card_mapping();
-        Self::card_mapping_to_distribution_field(&card_mapping)
     }
 
     fn generate_card_mapping(&self) -> Vec<(VirtualCard, Seat)> {
@@ -47,12 +42,14 @@ impl<const N: usize> VirtualState<N> {
         output
     }
 
-    fn card_mapping_to_distribution_field(input: &[(VirtualCard, Seat)]) -> [u32; 4] {
+    fn generate_distribution_field(&self) -> [u32; 4] {
         let mut fields = [0u32; 4];
-        for &(card, seat) in input {
-            let offset = 2 * card.rank as usize;
-            fields[card.suit as usize] |= (seat as u32) << offset;
-            fields[card.suit as usize] += 1 << 28; // count the cards still in play on the highest 4 bits
+        for player in Seat::iter() {
+            for card in self.cards_of(player).all_cards() {
+                let offset = 2 * card.rank as usize;
+                fields[card.suit as usize] |= (player as u32) << offset;
+                fields[card.suit as usize] += 1 << 28; // count the cards still in play on the highest 4 bits
+            }
         }
         fields
     }
@@ -76,7 +73,7 @@ impl<const N: usize> VirtualState<N> {
             Some(card) => {
                 self.game.play(card);
                 if self.game.player_is_leading() {
-                    self.update_played();
+                    self.update_out_of_play();
                 }
                 Ok(())
             }
@@ -84,11 +81,11 @@ impl<const N: usize> VirtualState<N> {
         }
     }
 
-    fn update_played(&mut self) {
-        let played_cards = self.game.out_of_play_cards();
-        let tracker = CardTracker::from_cards(played_cards);
+    fn update_out_of_play(&mut self) {
+        let out_of_play_cards = self.game.out_of_play_cards();
+        let tracker = CardTracker::from_cards(out_of_play_cards);
         for suit in Suit::iter() {
-            self.played[suit as usize] = *tracker.suit_state(suit);
+            self.out_of_play[suit as usize] = *tracker.suit_state(suit);
         }
     }
 
@@ -96,7 +93,7 @@ impl<const N: usize> VirtualState<N> {
         self.game.undo();
         if self.game.count_cards_in_current_trick() == 3 {
             // we moved back a trick
-            self.update_played()
+            self.update_out_of_play()
         }
     }
 
@@ -191,7 +188,7 @@ impl<const N: usize> VirtualState<N> {
     }
 
     fn create_virtualizer(&self) -> Virtualizer {
-        Virtualizer::new(self.played)
+        Virtualizer::new(self.out_of_play)
     }
 
     fn absolute_to_virtual(&self, card: Card) -> Option<VirtualCard> {
