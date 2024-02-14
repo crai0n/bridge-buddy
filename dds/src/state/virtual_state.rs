@@ -1,5 +1,5 @@
 use super::double_dummy_state::DoubleDummyState;
-use crate::card_manager::card_tracker::CardTracker;
+use crate::card_manager::card_tracker::{CardTracker, SUIT_ARRAY};
 use crate::card_manager::suit_field::SuitField;
 
 use super::virtual_card::VirtualCard;
@@ -43,15 +43,18 @@ impl<const N: usize> VirtualState<N> {
     }
 
     fn generate_distribution_field(&self) -> [u32; 4] {
-        let mut fields = [0u32; 4];
-        for player in Seat::iter() {
-            for card in self.cards_of(player).all_cards() {
-                let offset = 2 * card.rank as usize;
-                fields[card.suit as usize] |= (player as u32) << offset;
-                fields[card.suit as usize] += 1 << 28; // count the cards still in play on the highest 4 bits
+        SUIT_ARRAY.map(|suit| {
+            let mut field = 0u32;
+            for player in Seat::iter() {
+                for card in self.cards_of(player).cards_in(suit) {
+                    let offset = 2 * card.rank as usize;
+                    field |= (player as u32) << offset;
+                }
+                let count = self.cards_of(player).count_cards_in(suit) as u32;
+                field += count << 28; // count the cards still in play on the highest 4 bits
             }
-        }
-        fields
+            field
+        })
     }
 
     pub fn count_played_cards(&self) -> usize {
