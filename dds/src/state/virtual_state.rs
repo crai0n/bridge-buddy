@@ -127,17 +127,6 @@ impl<const N: usize> VirtualState<N> {
         }
     }
 
-    fn valid_moves_for(&self, player: Seat) -> impl Iterator<Item = VirtualCard> + '_ {
-        self.game
-            .valid_moves_for(player)
-            .into_iter()
-            .filter_map(|x| self.absolute_to_virtual(x))
-    }
-
-    pub fn valid_moves(&self) -> impl Iterator<Item = VirtualCard> + '_ {
-        self.valid_moves_for(self.next_to_play())
-    }
-
     pub fn player_is_leading(&self) -> bool {
         self.game.player_is_leading()
     }

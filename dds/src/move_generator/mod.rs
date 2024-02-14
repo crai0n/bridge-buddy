@@ -15,7 +15,21 @@ pub struct MoveGenerator {}
 
 impl MoveGenerator {
     pub fn generate_moves<const N: usize>(state: &VirtualState<N>, move_ordering: bool) -> Vec<DdsMove> {
-        let mut unique_moves = Self::select_one_move_per_sequence(state.valid_moves());
+        let player = state.next_to_play();
+        let mut unique_moves = match state.suit_to_follow() {
+            Some(lead_suit) => {
+                let card_tracker = state.cards_of(player);
+                if card_tracker.is_void_in(lead_suit) {
+                    Self::select_one_move_per_sequence(card_tracker.all_cards())
+                } else {
+                    Self::select_one_move_per_sequence(card_tracker.cards_in(lead_suit))
+                }
+            }
+            None => {
+                let card_tracker = state.cards_of(player);
+                Self::select_one_move_per_sequence(card_tracker.all_cards())
+            }
+        };
         if move_ordering {
             Self::calc_priority(&mut unique_moves, state);
             Self::sort_moves_by_priority_descending(&mut unique_moves);

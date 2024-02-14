@@ -2,7 +2,6 @@ use super::suit_field::SuitField;
 
 use bridge_buddy_core::primitives::{Card, Hand, Suit};
 
-use itertools::Itertools;
 use std::fmt::Debug;
 use strum::IntoEnumIterator;
 
@@ -141,21 +140,6 @@ impl CardTracker {
     #[allow(dead_code)]
     pub fn count_cards_higher_than(&self, card: Card) -> usize {
         self.suit_state(card.suit).cards_higher_than(card.rank).count_cards()
-    }
-
-    pub fn valid_moves(&self, lead_suit: Option<Suit>) -> Vec<Card> {
-        match lead_suit {
-            None => self.all_cards().collect_vec(),
-            Some(lead_suit) => {
-                let (cards_in_suit, other_cards): (Vec<_>, Vec<_>) =
-                    self.all_cards().partition(|card| card.suit == lead_suit);
-                if cards_in_suit.is_empty() {
-                    other_cards
-                } else {
-                    cards_in_suit
-                }
-            }
-        }
     }
 }
 

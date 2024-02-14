@@ -142,14 +142,6 @@ impl<const N: usize> DoubleDummyState<N> {
         }
     }
 
-    pub fn valid_moves_for(&self, player: Seat) -> Vec<Card> {
-        self.cards_of(player).valid_moves(self.suit_to_follow())
-    }
-
-    pub fn valid_moves(&self) -> Vec<Card> {
-        self.valid_moves_for(self.next_to_play())
-    }
-
     pub fn list_played_cards(&self) -> &[Card] {
         self.trick_manager.played_cards()
     }

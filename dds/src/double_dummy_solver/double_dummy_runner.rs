@@ -303,7 +303,8 @@ impl DoubleDummyRunner {
 
     fn play_last_trick<const N: usize>(state: &mut VirtualState<N>) {
         for _ in 0..4 {
-            let last_card_of_player = state.valid_moves().next().unwrap();
+            let next_to_play = state.next_to_play();
+            let last_card_of_player = state.cards_of(next_to_play).all_cards().next().unwrap();
             state.play(last_card_of_player).unwrap();
         }
     }
@@ -314,5 +315,3 @@ impl DoubleDummyRunner {
         }
     }
 }
-
-
