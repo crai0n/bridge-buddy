@@ -108,6 +108,13 @@ impl SuitField {
         Self::u16_to_rank(lowest_bit)
     }
 
+    #[allow(dead_code)]
+    pub fn take_highest_rank(&mut self) -> Option<Rank> {
+        let highest_bit_position = 15 - self.0.leading_zeros();
+        self.0 &= !(1 << highest_bit_position);
+        Rank::try_from(highest_bit_position).ok()
+    }
+
     fn lowest_bit(val: u16) -> u16 {
         val & (!val + 1)
     }
@@ -174,6 +181,12 @@ impl Iterator for SuitFieldIntoIterator {
     }
 }
 
+impl DoubleEndedIterator for SuitFieldIntoIterator {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.suit_field.take_highest_rank()
+    }
+}
+
 impl<'a> IntoIterator for &'a SuitField {
     type Item = Rank;
     type IntoIter = SuitFieldIterator<'a>;
@@ -199,6 +212,15 @@ impl<'a> Iterator for SuitFieldIterator<'a> {
         let lowest_bit = SuitField::lowest_bit(masked.0);
         self.mask |= lowest_bit;
         SuitField::u16_to_rank(lowest_bit)
+    }
+}
+
+impl<'a> DoubleEndedIterator for SuitFieldIterator<'a> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        let masked = self.suit_field.masked(!self.mask);
+        let highest_bit = 1 << (15 - masked.0.leading_zeros());
+        self.mask |= highest_bit;
+        SuitField::u16_to_rank(highest_bit)
     }
 }
 
