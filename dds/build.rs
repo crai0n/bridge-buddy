@@ -67,16 +67,16 @@ fn create_virtual_map() {
 }
 
 fn try_absolute_from_virtual_rank(virtual_rank: VirtualRank, played: u16) -> Option<Rank> {
-    let rel_index = virtual_rank as u16;
+    let rel_index = virtual_rank as u32;
     let mut index = 0;
 
     while index <= rel_index {
         if played & (1 << index) == 0 {
             let shifted = played >> index;
-            let pop_count = shifted.count_ones() as u16;
+            let pop_count = shifted.count_ones();
 
             if rel_index == index + pop_count {
-                return Some(Rank::from(index));
+                return Some(Rank::try_from(index).unwrap());
             }
         }
         index += 1;

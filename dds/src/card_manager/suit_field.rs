@@ -2,7 +2,6 @@ use bridge_buddy_core::primitives::card::rank::N_RANKS;
 use bridge_buddy_core::primitives::card::Rank;
 
 use std::ops::BitXor;
-use strum::IntoEnumIterator;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct SuitField(pub(crate) u16);
@@ -11,6 +10,10 @@ pub struct SuitField(pub(crate) u16);
 impl SuitField {
     pub fn empty() -> Self {
         Self(0u16)
+    }
+
+    pub fn masked(&self, mask: u16) -> Self {
+        Self(self.0 & mask)
     }
 
     #[allow(dead_code)]
@@ -55,8 +58,7 @@ impl SuitField {
         while tracking_field != 0 {
             let lowest_bit = tracking_field & (!tracking_field + 1);
             tracking_field &= !lowest_bit;
-            let index = lowest_bit.ilog2();
-            let rank = Rank::from((index % 16) as u16);
+            let rank = Self::u16_to_rank(lowest_bit).unwrap();
             vec.push(rank)
         }
 
@@ -69,21 +71,52 @@ impl SuitField {
         Self(new)
     }
 
+    fn u16_to_rank(input: u16) -> Option<Rank> {
+        match input {
+            0b0000_0000_0000_0000 => None,
+            0b0001_0000_0000_0000 => Some(Rank::Ace),
+            0b0000_1000_0000_0000 => Some(Rank::King),
+            0b0000_0100_0000_0000 => Some(Rank::Queen),
+            0b0000_0010_0000_0000 => Some(Rank::Jack),
+            0b0000_0001_0000_0000 => Some(Rank::Ten),
+            0b0000_0000_1000_0000 => Some(Rank::Nine),
+            0b0000_0000_0100_0000 => Some(Rank::Eight),
+            0b0000_0000_0010_0000 => Some(Rank::Seven),
+            0b0000_0000_0001_0000 => Some(Rank::Six),
+            0b0000_0000_0000_1000 => Some(Rank::Five),
+            0b0000_0000_0000_0100 => Some(Rank::Four),
+            0b0000_0000_0000_0010 => Some(Rank::Three),
+            0b0000_0000_0000_0001 => Some(Rank::Two),
+            _ => panic!("Not a valid Rank!"),
+        }
+    }
+
     #[allow(dead_code)]
     pub fn highest_rank(&self) -> Option<Rank> {
-        Rank::iter().rev().find(|&rank| self.0 & Self::u16_from_rank(rank) != 0)
+        Rank::try_from(15 - self.0.leading_zeros()).ok()
     }
 
     #[allow(dead_code)]
     pub fn lowest_rank(&self) -> Option<Rank> {
-        Rank::iter().find(|&rank| self.0 & Self::u16_from_rank(rank) != 0)
+        Self::u16_to_rank(Self::lowest_bit(self.0))
+    }
+
+    #[allow(dead_code)]
+    pub fn take_lowest_rank(&mut self) -> Option<Rank> {
+        let lowest_bit = Self::lowest_bit(self.0);
+        self.0 &= !lowest_bit;
+        Self::u16_to_rank(lowest_bit)
+    }
+
+    fn lowest_bit(val: u16) -> u16 {
+        val & (!val + 1)
     }
 
     #[allow(dead_code)]
     pub fn win_ranks(&self, least_win: Rank) -> Self {
         let mask = Self::u16_from_rank(least_win) - 1;
-        let new = self.0 & !mask;
-        Self(new)
+
+        self.masked(!mask)
     }
 
     pub fn all_lower_than(rank: Rank) -> Self {
@@ -93,7 +126,7 @@ impl SuitField {
     #[allow(dead_code)]
     pub fn cards_lower_than(&self, rank: Rank) -> Self {
         let mask = 2 * Self::u16_from_rank(rank) - 1;
-        Self(mask & self.0)
+        self.masked(mask)
     }
 
     pub fn all_higher_than(rank: Rank) -> Self {
@@ -106,7 +139,7 @@ impl SuitField {
     pub fn cards_higher_than(&self, rank: Rank) -> Self {
         let mask = 2 * Self::u16_from_rank(rank) - 1;
         let mask = Self::ALL_RANKS & !mask;
-        Self(mask & self.0)
+        self.masked(mask)
     }
 
     pub fn win_rank_mask(&self) -> u32 {
@@ -121,10 +154,53 @@ impl SuitField {
     }
 }
 
-// pub struct HighCard {
-//     rank: Rank,
-//     player: Seat,
-// }
+impl IntoIterator for SuitField {
+    type Item = Rank;
+    type IntoIter = SuitFieldIntoIterator;
+
+    fn into_iter(self) -> Self::IntoIter {
+        SuitFieldIntoIterator { suit_field: self }
+    }
+}
+
+pub struct SuitFieldIntoIterator {
+    suit_field: SuitField,
+}
+
+impl Iterator for SuitFieldIntoIterator {
+    type Item = Rank;
+    fn next(&mut self) -> Option<Rank> {
+        self.suit_field.take_lowest_rank()
+    }
+}
+
+impl<'a> IntoIterator for &'a SuitField {
+    type Item = Rank;
+    type IntoIter = SuitFieldIterator<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        SuitFieldIterator {
+            suit_field: self,
+            mask: 0,
+        }
+    }
+}
+
+pub struct SuitFieldIterator<'a> {
+    suit_field: &'a SuitField,
+    mask: u16,
+}
+
+impl<'a> Iterator for SuitFieldIterator<'a> {
+    type Item = Rank;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let masked = self.suit_field.masked(!self.mask);
+        let lowest_bit = SuitField::lowest_bit(masked.0);
+        self.mask |= lowest_bit;
+        SuitField::u16_to_rank(lowest_bit)
+    }
+}
 
 #[cfg(test)]
 mod test {
@@ -187,6 +263,20 @@ mod test {
                 .map(|v| {
                     let suit_field = SuitField::from_u16(v);
                     suit_field.highest_rank()
+                })
+                .collect_vec()
+        })
+    }
+
+    #[bench]
+    fn bench_lowest_rank(b: &mut Bencher) {
+        let n = test::black_box(8192u16);
+
+        b.iter(|| {
+            (0..n)
+                .map(|v| {
+                    let suit_field = SuitField::from_u16(v);
+                    suit_field.lowest_rank()
                 })
                 .collect_vec()
         })

@@ -41,23 +41,24 @@ impl From<Card> for Rank {
     }
 }
 
-impl From<u16> for Rank {
-    fn from(value: u16) -> Rank {
+impl TryFrom<u32> for Rank {
+    type Error = BBError;
+    fn try_from(value: u32) -> Result<Rank, Self::Error> {
         match value {
-            0 => Rank::Two,
-            1 => Rank::Three,
-            2 => Rank::Four,
-            3 => Rank::Five,
-            4 => Rank::Six,
-            5 => Rank::Seven,
-            6 => Rank::Eight,
-            7 => Rank::Nine,
-            8 => Rank::Ten,
-            9 => Rank::Jack,
-            10 => Rank::Queen,
-            11 => Rank::King,
-            12 => Rank::Ace,
-            _ => panic!("Not a valid rank!"),
+            0 => Ok(Rank::Two),
+            1 => Ok(Rank::Three),
+            2 => Ok(Rank::Four),
+            3 => Ok(Rank::Five),
+            4 => Ok(Rank::Six),
+            5 => Ok(Rank::Seven),
+            6 => Ok(Rank::Eight),
+            7 => Ok(Rank::Nine),
+            8 => Ok(Rank::Ten),
+            9 => Ok(Rank::Jack),
+            10 => Ok(Rank::Queen),
+            11 => Ok(Rank::King),
+            12 => Ok(Rank::Ace),
+            _ => Err(BBError::UnknownRank(format!("{}", value))),
         }
     }
 }
