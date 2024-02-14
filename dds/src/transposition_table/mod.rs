@@ -1,11 +1,11 @@
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::Suit;
 use std::cmp::{max, min};
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 
 #[derive(Default)]
 pub struct TranspositionTable {
-    inner: BTreeMap<TTKey, TTValue>,
+    inner: HashMap<TTKey, TTValue>,
 }
 
 impl TranspositionTable {

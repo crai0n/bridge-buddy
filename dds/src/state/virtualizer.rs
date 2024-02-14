@@ -1,10 +1,10 @@
 use super::virtual_card::VirtualCard;
 use crate::card_manager::suit_field::SuitField;
-use bridge_buddy_core::primitives::card::virtual_rank::VirtualRank;
+use bridge_buddy_core::primitives::card::rank::RANK_ARRAY;
+use bridge_buddy_core::primitives::card::virtual_rank::{VirtualRank, VIRTUAL_RANK_ARRAY};
 use bridge_buddy_core::primitives::card::Rank;
 use bridge_buddy_core::primitives::Card;
 use lazy_static::lazy_static;
-use strum::IntoEnumIterator;
 
 pub struct Virtualizer {
     played: [SuitField; 4],
@@ -13,7 +13,7 @@ pub struct Virtualizer {
 lazy_static! {
     static ref TO_VIRTUAL_GIVEN_OUT_OF_PLAY: [[Option<VirtualRank>; 13]; 8192] = {
         let mut virt_rank = [[None; 13]; 8192];
-        for rank in Rank::iter() {
+        for rank in RANK_ARRAY {
             for out_of_play in 0u16..8192 {
                 virt_rank[out_of_play as usize][rank as usize] = try_virtual_from_absolute_rank(rank, out_of_play)
             }
@@ -22,7 +22,7 @@ lazy_static! {
     };
     static ref TO_ABSOLUTE_GIVEN_OUT_OF_PLAY: [[Option<Rank>; 13]; 8192] = {
         let mut abs_rank = [[None; 13]; 8192];
-        for virt_rank in VirtualRank::iter() {
+        for virt_rank in VIRTUAL_RANK_ARRAY {
             for out_of_play in 0u16..8192 {
                 abs_rank[out_of_play as usize][virt_rank as usize] =
                     try_absolute_from_virtual_rank(virt_rank, out_of_play)

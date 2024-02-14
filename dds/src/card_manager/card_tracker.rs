@@ -2,13 +2,11 @@ use super::suit_field::SuitField;
 
 use bridge_buddy_core::primitives::{Card, Hand, Suit};
 
+use bridge_buddy_core::primitives::card::suit::SUIT_ARRAY;
 use std::fmt::Debug;
-use strum::IntoEnumIterator;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct CardTracker([SuitField; 4]);
-
-pub const SUIT_ARRAY: [Suit; 4] = [Suit::Clubs, Suit::Diamonds, Suit::Hearts, Suit::Spades];
 
 impl CardTracker {
     pub fn suit_state(&self, suit: Suit) -> &SuitField {
@@ -81,7 +79,9 @@ impl CardTracker {
 
     #[allow(dead_code)]
     pub fn count_cards(&self) -> usize {
-        Suit::iter().fold(0, |result, suit| self.suit_state(suit).count_cards() + result)
+        SUIT_ARRAY
+            .into_iter()
+            .fold(0, |result, suit| self.suit_state(suit).count_cards() + result)
     }
 
     pub fn is_void_in(&self, suit: Suit) -> bool {
@@ -118,7 +118,9 @@ impl CardTracker {
     }
 
     pub fn all_cards(&self) -> impl DoubleEndedIterator<Item = Card> + '_ {
-        Suit::iter().flat_map(|suit| self.suit_state(suit).into_iter().map(move |rank| Card { suit, rank }))
+        SUIT_ARRAY
+            .into_iter()
+            .flat_map(|suit| self.suit_state(suit).into_iter().map(move |rank| Card { suit, rank }))
     }
 
     pub fn cards_in(&self, suit: Suit) -> impl DoubleEndedIterator<Item = Card> + '_ {

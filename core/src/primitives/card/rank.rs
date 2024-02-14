@@ -1,11 +1,27 @@
 use crate::error::BBError;
 use crate::primitives::Card;
 use std::cmp::Ordering;
-use strum::{Display, EnumIter};
+use strum::Display;
 
 pub const N_RANKS: usize = 13;
 
-#[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter, Hash)]
+pub const RANK_ARRAY: [Rank; N_RANKS] = [
+    Rank::Two,
+    Rank::Three,
+    Rank::Four,
+    Rank::Five,
+    Rank::Six,
+    Rank::Seven,
+    Rank::Eight,
+    Rank::Nine,
+    Rank::Ten,
+    Rank::Jack,
+    Rank::Queen,
+    Rank::King,
+    Rank::Ace,
+];
+
+#[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Rank {
     #[strum(serialize = "2")]
     Two = 0,
@@ -115,10 +131,10 @@ impl std::str::FromStr for Rank {
 mod tests {
     use super::Rank::*;
     use crate::error::BBError;
+    use crate::primitives::card::rank::RANK_ARRAY;
     use crate::primitives::card::{Rank, Suit};
     use crate::primitives::Card;
     use std::str::FromStr;
-    use strum::IntoEnumIterator;
     use test_case::test_case;
 
     #[test_case(King, Ace; "King and Ace")]
@@ -225,7 +241,7 @@ mod tests {
     #[test]
     fn iteration() {
         assert_eq!(
-            Rank::iter().collect::<Vec<Rank>>(),
+            RANK_ARRAY.into_iter().collect::<Vec<Rank>>(),
             vec![Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King, Ace]
         )
     }

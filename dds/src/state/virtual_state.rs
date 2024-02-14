@@ -1,5 +1,5 @@
 use super::double_dummy_state::DoubleDummyState;
-use crate::card_manager::card_tracker::{CardTracker, SUIT_ARRAY};
+use crate::card_manager::card_tracker::CardTracker;
 use crate::card_manager::suit_field::SuitField;
 
 use super::virtual_card::VirtualCard;
@@ -7,10 +7,11 @@ use crate::state::virtual_card_tracker::VirtualCardTracker;
 use crate::state::virtualizer::Virtualizer;
 use crate::transposition_table::TTKey;
 use bridge_buddy_core::error::BBError;
+use bridge_buddy_core::primitives::card::suit::SUIT_ARRAY;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::{Card, Hand, Suit};
 
-use strum::IntoEnumIterator;
+use bridge_buddy_core::primitives::deal::seat::SEAT_ARRAY;
 
 pub struct VirtualState<const N: usize> {
     game: DoubleDummyState<N>,
@@ -34,7 +35,7 @@ impl<const N: usize> VirtualState<N> {
 
     fn generate_card_mapping(&self) -> Vec<(VirtualCard, Seat)> {
         let mut output = vec![];
-        for player in Seat::iter() {
+        for player in SEAT_ARRAY.into_iter() {
             for card in self.cards_of(player).all_cards() {
                 output.push((card, player));
             }
@@ -45,7 +46,7 @@ impl<const N: usize> VirtualState<N> {
     fn generate_distribution_field(&self) -> [u32; 4] {
         SUIT_ARRAY.map(|suit| {
             let mut field = 0u32;
-            for player in Seat::iter() {
+            for player in SEAT_ARRAY {
                 for card in self.cards_of(player).cards_in(suit) {
                     let offset = 2 * card.rank as usize;
                     field |= (player as u32) << offset;
@@ -87,7 +88,7 @@ impl<const N: usize> VirtualState<N> {
     fn update_out_of_play(&mut self) {
         let out_of_play_cards = self.game.out_of_play_cards();
         let tracker = CardTracker::from_cards(out_of_play_cards);
-        for suit in Suit::iter() {
+        for suit in SUIT_ARRAY {
             self.out_of_play[suit as usize] = *tracker.suit_state(suit);
         }
     }
@@ -109,15 +110,21 @@ impl<const N: usize> VirtualState<N> {
     }
 
     pub fn owner_of(&self, card: VirtualCard) -> Option<Seat> {
-        Seat::iter().find(|&player| self.cards_of(player).contains(&card))
+        SEAT_ARRAY
+            .into_iter()
+            .find(|&player| self.cards_of(player).contains(&card))
     }
 
     pub fn owner_of_winning_rank_in(&self, suit: Suit) -> Option<Seat> {
-        Seat::iter().find(|&seat| self.cards_of(seat).contains_winning_rank_in(suit))
+        SEAT_ARRAY
+            .into_iter()
+            .find(|&seat| self.cards_of(seat).contains_winning_rank_in(suit))
     }
 
     pub fn owner_of_runner_up_in(&self, suit: Suit) -> Option<Seat> {
-        Seat::iter().find(|&seat| self.cards_of(seat).contains_runner_up_in(suit))
+        SEAT_ARRAY
+            .into_iter()
+            .find(|&seat| self.cards_of(seat).contains_runner_up_in(suit))
     }
 
     pub fn player_can_ruff_suit(&self, suit: Suit, player: Seat) -> bool {

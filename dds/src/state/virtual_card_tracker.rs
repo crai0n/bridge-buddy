@@ -1,10 +1,9 @@
-use crate::card_manager::card_tracker::{CardTracker, SUIT_ARRAY};
+use crate::card_manager::card_tracker::CardTracker;
 use crate::state::virtual_card::VirtualCard;
 use crate::state::virtualizer::Virtualizer;
-use bridge_buddy_core::primitives::card::virtual_rank::VirtualRank;
+use bridge_buddy_core::primitives::card::suit::SUIT_ARRAY;
+use bridge_buddy_core::primitives::card::virtual_rank::{VirtualRank, VIRTUAL_RANK_ARRAY};
 use bridge_buddy_core::primitives::{Card, Suit};
-
-use strum::IntoEnumIterator;
 
 pub struct VirtualCardTracker<'a> {
     card_tracker: &'a CardTracker,
@@ -115,8 +114,8 @@ impl<'a> VirtualCardTracker<'a> {
         SUIT_ARRAY.map(|suit| {
             self.cards_in(suit)
                 .rev()
-                .zip(VirtualRank::iter().rev())
-                .take_while(|(card, high_rank)| card.rank == *high_rank)
+                .zip(VIRTUAL_RANK_ARRAY.iter().rev())
+                .take_while(|(card, &high_rank)| card.rank == high_rank)
                 .count()
         })
     }
@@ -127,7 +126,7 @@ impl<'a> VirtualCardTracker<'a> {
             let mut other_iter = other.cards_in(suit).rev().peekable();
 
             let mut count = [0usize, 0];
-            for high_rank in VirtualRank::iter().rev() {
+            for high_rank in VIRTUAL_RANK_ARRAY.into_iter().rev() {
                 if my_iter.next_if(|y| y.rank == high_rank).is_some() {
                     count[0] += 1;
                 } else if other_iter.next_if(|y| y.rank == high_rank).is_some() {

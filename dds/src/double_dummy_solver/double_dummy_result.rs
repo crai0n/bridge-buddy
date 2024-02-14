@@ -1,8 +1,8 @@
 use bridge_buddy_core::primitives::contract::Strain;
+use bridge_buddy_core::primitives::deal::seat::SEAT_ARRAY;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::Suit;
 use std::fmt::{Display, Formatter};
-use strum::IntoEnumIterator;
 
 pub struct DoubleDummyResult {
     pub max_tricks: [usize; 20],
@@ -63,7 +63,7 @@ impl Default for DoubleDummyResult {
 impl Display for DoubleDummyResult {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "  NT ♠S ♥H ♦D ♣C")?;
-        for seat in Seat::iter() {
+        for seat in SEAT_ARRAY {
             write!(f, "{} ", seat)?;
             for strain in (0..5).rev() {
                 let n_str = format!("{}", self.max_tricks[5 * (seat as usize) + strain]);

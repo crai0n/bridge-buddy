@@ -1,8 +1,26 @@
 use crate::error::BBError;
 use std::cmp::Ordering;
-use strum::{Display, EnumIter};
+use strum::Display;
 
-#[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
+pub const N_VIRTUAL_RANKS: usize = 13;
+
+pub const VIRTUAL_RANK_ARRAY: [VirtualRank; N_VIRTUAL_RANKS] = [
+    VirtualRank::Two,
+    VirtualRank::Three,
+    VirtualRank::Four,
+    VirtualRank::Five,
+    VirtualRank::Six,
+    VirtualRank::Seven,
+    VirtualRank::Eight,
+    VirtualRank::Nine,
+    VirtualRank::Ten,
+    VirtualRank::Jack,
+    VirtualRank::Queen,
+    VirtualRank::King,
+    VirtualRank::Ace,
+];
+
+#[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord)]
 pub enum VirtualRank {
     #[strum(serialize = "2")]
     Two = 0,

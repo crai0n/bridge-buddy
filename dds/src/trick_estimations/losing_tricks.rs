@@ -3,8 +3,8 @@ use crate::state::VirtualState;
 use bridge_buddy_core::primitives::card::virtual_rank::VirtualRank;
 use bridge_buddy_core::primitives::Suit;
 
+use bridge_buddy_core::primitives::card::suit::SUIT_ARRAY;
 use std::cmp::{max, min, Ordering};
-use strum::IntoEnumIterator;
 
 pub fn losing_tricks_for_leader<const N: usize>(state: &VirtualState<N>) -> usize {
     match state.trump_suit() {
@@ -85,7 +85,7 @@ fn nt_losing_tricks<const N: usize>(state: &VirtualState<N>) -> usize {
     let mut lhos_suits = 0;
     let mut rhos_suits = 0;
 
-    for suit in Suit::iter() {
+    for suit in SUIT_ARRAY {
         if my_card_count[suit as usize] != 0 {
             if rhos_simple_high_card_count[suit as usize] > 0 {
                 rhos_suits += 1;
@@ -103,7 +103,7 @@ fn nt_losing_tricks<const N: usize>(state: &VirtualState<N>) -> usize {
 
     let mut our_maximum_tricks = 0;
 
-    for suit in Suit::iter() {
+    for suit in SUIT_ARRAY {
         if lhos_simple_high_card_count[suit as usize] == 0 && rhos_simple_high_card_count[suit as usize] == 0 {
             // we have the winner for this suit
             // assume we win with every card

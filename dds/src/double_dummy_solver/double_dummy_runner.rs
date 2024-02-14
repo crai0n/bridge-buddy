@@ -6,11 +6,11 @@ use crate::transposition_table::TranspositionTable;
 use crate::trick_estimations::{losing_tricks_for_leader, quick_tricks_for_leader, quick_tricks_for_second_hand};
 use bridge_buddy_core::engine::hand_evaluation::ForumDPlus2015Evaluator;
 use bridge_buddy_core::primitives::contract::Strain;
+use bridge_buddy_core::primitives::deal::seat::SEAT_ARRAY;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::Deal;
-use itertools::Itertools;
+
 use std::cmp::min;
-use strum::IntoEnumIterator;
 
 #[derive(Default)]
 pub struct DoubleDummyRunner {
@@ -33,14 +33,10 @@ impl DoubleDummyRunner {
     }
 
     pub fn solve_for_all_declarers<const N: usize>(&mut self, deal: Deal<N>, strain: Strain) -> [usize; 4] {
-        Seat::iter()
-            .map(|declarer| {
-                let opening_leader = declarer + 1;
-                N - self.solve_initial_position(deal, strain, opening_leader)
-            })
-            .collect_vec()
-            .try_into()
-            .unwrap()
+        SEAT_ARRAY.map(|declarer| {
+            let opening_leader = declarer + 1;
+            N - self.solve_initial_position(deal, strain, opening_leader)
+        })
     }
 
     pub fn solve_initial_position<const N: usize>(

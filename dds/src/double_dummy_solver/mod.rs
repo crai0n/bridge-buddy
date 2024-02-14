@@ -12,12 +12,12 @@ use crate::double_dummy_solver::dds_statistics::DdsStatistics;
 use crate::double_dummy_solver::double_dummy_runner::DoubleDummyRunner;
 
 use bridge_buddy_core::primitives::contract::strain::STRAIN_ARRAY;
-use bridge_buddy_core::primitives::contract::Strain;
-use bridge_buddy_core::primitives::deal::Seat;
+
+use bridge_buddy_core::primitives::deal::seat::SEAT_ARRAY;
+
 use bridge_buddy_core::primitives::Deal;
-use enum_iterator::all;
+
 use rayon::prelude::*;
-use strum::IntoEnumIterator;
 
 pub struct DoubleDummySolver {
     config: DdsConfig,
@@ -54,9 +54,9 @@ impl DoubleDummySolver {
 
         let mut result = DoubleDummyResult::new();
 
-        for strain in all::<Strain>() {
+        for strain in STRAIN_ARRAY {
             let mut strain_runner = self.new_runner();
-            for declarer in Seat::iter() {
+            for declarer in SEAT_ARRAY {
                 let opening_leader = declarer + 1;
                 let defenders_tricks = strain_runner.solve_initial_position(deal, strain, opening_leader);
                 result.set_tricks_for_declarer_in_strain(N - defenders_tricks, declarer, strain);
@@ -69,10 +69,6 @@ impl DoubleDummySolver {
     }
 
     pub fn solve_multi_threaded<const N: usize>(&mut self, deal: Deal<N>) -> DoubleDummyResult {
-        // for (seat, hand) in Seat::iter().zip(deal.hands) {
-        //     println!("{}:\n{}", seat, hand)
-        // }
-
         self.reset_statistics();
 
         let mut result = DoubleDummyResult::new();
@@ -93,7 +89,7 @@ impl DoubleDummySolver {
         for item in runner_result {
             let (strain, sub_results, statistics) = item;
             // println!("Collected thread for strain {} after {:?}", strain, time.elapsed());
-            for declarer in Seat::iter() {
+            for declarer in SEAT_ARRAY {
                 result.set_tricks_for_declarer_in_strain(sub_results[declarer as usize], declarer, strain)
             }
             self.update_statistics(&statistics);
@@ -150,10 +146,6 @@ mod test {
     #[test_case( 49u64, [1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0]; "Test T")]
     fn solve1(seed: u64, expected: [usize; 20]) {
         let deal: Deal<1> = Deal::from_u64_seed(seed);
-
-        // for (seat, hand) in Seat::iter().zip(deal.hands) {
-        //     println!("{}:\n{}", seat, hand)
-        // }
 
         let mut dds = DoubleDummySolver::default();
         let dds_result = dds.solve(deal);
@@ -360,10 +352,6 @@ mod test {
     fn solve2(seed: u64, expected: [usize; 20]) {
         let deal: Deal<2> = Deal::from_u64_seed(seed);
 
-        // for (seat, hand) in Seat::iter().zip(deal.hands) {
-        //     println!("{}:\n{}", seat, hand)
-        // }
-
         let mut dds = DoubleDummySolver::default();
         let dds_result = dds.solve(deal);
         // println!("{}", dds_result);
@@ -393,10 +381,6 @@ mod test {
     #[test_case( 49u64, [3, 1, 2, 2, 2, 0, 2, 1, 1, 0, 2, 1, 2, 1, 2, 0, 1, 1, 1, 1]; "Test T")]
     fn solve3(seed: u64, expected: [usize; 20]) {
         let deal: Deal<3> = Deal::from_u64_seed(seed);
-
-        // for (seat, hand) in Seat::iter().zip(deal.hands) {
-        //     println!("{}:\n{}", seat, hand)
-        // }
 
         let mut dds = DoubleDummySolver::default();
         let dds_result = dds.solve(deal);
@@ -428,10 +412,6 @@ mod test {
     fn solve5(seed: u64, expected: [usize; 20]) {
         let deal: Deal<5> = Deal::from_u64_seed(seed);
 
-        // for (seat, hand) in Seat::iter().zip(deal.hands) {
-        //     println!("{}:\n{}", seat, hand)
-        // }
-
         let mut dds = DoubleDummySolver::default();
         let dds_result = dds.solve(deal);
 
@@ -461,10 +441,6 @@ mod test {
     #[test_case( 49u64, [3, 0, 4, 2, 1, 1, 6, 1, 4, 4, 3, 0, 4, 2, 1, 1, 6, 1, 4, 4]; "Test T")]
     fn solve6(seed: u64, expected: [usize; 20]) {
         let deal: Deal<6> = Deal::from_u64_seed(seed);
-
-        // for (seat, hand) in Seat::iter().zip(deal.hands) {
-        //     println!("{}:\n{}", seat, hand)
-        // }
 
         let mut dds = DoubleDummySolver::default();
         let dds_result = dds.solve(deal);
@@ -496,10 +472,6 @@ mod test {
     fn solve8(seed: u64, expected: [usize; 20]) {
         let deal: Deal<8> = Deal::from_u64_seed(seed);
 
-        // for (seat, hand) in Seat::iter().zip(deal.hands) {
-        //     println!("{}:\n{}", seat, hand)
-        // }
-
         let mut dds = DoubleDummySolver::default();
         let dds_result = dds.solve(deal);
 
@@ -519,10 +491,6 @@ mod test {
     #[test_case( 39u64, [3, 2, 0, 0, 0, 6, 7, 9, 9, 9, 3, 2, 0, 0, 0, 6, 7, 9, 9, 9]; "Test J")]
     fn solve9(seed: u64, expected: [usize; 20]) {
         let deal: Deal<9> = Deal::from_u64_seed(seed);
-
-        // for (seat, hand) in Seat::iter().zip(deal.hands) {
-        //     println!("{}:\n{}", seat, hand)
-        // }
 
         let mut dds = DoubleDummySolver::default();
         let dds_result = dds.solve(deal);
@@ -575,10 +543,6 @@ mod test {
             hands: [north_hand, east_hand, south_hand, west_hand],
         };
 
-        // for (seat, hand) in Seat::iter().zip(deal.hands) {
-        //     println!("{}:\n{}", seat, hand)
-        // }
-
         let mut dds = DoubleDummySolver::default();
         let dds_result = dds.solve(deal);
 
@@ -606,10 +570,6 @@ mod test {
             board: Board::from_number(1),
             hands: [north_hand, east_hand, south_hand, west_hand],
         };
-
-        // for (seat, hand) in Seat::iter().zip(deal.hands) {
-        //     println!("{}:\n{}", seat, hand)
-        // }
 
         let mut ddr = DoubleDummyRunner::default();
 

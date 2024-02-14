@@ -1,13 +1,13 @@
 use crate::engine::subjective_game_view::{SubjectiveGameDataView, SubjectiveSeat};
 use crate::game::game_data::{Bidding, CardPlay};
 use itertools::Itertools;
-use strum::IntoEnumIterator;
 
+use crate::primitives::card::suit::SUIT_ARRAY;
 use crate::primitives::game_event::{
     BidEvent, BiddingEndedEvent, CardEvent, DiscloseHandEvent, DummyUncoveredEvent, GameEndedEvent, GameEvent,
     NewGameEvent,
 };
-use crate::primitives::{Card, Hand, Suit};
+use crate::primitives::{Card, Hand};
 
 pub struct CliPresenter {}
 
@@ -104,8 +104,8 @@ impl CliPresenter {
     }
 
     pub fn display_hand_for_user(cards: &[Card]) {
-        for suit in Suit::iter().rev() {
-            let suited_cards = cards.iter().filter(|x| x.suit == suit).rev().collect_vec();
+        for suit in SUIT_ARRAY.iter().rev() {
+            let suited_cards = cards.iter().filter(|x| x.suit == *suit).rev().collect_vec();
             if !suited_cards.is_empty() {
                 print!("{}", suit);
             }
@@ -124,8 +124,8 @@ impl CliPresenter {
     pub fn display_dummys_hand_for_user(cards: &[Card], declarer: SubjectiveSeat) {
         match declarer {
             SubjectiveSeat::Myself => {
-                for suit in Suit::iter().rev() {
-                    let suited_cards = cards.iter().filter(|x| x.suit == suit).rev().collect_vec();
+                for suit in SUIT_ARRAY.iter().rev() {
+                    let suited_cards = cards.iter().filter(|x| x.suit == *suit).rev().collect_vec();
                     if !suited_cards.is_empty() {
                         print!("{}", suit);
                     }
@@ -136,8 +136,8 @@ impl CliPresenter {
                 println!();
             }
             SubjectiveSeat::RightHandOpponent => {
-                for suit in Suit::iter().rev() {
-                    let suited_cards = cards.iter().filter(|x| x.suit == suit);
+                for suit in SUIT_ARRAY.iter().rev() {
+                    let suited_cards = cards.iter().filter(|x| x.suit == *suit);
                     print!("{}", suit);
                     for card in suited_cards.rev() {
                         print!("{}", card.rank);
@@ -146,8 +146,8 @@ impl CliPresenter {
                 }
             }
             SubjectiveSeat::LeftHandOpponent => {
-                for suit in Suit::iter().rev() {
-                    let suited_cards = cards.iter().filter(|x| x.suit == suit);
+                for suit in SUIT_ARRAY.iter().rev() {
+                    let suited_cards = cards.iter().filter(|x| x.suit == *suit);
 
                     let mut card_string = String::new();
                     for card in suited_cards {

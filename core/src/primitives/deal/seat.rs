@@ -3,11 +3,13 @@ use crate::primitives::deal::axis::Axis;
 use crate::primitives::deal::{Board, Vulnerability};
 use crate::primitives::Deal;
 use std::ops;
-use strum::{Display, EnumIter, EnumString};
+use strum::{Display, EnumString};
 
 pub const N_SEATS: usize = 4;
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Display, EnumIter, EnumString, Ord, PartialOrd, Hash)]
+pub const SEAT_ARRAY: [Seat; N_SEATS] = [Seat::North, Seat::East, Seat::South, Seat::West];
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Display, EnumString, Ord, PartialOrd, Hash)]
 pub enum Seat {
     #[strum(serialize = "n")]
     #[strum(to_string = "N")]

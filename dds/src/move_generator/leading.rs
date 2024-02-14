@@ -1,8 +1,8 @@
 use super::DdsMove;
 use super::MoveGenerator;
-use crate::card_manager::card_tracker::SUIT_ARRAY;
 use crate::state::virtual_card::VirtualCard;
 use crate::state::VirtualState;
+use bridge_buddy_core::primitives::card::suit::SUIT_ARRAY;
 use bridge_buddy_core::primitives::card::virtual_rank::VirtualRank;
 use std::cmp::max;
 

@@ -1,10 +1,11 @@
 use crate::error::BBError;
 use crate::primitives::Card;
-use enum_iterator::Sequence;
-use strum::{Display, EnumIter};
+use strum::Display;
 
 pub const N_SUITS: usize = 4;
-#[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter, Sequence, Hash)]
+
+pub const SUIT_ARRAY: [Suit; N_SUITS] = [Suit::Clubs, Suit::Diamonds, Suit::Hearts, Suit::Spades];
+#[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Suit {
     #[strum(serialize = "♣")]
     Clubs = 0,
@@ -104,7 +105,6 @@ mod tests {
     use crate::primitives::card::{Card, Rank};
     use crate::primitives::Suit;
     use std::str::FromStr;
-    use strum::IntoEnumIterator;
     use test_case::test_case;
 
     #[test]
@@ -194,14 +194,6 @@ mod tests {
         x = Spades;
         assert_eq!(x, Spades);
         assert_eq!(y, Hearts);
-    }
-
-    #[test]
-    fn iteration() {
-        assert_eq!(
-            Suit::iter().collect::<Vec<Suit>>(),
-            vec![Clubs, Diamonds, Hearts, Spades]
-        )
     }
 
     #[test]
