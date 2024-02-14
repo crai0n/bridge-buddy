@@ -48,7 +48,7 @@ impl SuitField {
     }
 
     pub fn all_contained_ranks(&self) -> Vec<Rank> {
-        let mut vec = vec![];
+        let mut vec = Vec::with_capacity(self.0.count_ones() as usize);
 
         let mut tracking_field = self.0;
 
@@ -128,10 +128,69 @@ impl SuitField {
 
 #[cfg(test)]
 mod test {
+    extern crate test;
+    use itertools::Itertools;
+    use test::Bencher;
 
     use super::SuitField;
     use bridge_buddy_core::primitives::card::Rank;
+
     use test_case::test_case;
+
+    #[bench]
+    fn is_void(b: &mut Bencher) {
+        let val = test::black_box(8192u16);
+        b.iter(|| {
+            (0..val)
+                .map(|v| {
+                    let suit_field = SuitField::from_u16(v);
+                    suit_field.is_void()
+                })
+                .collect_vec()
+        })
+    }
+
+    #[bench]
+    fn count_cards(b: &mut Bencher) {
+        let val = test::black_box(8192u16);
+
+        b.iter(|| {
+            (0..val)
+                .map(|v| {
+                    let suit_field = SuitField::from_u16(v);
+                    suit_field.count_cards()
+                })
+                .collect_vec()
+        })
+    }
+
+    #[bench]
+    fn all_contained_ranks(b: &mut Bencher) {
+        let n = test::black_box(8192u16);
+
+        b.iter(|| {
+            (0..n)
+                .map(|v| {
+                    let suit_field = SuitField::from_u16(v);
+                    suit_field.all_contained_ranks()
+                })
+                .collect_vec()
+        })
+    }
+
+    #[bench]
+    fn bench_highest_rank(b: &mut Bencher) {
+        let n = test::black_box(8192u16);
+
+        b.iter(|| {
+            (0..n)
+                .map(|v| {
+                    let suit_field = SuitField::from_u16(v);
+                    suit_field.highest_rank()
+                })
+                .collect_vec()
+        })
+    }
 
     #[test_case(0b0000_0011_0000_1000, Some(Rank::Five))]
     #[test_case(0b0000_0000_0000_0000, None)]
