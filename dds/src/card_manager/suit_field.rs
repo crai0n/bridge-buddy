@@ -94,7 +94,11 @@ impl SuitField {
 
     #[allow(dead_code)]
     pub fn highest_rank(&self) -> Option<Rank> {
-        Rank::try_from(15 - self.0.leading_zeros()).ok()
+        let leading_zeros = self.0.leading_zeros();
+        match leading_zeros {
+            0..=15 => Rank::try_from(15 - leading_zeros).ok(),
+            _ => None,
+        }
     }
 
     #[allow(dead_code)]
@@ -122,7 +126,10 @@ impl SuitField {
     }
 
     fn lowest_bit(val: u16) -> u16 {
-        val & (!val + 1)
+        match val {
+            0 => 0,
+            v => v & (!v + 1),
+        }
     }
 
     #[allow(dead_code)]

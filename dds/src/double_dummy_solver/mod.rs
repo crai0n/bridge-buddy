@@ -1,6 +1,6 @@
 mod dds_statistics;
 mod double_dummy_result;
-mod double_dummy_runner;
+pub mod double_dummy_runner;
 
 pub use double_dummy_result::DoubleDummyResult;
 
