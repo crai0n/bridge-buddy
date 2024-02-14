@@ -375,7 +375,6 @@ mod test {
     fn iterator(my_field: u16) {
         let suit_field = SuitField::from_u16(my_field);
         itertools::assert_equal(suit_field.iter(), suit_field.all_contained_ranks());
-        println!("suit field is {}", suit_field.0);
     }
 
     #[test_case(0b0000_0011_0000_1010)]
@@ -389,7 +388,6 @@ mod test {
             suit_field.iter().rev(),
             suit_field.all_contained_ranks().into_iter().rev(),
         );
-        println!("suit field is {}", suit_field.0);
     }
 
     #[test_case(0b0000_0011_0000_1010)]

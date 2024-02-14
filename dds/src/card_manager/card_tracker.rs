@@ -119,19 +119,11 @@ impl CardTracker {
     }
 
     pub fn all_cards(&self) -> impl DoubleEndedIterator<Item = Card> + '_ {
-        Suit::iter().flat_map(|suit| {
-            self.suit_state(suit)
-                .all_contained_ranks()
-                .into_iter()
-                .map(move |rank| Card { suit, rank })
-        })
+        Suit::iter().flat_map(|suit| self.suit_state(suit).into_iter().map(move |rank| Card { suit, rank }))
     }
 
     pub fn cards_in(&self, suit: Suit) -> impl DoubleEndedIterator<Item = Card> + '_ {
-        self.suit_state(suit)
-            .all_contained_ranks()
-            .into_iter()
-            .map(move |rank| Card { suit, rank })
+        self.suit_state(suit).into_iter().map(move |rank| Card { suit, rank })
     }
 
     pub fn highest_card_in(&self, suit: Suit) -> Option<Card> {
