@@ -86,7 +86,7 @@ impl CardTracker {
     }
 
     pub fn is_void_in(&self, suit: Suit) -> bool {
-        self.count_cards_in(suit) == 0
+        self.suit_state(suit).is_void()
     }
 
     pub fn has_cards_in(&self, suit: Suit) -> bool {

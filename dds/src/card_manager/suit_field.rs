@@ -23,6 +23,10 @@ impl SuitField {
         Self(mask)
     }
 
+    pub const fn is_void(&self) -> bool {
+        self.0 == 0
+    }
+
     pub const fn u16_from_rank(rank: Rank) -> u16 {
         1 << (rank as usize)
     }
