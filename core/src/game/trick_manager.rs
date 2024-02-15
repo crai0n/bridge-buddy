@@ -29,9 +29,20 @@ impl<const N: usize> TrickManager<N> {
         cards.first().map(|card| card.suit)
     }
 
-    fn cards_in_current_trick(&self) -> &[Card] {
+    pub fn cards_in_current_trick(&self) -> &[Card] {
         let last_lead_index = (self.played_cards.len() / 4) * 4;
         &self.played_cards[last_lead_index..]
+    }
+
+    pub fn cards_in_last_trick(&self) -> &[Card] {
+        let n_tricks = self.played_cards.len() / 4;
+        match n_tricks {
+            0 => &[],
+            _ => {
+                let last_lead_index = (n_tricks - 1) * 4;
+                &self.played_cards[last_lead_index..last_lead_index + 4]
+            }
+        }
     }
 
     pub fn current_trick(&self) -> ActiveTrick {
@@ -70,7 +81,7 @@ impl<const N: usize> TrickManager<N> {
         N - self.count_played_tricks()
     }
 
-    fn trick_complete(&self) -> bool {
+    pub fn trick_complete(&self) -> bool {
         self.played_cards.len() % 4 == 0
     }
 

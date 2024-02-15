@@ -9,7 +9,6 @@ use bridge_buddy_core::primitives::card::suit::SUIT_ARRAY;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::{Card, Hand, Suit};
 
-use crate::card_manager::card_tracker::CardTracker;
 use bridge_buddy_core::primitives::deal::seat::SEAT_ARRAY;
 
 pub struct VirtualState<const N: usize> {
@@ -75,9 +74,10 @@ impl<const N: usize> VirtualState<N> {
     }
 
     fn update_virtualizer(&mut self) {
-        let out_of_play_cards = self.game.out_of_play_cards();
-        let tracker = CardTracker::from_cards(out_of_play_cards);
-        self.virtualizer = Virtualizer::new(tracker);
+        // let out_of_play_cards = self.game.out_of_play_cards();
+        // let tracker = CardTracker::from_cards(out_of_play_cards);
+        // self.virtualizer = Virtualizer::new(tracker);
+        self.virtualizer = Virtualizer::new(self.game.out_of_play_cards().clone());
     }
 
     pub fn undo(&mut self) {

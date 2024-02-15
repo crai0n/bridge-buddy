@@ -95,7 +95,8 @@ impl<const N: usize> DoubleDummyState<N> {
         self.count_trump_cards_for_axis(self.next_to_play() + 1)
     }
 
-    pub fn out_of_play_cards(&self) -> &[Card] {
+    #[allow(dead_code)]
+    pub fn slice_out_of_play_cards(&self) -> &[Card] {
         self.trick_manager.out_of_play_cards()
     }
 
@@ -133,10 +134,20 @@ impl<const N: usize> DoubleDummyState<N> {
 
     pub fn play(&mut self, card: Card) {
         self.card_manager.play(card, self.next_to_play());
-        self.trick_manager.play(card)
+        self.trick_manager.play(card);
+
+        if self.trick_manager.trick_complete() {
+            let last_trick_cards = self.trick_manager.cards_in_last_trick();
+            self.card_manager.remove_cards(last_trick_cards);
+        }
     }
 
     pub fn undo(&mut self) {
+        if self.trick_manager.trick_complete() {
+            let last_trick_cards = self.trick_manager.cards_in_last_trick();
+            self.card_manager.replace_cards(last_trick_cards);
+        }
+
         if let Some(card) = self.trick_manager.undo() {
             self.card_manager.unplay(card, self.next_to_play());
         }
@@ -146,8 +157,8 @@ impl<const N: usize> DoubleDummyState<N> {
         self.trick_manager.played_cards()
     }
 
-    pub fn played_cards(&self) -> &CardTracker {
-        self.card_manager.played_cards()
+    pub fn out_of_play_cards(&self) -> &CardTracker {
+        self.card_manager.out_of_play_cards()
     }
 }
 
