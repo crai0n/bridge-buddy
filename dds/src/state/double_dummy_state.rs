@@ -142,7 +142,7 @@ impl<const N: usize> DoubleDummyState<N> {
         }
     }
 
-    pub fn undo(&mut self) {
+    pub fn undo(&mut self) -> Option<Card> {
         if self.trick_manager.trick_complete() {
             let last_trick_cards = self.trick_manager.cards_in_last_trick();
             self.card_manager.replace_cards(last_trick_cards);
@@ -150,6 +150,9 @@ impl<const N: usize> DoubleDummyState<N> {
 
         if let Some(card) = self.trick_manager.undo() {
             self.card_manager.unplay(card, self.next_to_play());
+            Some(card)
+        } else {
+            None
         }
     }
 
@@ -159,6 +162,22 @@ impl<const N: usize> DoubleDummyState<N> {
 
     pub fn out_of_play_cards(&self) -> &CardTracker {
         self.card_manager.out_of_play_cards()
+    }
+
+    pub fn cards_in_current_trick(&self) -> &[Card] {
+        self.trick_manager.cards_in_current_trick()
+    }
+
+    pub fn cards_in_last_trick(&self) -> &[Card] {
+        self.trick_manager.cards_in_last_trick()
+    }
+
+    pub fn trick_complete(&self) -> bool {
+        self.trick_manager.trick_complete()
+    }
+
+    pub fn trick_leader(&self) -> Seat {
+        self.trick_manager.trick_leader()
     }
 }
 
