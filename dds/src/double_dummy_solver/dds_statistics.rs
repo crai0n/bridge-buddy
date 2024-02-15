@@ -1,4 +1,4 @@
-#[derive(Copy, Clone, Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct DdsStatistics {
     pub node_count: [usize; 4],
     pub n_first_moves: [usize; 4],

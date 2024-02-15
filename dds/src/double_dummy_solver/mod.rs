@@ -109,7 +109,7 @@ impl DoubleDummySolver {
     }
 
     pub fn get_statistics(&self) -> DdsStatistics {
-        self.statistics
+        self.statistics.clone()
     }
 }
 
@@ -190,12 +190,12 @@ mod test {
                 Some(strain) => {
                     let mut ddr = DoubleDummyRunner::default();
                     let _dds_result = ddr.solve_for_all_declarers(deal, strain);
-                    ddr.get_statistics().clone()
+                    ddr.get_statistics()
                 }
                 None => {
                     let mut dds = DoubleDummySolver::default();
                     let _dds_result = dds.solve(deal);
-                    dds.get_statistics().clone()
+                    dds.get_statistics()
                 }
             };
 

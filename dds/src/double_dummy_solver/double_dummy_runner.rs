@@ -2,7 +2,7 @@ use crate::dds_config::DdsConfig;
 use crate::double_dummy_solver::dds_statistics::DdsStatistics;
 use crate::move_generator::MoveGenerator;
 use crate::state::VirtualState;
-use crate::transposition_table::TranspositionTable;
+use crate::transposition_table::{TTKey, TranspositionTable};
 use crate::trick_estimations::{losing_tricks_for_leader, quick_tricks_for_leader, quick_tricks_for_second_hand};
 use bridge_buddy_core::engine::hand_evaluation::ForumDPlus2015Evaluator;
 use bridge_buddy_core::primitives::contract::Strain;
@@ -17,6 +17,7 @@ pub struct DoubleDummyRunner {
     config: DdsConfig,
     transposition_table: TranspositionTable,
     statistics: DdsStatistics,
+    current_node_tt_key: Option<TTKey>,
 }
 
 impl DoubleDummyRunner {
@@ -25,11 +26,12 @@ impl DoubleDummyRunner {
             config,
             transposition_table: TranspositionTable::default(),
             statistics: DdsStatistics::default(),
+            current_node_tt_key: None,
         }
     }
 
     pub fn get_statistics(&self) -> DdsStatistics {
-        self.statistics
+        self.statistics.clone()
     }
 
     pub fn solve_for_all_declarers<const N: usize>(&mut self, deal: Deal<N>, strain: Strain) -> [usize; 4] {
@@ -65,6 +67,7 @@ impl DoubleDummyRunner {
             let mut start_state = VirtualState::new(deal.hands, opening_leader, trumps);
 
             let score = self.score_node(&mut start_state, estimate);
+
             // println!("Scored {} tricks for defenders", score);
 
             if score >= estimate {
@@ -73,6 +76,7 @@ impl DoubleDummyRunner {
                 at_most = score;
             }
         }
+        self.current_node_tt_key = None; // reset after we are done
         at_least
     }
 
@@ -118,6 +122,8 @@ impl DoubleDummyRunner {
             // println!("trying card {} for {}!", candidate_move, state.next_to_play());
             let current_player = state.next_to_play();
 
+            let tt_key_temp_storage = self.current_node_tt_key.take();
+
             state.play(&candidate_move.card).unwrap();
             let new_player = state.next_to_play();
             let score = if current_player.same_axis(&new_player) {
@@ -126,6 +132,8 @@ impl DoubleDummyRunner {
                 N - self.score_node(state, N + 1 - estimate)
             };
             state.undo();
+
+            self.current_node_tt_key = tt_key_temp_storage;
 
             if score >= estimate {
                 if self.config.use_transposition_table && state.player_is_leading() {
@@ -165,8 +173,8 @@ impl DoubleDummyRunner {
         highest_score
     }
 
-    fn try_find_node_in_tt<const N: usize>(&self, state: &VirtualState<N>, estimate: usize) -> Option<usize> {
-        let tt_key = state.generate_tt_key();
+    fn try_find_node_in_tt<const N: usize>(&mut self, state: &VirtualState<N>, estimate: usize) -> Option<usize> {
+        let tt_key = self.get_tt_key(state);
         match self.transposition_table.lookup(&tt_key) {
             None => None,
             Some(tt_value) => {
@@ -246,7 +254,7 @@ impl DoubleDummyRunner {
         };
         let total_with_quick_tricks = state.tricks_won_by_axis(state.next_to_play()) + quick_tricks;
         if total_with_quick_tricks >= estimate {
-            if self.config.use_transposition_table {
+            if self.config.use_transposition_table && state.player_is_leading() {
                 self.store_lower_bound_in_tt(state, quick_tricks);
             }
             return Some(total_with_quick_tricks);
@@ -254,13 +262,24 @@ impl DoubleDummyRunner {
         None
     }
 
+    fn get_tt_key<const N: usize>(&mut self, state: &VirtualState<N>) -> TTKey {
+        match self.current_node_tt_key {
+            None => {
+                let tt_key = state.generate_tt_key();
+                self.current_node_tt_key = Some(tt_key);
+                tt_key
+            }
+            Some(tt_key) => tt_key,
+        }
+    }
+
     fn store_lower_bound_in_tt<const N: usize>(&mut self, state: &VirtualState<N>, bound: usize) {
-        let tt_key = state.generate_tt_key();
+        let tt_key = self.get_tt_key(state);
         self.transposition_table.update_lower_bound(&tt_key, bound)
     }
 
     fn store_upper_bound_in_tt<const N: usize>(&mut self, state: &VirtualState<N>, bound: usize) {
-        let tt_key = state.generate_tt_key();
+        let tt_key = self.get_tt_key(state);
         self.transposition_table.update_upper_bound(&tt_key, bound)
     }
 
