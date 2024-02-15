@@ -8,6 +8,12 @@ pub struct VirtualCard {
     pub rank: VirtualRank,
 }
 
+impl std::fmt::Display for VirtualCard {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}{}", self.suit, self.rank)
+    }
+}
+
 impl VirtualCard {
     pub fn touches(&self, other: &Self) -> bool {
         if self.suit == other.suit {

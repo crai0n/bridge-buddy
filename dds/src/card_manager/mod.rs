@@ -36,15 +36,22 @@ impl CardManager {
     }
 
     pub fn remove_cards(&mut self, cards: &[Card]) {
+        // print!("Taking real cards out of play: ");
         for card in cards {
+            // print!("{} ", card);
             self.out_of_play_cards.add_card(*card);
         }
+        // println!();
     }
 
     pub fn replace_cards(&mut self, cards: &[Card]) {
+        // print!("Putting real cards back into play: ");
+
         for card in cards {
+            // print!("{} ", card);
             self.out_of_play_cards.remove_card(*card);
         }
+        // println!();
     }
 
     pub fn remaining_cards_for_player(&self, player: Seat) -> &CardTracker {
