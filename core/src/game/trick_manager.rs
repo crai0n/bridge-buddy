@@ -82,7 +82,10 @@ impl<const N: usize> TrickManager<N> {
     }
 
     pub fn trick_complete(&self) -> bool {
-        self.played_cards.len() % 4 == 0
+        match self.played_cards.len() {
+            0 => false,
+            i => i % 4 == 0,
+        }
     }
 
     fn move_to_next_trick(&mut self) {
