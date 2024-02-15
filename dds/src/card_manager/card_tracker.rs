@@ -115,7 +115,12 @@ impl CardTracker {
 
     #[allow(dead_code)]
     pub fn contains(&self, card: &Card) -> bool {
-        self.suit_state(card.suit).contains_rank(card.rank)
+        self.suit_state(card.suit).contains_rank(&card.rank)
+    }
+
+    #[allow(dead_code)]
+    pub fn contains_in(&self, rank: &Rank, suit: Suit) -> bool {
+        self.suit_state(suit).contains_rank(rank)
     }
 
     pub fn all_cards(&self) -> impl DoubleEndedIterator<Item = Card> + '_ {

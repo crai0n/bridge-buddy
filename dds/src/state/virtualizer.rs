@@ -72,23 +72,23 @@ impl Virtualizer {
 
     pub fn virtual_to_absolute_card(&self, virtual_card: &VirtualCard) -> Option<Card> {
         let suit = virtual_card.suit;
-        self.virtual_to_absolute_rank(&virtual_card.rank, &suit)
+        self.virtual_to_absolute_rank(&virtual_card.rank, suit)
             .map(|rank| Card { rank, suit })
     }
 
     pub fn absolute_to_virtual_card(&self, card: &Card) -> Option<VirtualCard> {
         let suit = card.suit;
-        self.absolute_to_virtual_rank(&card.rank, &suit)
+        self.absolute_to_virtual_rank(&card.rank, suit)
             .map(|rank| VirtualCard { rank, suit })
     }
 
-    pub fn virtual_to_absolute_rank(&self, virtual_rank: &VirtualRank, suit: &Suit) -> Option<Rank> {
-        let out_of_play = self.played[*suit as usize];
+    pub fn virtual_to_absolute_rank(&self, virtual_rank: &VirtualRank, suit: Suit) -> Option<Rank> {
+        let out_of_play = self.played[suit as usize];
         TO_ABSOLUTE_GIVEN_OUT_OF_PLAY[out_of_play.0 as usize][*virtual_rank as usize]
     }
 
-    pub fn absolute_to_virtual_rank(&self, rank: &Rank, suit: &Suit) -> Option<VirtualRank> {
-        let out_of_play = self.played[*suit as usize];
+    pub fn absolute_to_virtual_rank(&self, rank: &Rank, suit: Suit) -> Option<VirtualRank> {
+        let out_of_play = self.played[suit as usize];
         TO_VIRTUAL_GIVEN_OUT_OF_PLAY[out_of_play.0 as usize][*rank as usize]
     }
 }

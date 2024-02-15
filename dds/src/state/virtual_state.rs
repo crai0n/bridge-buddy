@@ -33,16 +33,6 @@ impl<const N: usize> VirtualState<N> {
         self.game.suit_to_follow()
     }
 
-    fn generate_card_mapping(&self) -> Vec<(VirtualCard, Seat)> {
-        let mut output = vec![];
-        for player in SEAT_ARRAY.into_iter() {
-            for card in self.cards_of(player).all_cards() {
-                output.push((card, player));
-            }
-        }
-        output
-    }
-
     fn generate_distribution_field(&self) -> [u32; 4] {
         SUIT_ARRAY.map(|suit| {
             let mut field = 0u32;

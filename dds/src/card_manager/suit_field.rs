@@ -42,8 +42,8 @@ impl SuitField {
         self.0 &= !Self::u16_from_rank(rank);
     }
 
-    pub fn contains_rank(&self, rank: Rank) -> bool {
-        self.0 & Self::u16_from_rank(rank) != 0
+    pub fn contains_rank(&self, rank: &Rank) -> bool {
+        self.0 & Self::u16_from_rank(*rank) != 0
     }
 
     pub fn count_cards(&self) -> usize {

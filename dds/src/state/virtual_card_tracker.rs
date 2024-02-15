@@ -36,17 +36,11 @@ impl<'a> VirtualCardTracker<'a> {
     }
 
     pub fn contains_winning_rank_in(&self, suit: Suit) -> bool {
-        self.contains(&VirtualCard {
-            suit,
-            rank: VirtualRank::Ace,
-        })
+        self.contains_in(&VirtualRank::Ace, suit)
     }
 
     pub fn contains_runner_up_in(&self, suit: Suit) -> bool {
-        self.contains(&VirtualCard {
-            suit,
-            rank: VirtualRank::King,
-        })
+        self.contains_in(&VirtualRank::King, suit)
     }
 
     pub fn has_singleton_winner_in(&self, suit: Suit) -> bool {
@@ -62,6 +56,14 @@ impl<'a> VirtualCardTracker<'a> {
         match real_card {
             None => false,
             Some(card) => self.card_tracker.contains(&card),
+        }
+    }
+
+    pub fn contains_in(&self, rank: &VirtualRank, suit: Suit) -> bool {
+        let real_rank = self.virtual_to_absolute_rank(rank, suit);
+        match real_rank {
+            None => false,
+            Some(rank) => self.card_tracker.contains_in(&rank, suit),
         }
     }
 
@@ -86,12 +88,12 @@ impl<'a> VirtualCardTracker<'a> {
         self.virtualizer.virtual_to_absolute_card(virtual_card)
     }
 
-    fn absolute_to_virtual_rank(&self, rank: &Rank, suit: &Suit) -> Option<VirtualRank> {
+    fn absolute_to_virtual_rank(&self, rank: &Rank, suit: Suit) -> Option<VirtualRank> {
         self.virtualizer.absolute_to_virtual_rank(rank, suit)
     }
 
     #[allow(dead_code)]
-    fn virtual_to_absolute_rank(&self, virtual_rank: &VirtualRank, suit: &Suit) -> Option<Rank> {
+    fn virtual_to_absolute_rank(&self, virtual_rank: &VirtualRank, suit: Suit) -> Option<Rank> {
         self.virtualizer.virtual_to_absolute_rank(virtual_rank, suit)
     }
 
@@ -109,7 +111,7 @@ impl<'a> VirtualCardTracker<'a> {
     pub fn ranks_in(&self, suit: Suit) -> impl DoubleEndedIterator<Item = VirtualRank> + '_ {
         self.card_tracker
             .ranks_in(suit)
-            .filter_map(move |rank| self.absolute_to_virtual_rank(&rank, &suit))
+            .filter_map(move |rank| self.absolute_to_virtual_rank(&rank, suit))
     }
 
     pub fn highest_card_in(&self, suit: Suit) -> Option<VirtualCard> {
