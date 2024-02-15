@@ -172,7 +172,7 @@ mod test {
     }
 
     fn node_count_all(strain: Option<Strain>) {
-        const N_AVERAGE: usize = 5000;
+        const N_AVERAGE: usize = 1000;
         const N_TRICKS: usize = 8;
 
         const ARRAY_REPEAT_VALUE_I32: Vec<i32> = Vec::new();

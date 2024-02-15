@@ -35,9 +35,12 @@ impl<const N: usize> VirtualState<N> {
         SUIT_ARRAY.map(|suit| {
             let mut field = 0u32;
             for player in SEAT_ARRAY {
-                for rank in self.cards_of(player).ranks_in(suit) {
-                    let offset = 2 * rank as usize;
-                    field |= (player as u32) << offset;
+                if player != Seat::North {
+                    // North's id is 00 anyway
+                    for rank in self.cards_of(player).ranks_in(suit) {
+                        let offset = 2 * rank as usize;
+                        field |= (player as u32) << offset;
+                    }
                 }
                 let count = self.cards_of(player).count_cards_in(suit) as u32;
                 field += count << 28; // count the cards still in play on the highest 4 bits
