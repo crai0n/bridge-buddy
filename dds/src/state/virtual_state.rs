@@ -1,6 +1,4 @@
 use super::double_dummy_state::DoubleDummyState;
-use crate::card_manager::card_tracker::CardTracker;
-use crate::card_manager::suit_field::SuitField;
 
 use super::virtual_card::VirtualCard;
 use crate::state::virtual_card_tracker::VirtualCardTracker;
@@ -11,11 +9,12 @@ use bridge_buddy_core::primitives::card::suit::SUIT_ARRAY;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::{Card, Hand, Suit};
 
+use crate::card_manager::card_tracker::CardTracker;
 use bridge_buddy_core::primitives::deal::seat::SEAT_ARRAY;
 
 pub struct VirtualState<const N: usize> {
     game: DoubleDummyState<N>,
-    out_of_play: [SuitField; 4],
+    virtualizer: Virtualizer,
 }
 
 #[allow(dead_code)]
@@ -25,7 +24,7 @@ impl<const N: usize> VirtualState<N> {
 
         Self {
             game,
-            out_of_play: [SuitField::empty(); 4],
+            virtualizer: Virtualizer::default(),
         }
     }
 
@@ -67,7 +66,7 @@ impl<const N: usize> VirtualState<N> {
             Some(card) => {
                 self.game.play(card);
                 if self.game.player_is_leading() {
-                    self.update_out_of_play();
+                    self.update_virtualizer();
                 }
                 Ok(())
             }
@@ -75,19 +74,17 @@ impl<const N: usize> VirtualState<N> {
         }
     }
 
-    fn update_out_of_play(&mut self) {
+    fn update_virtualizer(&mut self) {
         let out_of_play_cards = self.game.out_of_play_cards();
         let tracker = CardTracker::from_cards(out_of_play_cards);
-        for suit in SUIT_ARRAY {
-            self.out_of_play[suit as usize] = *tracker.suit_state(suit);
-        }
+        self.virtualizer = Virtualizer::new(tracker);
     }
 
     pub fn undo(&mut self) {
         self.game.undo();
         if self.game.count_cards_in_current_trick() == 3 {
             // we moved back a trick
-            self.update_out_of_play()
+            self.update_virtualizer()
         }
     }
 
@@ -175,16 +172,12 @@ impl<const N: usize> VirtualState<N> {
         }
     }
 
-    fn create_virtualizer(&self) -> Virtualizer {
-        Virtualizer::new(self.out_of_play)
-    }
-
     fn absolute_to_virtual(&self, card: &Card) -> Option<VirtualCard> {
-        self.create_virtualizer().absolute_to_virtual_card(card)
+        self.virtualizer.absolute_to_virtual_card(card)
     }
 
     fn virtual_to_absolute(&self, virtual_card: &VirtualCard) -> Option<Card> {
-        self.create_virtualizer().virtual_to_absolute_card(virtual_card)
+        self.virtualizer.virtual_to_absolute_card(virtual_card)
     }
 
     pub fn partner_has_higher_cards_than_opponents(&self, suit: Suit, leader: Seat) -> bool {
@@ -202,6 +195,6 @@ impl<const N: usize> VirtualState<N> {
 
     pub fn cards_of(&self, player: Seat) -> VirtualCardTracker {
         let card_tracker = self.game.cards_of(player);
-        VirtualCardTracker::from_card_tracker(card_tracker, self.create_virtualizer())
+        VirtualCardTracker::from_card_tracker(card_tracker, &self.virtualizer)
     }
 }

@@ -1,5 +1,5 @@
 use super::virtual_card::VirtualCard;
-use crate::card_manager::suit_field::SuitField;
+use crate::card_manager::card_tracker::CardTracker;
 use bridge_buddy_core::primitives::card::rank::RANK_ARRAY;
 use bridge_buddy_core::primitives::card::virtual_rank::{VirtualRank, VIRTUAL_RANK_ARRAY};
 use bridge_buddy_core::primitives::card::Rank;
@@ -7,7 +7,7 @@ use bridge_buddy_core::primitives::{Card, Suit};
 use lazy_static::lazy_static;
 
 pub struct Virtualizer {
-    played: [SuitField; 4],
+    out_of_play: CardTracker,
 }
 
 lazy_static! {
@@ -65,9 +65,17 @@ fn try_virtual_from_absolute_rank(rank: Rank, played: u16) -> Option<VirtualRank
     Some(VirtualRank::from(index + pop_count))
 }
 
+impl Default for Virtualizer {
+    fn default() -> Self {
+        Self {
+            out_of_play: CardTracker::empty(),
+        }
+    }
+}
+
 impl Virtualizer {
-    pub fn new(played: [SuitField; 4]) -> Self {
-        Self { played }
+    pub fn new(out_of_play: CardTracker) -> Self {
+        Self { out_of_play }
     }
 
     pub fn virtual_to_absolute_card(&self, virtual_card: &VirtualCard) -> Option<Card> {
@@ -83,18 +91,19 @@ impl Virtualizer {
     }
 
     pub fn virtual_to_absolute_rank(&self, virtual_rank: &VirtualRank, suit: Suit) -> Option<Rank> {
-        let out_of_play = self.played[suit as usize];
+        let out_of_play = self.out_of_play.suit_state(suit);
         TO_ABSOLUTE_GIVEN_OUT_OF_PLAY[out_of_play.0 as usize][*virtual_rank as usize]
     }
 
     pub fn absolute_to_virtual_rank(&self, rank: &Rank, suit: Suit) -> Option<VirtualRank> {
-        let out_of_play = self.played[suit as usize];
+        let out_of_play = self.out_of_play.suit_state(suit);
         TO_VIRTUAL_GIVEN_OUT_OF_PLAY[out_of_play.0 as usize][*rank as usize]
     }
 }
 
 #[cfg(test)]
 mod test {
+    use crate::card_manager::card_tracker::CardTracker;
     use crate::card_manager::suit_field::SuitField;
     use crate::state::virtual_card::VirtualCard;
     use crate::state::virtualizer::Virtualizer;
@@ -108,7 +117,7 @@ mod test {
     #[test_case(Rank::Two, 0b0000_0011_0100_1001, None)]
     fn virtual_given_played(rank: Rank, played: u16, expected: Option<VirtualRank>) {
         let played = SuitField::from_u16(played);
-        let array = [played; 4];
+        let array = CardTracker::from_suit_fields([played; 4]);
         let virtualizer = Virtualizer::new(array);
         let suit = Suit::Clubs;
         let expected = expected.map(|rank| VirtualCard { rank, suit });
@@ -121,7 +130,7 @@ mod test {
     #[test_case(VirtualRank::Jack, 0b0000_0011_0100_1001, Some(Rank::Nine))]
     fn absolute_given_played(rank: VirtualRank, played: u16, expected: Option<Rank>) {
         let played = SuitField::from_u16(played);
-        let array = [played; 4];
+        let array = CardTracker::from_suit_fields([played; 4]);
         let virtualizer = Virtualizer::new(array);
         let suit = Suit::Clubs;
         let expected = expected.map(|rank| Card { rank, suit });

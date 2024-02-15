@@ -8,11 +8,11 @@ use bridge_buddy_core::primitives::{Card, Suit};
 
 pub struct VirtualCardTracker<'a> {
     card_tracker: &'a CardTracker,
-    virtualizer: Virtualizer,
+    virtualizer: &'a Virtualizer,
 }
 
 impl<'a> VirtualCardTracker<'a> {
-    pub fn from_card_tracker(card_tracker: &'a CardTracker, virtualizer: Virtualizer) -> Self {
+    pub fn from_card_tracker(card_tracker: &'a CardTracker, virtualizer: &'a Virtualizer) -> Self {
         Self {
             card_tracker,
             virtualizer,
