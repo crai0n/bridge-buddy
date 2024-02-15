@@ -172,8 +172,8 @@ mod test {
     }
 
     fn node_count_all(strain: Option<Strain>) {
-        const N_AVERAGE: usize = 10000;
-        const N_TRICKS: usize = 6;
+        const N_AVERAGE: usize = 5000;
+        const N_TRICKS: usize = 8;
 
         const ARRAY_REPEAT_VALUE_I32: Vec<i32> = Vec::new();
         const ARRAY_REPEAT_VALUE_F32: Vec<f32> = Vec::new();
@@ -190,12 +190,12 @@ mod test {
                 Some(strain) => {
                     let mut ddr = DoubleDummyRunner::default();
                     let _dds_result = ddr.solve_for_all_declarers(deal, strain);
-                    ddr.get_statistics()
+                    ddr.get_statistics().clone()
                 }
                 None => {
                     let mut dds = DoubleDummySolver::default();
                     let _dds_result = dds.solve(deal);
-                    dds.get_statistics()
+                    dds.get_statistics().clone()
                 }
             };
 

@@ -3,6 +3,7 @@ use crate::state::virtual_card::VirtualCard;
 use crate::state::virtualizer::Virtualizer;
 use bridge_buddy_core::primitives::card::suit::SUIT_ARRAY;
 use bridge_buddy_core::primitives::card::virtual_rank::{VirtualRank, VIRTUAL_RANK_ARRAY};
+use bridge_buddy_core::primitives::card::Rank;
 use bridge_buddy_core::primitives::{Card, Suit};
 
 pub struct VirtualCardTracker<'a> {
@@ -57,7 +58,7 @@ impl<'a> VirtualCardTracker<'a> {
     }
 
     pub fn contains(&self, card: &VirtualCard) -> bool {
-        let real_card = self.virtual_to_absolute(*card);
+        let real_card = self.virtual_to_absolute_card(card);
         match real_card {
             None => false,
             Some(card) => self.card_tracker.contains(&card),
@@ -77,45 +78,58 @@ impl<'a> VirtualCardTracker<'a> {
         self.card_tracker.count_cards_per_suit()
     }
 
-    fn absolute_to_virtual(&self, card: Card) -> Option<VirtualCard> {
-        self.virtualizer.absolute_to_virtual(card)
+    fn absolute_to_virtual_card(&self, card: &Card) -> Option<VirtualCard> {
+        self.virtualizer.absolute_to_virtual_card(card)
     }
 
-    fn virtual_to_absolute(&self, virtual_card: VirtualCard) -> Option<Card> {
-        self.virtualizer.virtual_to_absolute(virtual_card)
+    fn virtual_to_absolute_card(&self, virtual_card: &VirtualCard) -> Option<Card> {
+        self.virtualizer.virtual_to_absolute_card(virtual_card)
+    }
+
+    fn absolute_to_virtual_rank(&self, rank: &Rank, suit: &Suit) -> Option<VirtualRank> {
+        self.virtualizer.absolute_to_virtual_rank(rank, suit)
+    }
+
+    #[allow(dead_code)]
+    fn virtual_to_absolute_rank(&self, virtual_rank: &VirtualRank, suit: &Suit) -> Option<Rank> {
+        self.virtualizer.virtual_to_absolute_rank(virtual_rank, suit)
     }
 
     pub fn all_cards(&self) -> impl DoubleEndedIterator<Item = VirtualCard> + '_ {
         self.card_tracker
             .all_cards()
-            .map(|x| self.absolute_to_virtual(x).unwrap())
+            .map(|x| self.absolute_to_virtual_card(&x).unwrap())
     }
 
     #[allow(dead_code)]
     pub fn cards_in(&self, suit: Suit) -> impl DoubleEndedIterator<Item = VirtualCard> + '_ {
+        self.ranks_in(suit).map(move |vrank| VirtualCard { rank: vrank, suit })
+    }
+
+    pub fn ranks_in(&self, suit: Suit) -> impl DoubleEndedIterator<Item = VirtualRank> + '_ {
         self.card_tracker
-            .cards_in(suit)
-            .map(|x| self.absolute_to_virtual(x).unwrap())
+            .ranks_in(suit)
+            .filter_map(move |rank| self.absolute_to_virtual_rank(&rank, &suit))
     }
 
     pub fn highest_card_in(&self, suit: Suit) -> Option<VirtualCard> {
         self.card_tracker
             .highest_card_in(suit)
-            .map(|x| self.absolute_to_virtual(x).unwrap())
+            .map(|x| self.absolute_to_virtual_card(&x).unwrap())
     }
     #[allow(dead_code)]
     pub fn lowest_card_in(&self, suit: Suit) -> Option<VirtualCard> {
         self.card_tracker
             .lowest_card_in(suit)
-            .map(|x| self.absolute_to_virtual(x).unwrap())
+            .map(|x| self.absolute_to_virtual_card(&x).unwrap())
     }
 
     pub fn count_high_cards_per_suit(&self) -> [usize; 4] {
         SUIT_ARRAY.map(|suit| {
-            self.cards_in(suit)
+            self.ranks_in(suit)
                 .rev()
                 .zip(VIRTUAL_RANK_ARRAY.iter().rev())
-                .take_while(|(card, &high_rank)| card.rank == high_rank)
+                .take_while(|(rank, &high_rank)| *rank == high_rank)
                 .count()
         })
     }
@@ -149,16 +163,16 @@ impl<'a> VirtualCardTracker<'a> {
     }
 
     #[allow(dead_code)]
-    pub fn count_cards_higher_than(&self, card: VirtualCard) -> usize {
-        let abs_card = self.virtualizer.virtual_to_absolute(card);
+    pub fn count_cards_higher_than(&self, card: &VirtualCard) -> usize {
+        let abs_card = self.virtualizer.virtual_to_absolute_card(card);
         match abs_card {
             Some(abs_card) => self.card_tracker.count_cards_higher_than(abs_card),
             None => 0,
         }
     }
 
-    pub fn count_cards_lower_than(&self, card: VirtualCard) -> usize {
-        let abs_card = self.virtualizer.virtual_to_absolute(card);
+    pub fn count_cards_lower_than(&self, card: &VirtualCard) -> usize {
+        let abs_card = self.virtualizer.virtual_to_absolute_card(card);
         match abs_card {
             Some(abs_card) => self.card_tracker.count_cards_lower_than(abs_card),
             None => 0,

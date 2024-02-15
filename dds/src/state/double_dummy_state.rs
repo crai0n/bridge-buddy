@@ -146,7 +146,7 @@ impl<const N: usize> DoubleDummyState<N> {
         self.trick_manager.played_cards()
     }
 
-    pub fn played_cards(&self) -> CardTracker {
+    pub fn played_cards(&self) -> &CardTracker {
         self.card_manager.played_cards()
     }
 }

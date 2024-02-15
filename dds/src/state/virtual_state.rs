@@ -71,7 +71,7 @@ impl<const N: usize> VirtualState<N> {
         }
     }
 
-    pub fn play(&mut self, virtual_card: VirtualCard) -> Result<(), BBError> {
+    pub fn play(&mut self, virtual_card: &VirtualCard) -> Result<(), BBError> {
         let card = self.virtual_to_absolute(virtual_card);
         match card {
             Some(card) => {
@@ -181,7 +181,7 @@ impl<const N: usize> VirtualState<N> {
         let winning_card = self.game.currently_winning_card();
         match winning_card {
             None => None,
-            Some(winning_card) => self.absolute_to_virtual(winning_card),
+            Some(winning_card) => self.absolute_to_virtual(&winning_card),
         }
     }
 
@@ -189,12 +189,12 @@ impl<const N: usize> VirtualState<N> {
         Virtualizer::new(self.out_of_play)
     }
 
-    fn absolute_to_virtual(&self, card: Card) -> Option<VirtualCard> {
-        self.create_virtualizer().absolute_to_virtual(card)
+    fn absolute_to_virtual(&self, card: &Card) -> Option<VirtualCard> {
+        self.create_virtualizer().absolute_to_virtual_card(card)
     }
 
-    fn virtual_to_absolute(&self, virtual_card: VirtualCard) -> Option<Card> {
-        self.create_virtualizer().virtual_to_absolute(virtual_card)
+    fn virtual_to_absolute(&self, virtual_card: &VirtualCard) -> Option<Card> {
+        self.create_virtualizer().virtual_to_absolute_card(virtual_card)
     }
 
     pub fn partner_has_higher_cards_than_opponents(&self, suit: Suit, leader: Seat) -> bool {
@@ -202,7 +202,7 @@ impl<const N: usize> VirtualState<N> {
     }
 
     pub fn would_win_over_current_winner(&self, card: VirtualCard) -> bool {
-        let real_card = self.virtual_to_absolute(card).unwrap();
+        let real_card = self.virtual_to_absolute(&card).unwrap();
         self.game.would_win_over_current_winner(&real_card)
     }
 

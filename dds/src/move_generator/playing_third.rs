@@ -52,7 +52,7 @@ impl MoveGenerator {
         } else if lho_can_still_win {
             let mut already_beaten_cards = 0;
             for candidate in moves {
-                let beats = lhos_cards.count_cards_lower_than(candidate.card);
+                let beats = lhos_cards.count_cards_lower_than(&candidate.card);
                 if beats > already_beaten_cards {
                     // give a bonus to every card that beats more of lho's cards,
                     // so we will try winning, then forcing the ace, etc.
@@ -208,7 +208,7 @@ impl MoveGenerator {
             } else if lho_can_still_win {
                 let mut already_beaten_cards = 0;
                 for candidate in moves {
-                    let beats = lhos_cards.count_cards_lower_than(candidate.card);
+                    let beats = lhos_cards.count_cards_lower_than(&candidate.card);
                     if beats > already_beaten_cards {
                         // give a bonus to every card that beats more of lho's cards,
                         // so we will try winning, then forcing the ace, etc.
@@ -272,7 +272,7 @@ impl MoveGenerator {
                     // 4th hand will need to follow, so give bonuses to cards that force their hand
                     let mut already_beaten_cards = 0;
                     for candidate in moves {
-                        let beats = lhos_cards.count_cards_lower_than(candidate.card);
+                        let beats = lhos_cards.count_cards_lower_than(&candidate.card);
                         if beats > already_beaten_cards {
                             // give a bonus to every card that beats more of lho's cards,
                             // so we will try winning, then forcing the ace, etc.
@@ -301,7 +301,7 @@ impl MoveGenerator {
                     // 4th hand will need to follow, so give bonuses to cards that force their hand
                     let mut already_beaten_cards = 0;
                     for candidate in moves {
-                        let beats = lhos_cards.count_cards_lower_than(candidate.card);
+                        let beats = lhos_cards.count_cards_lower_than(&candidate.card);
                         if beats > already_beaten_cards {
                             // give a bonus to every card that beats more of lho's cards,
                             // so we will try winning, then forcing the ace, etc.

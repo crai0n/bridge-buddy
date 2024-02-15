@@ -3,9 +3,10 @@ use super::suit_field::SuitField;
 use bridge_buddy_core::primitives::{Card, Hand, Suit};
 
 use bridge_buddy_core::primitives::card::suit::SUIT_ARRAY;
+use bridge_buddy_core::primitives::card::Rank;
 use std::fmt::Debug;
 
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct CardTracker([SuitField; 4]);
 
 impl CardTracker {
@@ -120,20 +121,35 @@ impl CardTracker {
     pub fn all_cards(&self) -> impl DoubleEndedIterator<Item = Card> + '_ {
         SUIT_ARRAY
             .into_iter()
-            .flat_map(|suit| self.suit_state(suit).into_iter().map(move |rank| Card { suit, rank }))
+            .flat_map(|suit| self.suit_state(suit).iter().map(move |rank| Card { suit, rank }))
     }
 
     pub fn cards_in(&self, suit: Suit) -> impl DoubleEndedIterator<Item = Card> + '_ {
-        self.suit_state(suit).into_iter().map(move |rank| Card { suit, rank })
+        self.ranks_in(suit).map(move |rank| Card { suit, rank })
+    }
+
+    pub fn ranks_in(&self, suit: Suit) -> impl DoubleEndedIterator<Item = Rank> + '_ {
+        self.suit_state(suit).into_iter()
     }
 
     pub fn highest_card_in(&self, suit: Suit) -> Option<Card> {
-        self.suit_state(suit).highest_rank().map(|rank| Card { suit, rank })
+        self.highest_rank_in(suit).map(|rank| Card { suit, rank })
     }
+
+    pub fn highest_rank_in(&self, suit: Suit) -> Option<Rank> {
+        self.suit_state(suit).highest_rank()
+    }
+
     #[allow(dead_code)]
     pub fn lowest_card_in(&self, suit: Suit) -> Option<Card> {
-        self.suit_state(suit).lowest_rank().map(|rank| Card { suit, rank })
+        self.lowest_rank_in(suit).map(|rank| Card { suit, rank })
     }
+
+    #[allow(dead_code)]
+    pub fn lowest_rank_in(&self, suit: Suit) -> Option<Rank> {
+        self.suit_state(suit).lowest_rank()
+    }
+
     #[allow(dead_code)]
     pub fn count_cards_lower_than(&self, card: Card) -> usize {
         self.suit_state(card.suit).cards_lower_than(card.rank).count_cards()

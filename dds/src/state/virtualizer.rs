@@ -3,7 +3,7 @@ use crate::card_manager::suit_field::SuitField;
 use bridge_buddy_core::primitives::card::rank::RANK_ARRAY;
 use bridge_buddy_core::primitives::card::virtual_rank::{VirtualRank, VIRTUAL_RANK_ARRAY};
 use bridge_buddy_core::primitives::card::Rank;
-use bridge_buddy_core::primitives::Card;
+use bridge_buddy_core::primitives::{Card, Suit};
 use lazy_static::lazy_static;
 
 pub struct Virtualizer {
@@ -70,18 +70,26 @@ impl Virtualizer {
         Self { played }
     }
 
-    pub fn virtual_to_absolute(&self, virtual_card: VirtualCard) -> Option<Card> {
+    pub fn virtual_to_absolute_card(&self, virtual_card: &VirtualCard) -> Option<Card> {
         let suit = virtual_card.suit;
-        let out_of_play = self.played[suit as usize];
-        let absolute_rank = TO_ABSOLUTE_GIVEN_OUT_OF_PLAY[out_of_play.0 as usize][virtual_card.rank as usize];
-        absolute_rank.map(|rank| Card { rank, suit })
+        self.virtual_to_absolute_rank(&virtual_card.rank, &suit)
+            .map(|rank| Card { rank, suit })
     }
 
-    pub fn absolute_to_virtual(&self, card: Card) -> Option<VirtualCard> {
+    pub fn absolute_to_virtual_card(&self, card: &Card) -> Option<VirtualCard> {
         let suit = card.suit;
-        let out_of_play = self.played[suit as usize];
-        let virtual_rank = TO_VIRTUAL_GIVEN_OUT_OF_PLAY[out_of_play.0 as usize][card.rank as usize];
-        virtual_rank.map(|rank| VirtualCard { rank, suit })
+        self.absolute_to_virtual_rank(&card.rank, &suit)
+            .map(|rank| VirtualCard { rank, suit })
+    }
+
+    pub fn virtual_to_absolute_rank(&self, virtual_rank: &VirtualRank, suit: &Suit) -> Option<Rank> {
+        let out_of_play = self.played[*suit as usize];
+        TO_ABSOLUTE_GIVEN_OUT_OF_PLAY[out_of_play.0 as usize][*virtual_rank as usize]
+    }
+
+    pub fn absolute_to_virtual_rank(&self, rank: &Rank, suit: &Suit) -> Option<VirtualRank> {
+        let out_of_play = self.played[*suit as usize];
+        TO_VIRTUAL_GIVEN_OUT_OF_PLAY[out_of_play.0 as usize][*rank as usize]
     }
 }
 
@@ -104,7 +112,7 @@ mod test {
         let virtualizer = Virtualizer::new(array);
         let suit = Suit::Clubs;
         let expected = expected.map(|rank| VirtualCard { rank, suit });
-        let relative = virtualizer.absolute_to_virtual(Card { suit, rank });
+        let relative = virtualizer.absolute_to_virtual_card(&Card { suit, rank });
         assert_eq!(relative, expected)
     }
 
@@ -117,7 +125,7 @@ mod test {
         let virtualizer = Virtualizer::new(array);
         let suit = Suit::Clubs;
         let expected = expected.map(|rank| Card { rank, suit });
-        let absolute = virtualizer.virtual_to_absolute(VirtualCard { suit, rank });
+        let absolute = virtualizer.virtual_to_absolute_card(&VirtualCard { suit, rank });
         assert_eq!(absolute, expected)
     }
 }

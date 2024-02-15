@@ -51,10 +51,11 @@ impl MoveGenerator {
                 }
             } // else we just play low
         } else if partner_is_void {
+            let lhos_highest = lhos_highest.unwrap();
             // partner can't help
             if let Some(candidate) = moves
                 .iter_mut()
-                .find(|cand| cand.card > lead_card && cand.card > lhos_highest.unwrap())
+                .find(|cand| cand.card > lead_card && cand.card > lhos_highest)
             {
                 // this card beats both opponent
                 candidate.priority += 80;
@@ -66,14 +67,15 @@ impl MoveGenerator {
                 candidate.priority += 10;
             } // else we just play low
         } else {
+            let lhos_highest = lhos_highest.unwrap();
+            let partners_highest = partners_highest.unwrap();
             // both partner and lho have relevant cards
-            let partner_cannot_beat_opponents =
-                partners_highest.unwrap() < lead_card || partners_highest < lhos_highest;
+            let partner_cannot_beat_opponents = partners_highest < lead_card || partners_highest < lhos_highest;
 
             if partner_cannot_beat_opponents {
                 if let Some(candidate) = moves
                     .iter_mut()
-                    .find(|cand| cand.card > lead_card && cand.card > lhos_highest.unwrap())
+                    .find(|cand| cand.card > lead_card && cand.card > lhos_highest)
                 {
                     // this card beats both opponent
                     candidate.priority += 80;
@@ -235,7 +237,7 @@ impl MoveGenerator {
                 // try to win the trick and force lho's hand
                 let mut already_beaten_cards = 0;
                 for candidate in moves {
-                    let beats = lhos_cards.count_cards_lower_than(candidate.card);
+                    let beats = lhos_cards.count_cards_lower_than(&candidate.card);
                     if beats > already_beaten_cards {
                         // give a bonus to every card that beats more of lho's cards,
                         // so we will try winning, then forcing the ace, etc.
@@ -273,7 +275,7 @@ impl MoveGenerator {
                     // try to win the trick and force lho's hand
                     let mut already_beaten_cards = 0;
                     for candidate in moves {
-                        let beats = lhos_cards.count_cards_lower_than(candidate.card);
+                        let beats = lhos_cards.count_cards_lower_than(&candidate.card);
                         if beats > already_beaten_cards {
                             // give a bonus to every card that beats more of lho's cards,
                             // so we will try winning, then forcing the ace, etc.
@@ -299,7 +301,7 @@ impl MoveGenerator {
                         // try to win the trick and force lho's hand
                         let mut already_beaten_cards = 0;
                         for candidate in moves {
-                            let beats = lhos_cards.count_cards_lower_than(candidate.card);
+                            let beats = lhos_cards.count_cards_lower_than(&candidate.card);
                             if beats > already_beaten_cards {
                                 // give a bonus to every card that beats more of lho's cards,
                                 // so we will try winning, then forcing the ace, etc.
@@ -327,7 +329,7 @@ impl MoveGenerator {
                 // force lho to play as high as possible
                 let mut already_beaten_cards = 0;
                 for candidate in moves {
-                    let beats = lhos_cards.count_cards_lower_than(candidate.card);
+                    let beats = lhos_cards.count_cards_lower_than(&candidate.card);
                     if beats > already_beaten_cards {
                         // give a bonus to every card that beats more of lho's cards,
                         // so we will try winning, then forcing the ace, etc.

@@ -55,7 +55,7 @@ pub struct TTKey {
     pub remaining_cards: [u32; 4],
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct TTValue {
     pub at_least: usize,
     pub at_most: usize,

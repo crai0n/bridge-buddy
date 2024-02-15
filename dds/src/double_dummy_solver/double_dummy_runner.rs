@@ -118,7 +118,7 @@ impl DoubleDummyRunner {
             // println!("trying card {} for {}!", candidate_move, state.next_to_play());
             let current_player = state.next_to_play();
 
-            state.play(candidate_move.card).unwrap();
+            state.play(&candidate_move.card).unwrap();
             let new_player = state.next_to_play();
             let score = if current_player.same_axis(&new_player) {
                 self.score_node(state, estimate)
@@ -301,7 +301,7 @@ impl DoubleDummyRunner {
         for _ in 0..4 {
             let next_to_play = state.next_to_play();
             let last_card_of_player = state.cards_of(next_to_play).all_cards().next().unwrap();
-            state.play(last_card_of_player).unwrap();
+            state.play(&last_card_of_player).unwrap();
         }
     }
 

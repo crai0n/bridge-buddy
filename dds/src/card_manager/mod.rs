@@ -54,8 +54,8 @@ impl CardManager {
             .has_higher_cards_in_suit_than(suit, self.remaining_cards_for_player(other))
     }
 
-    pub fn played_cards(&self) -> CardTracker {
-        self.played_cards
+    pub fn played_cards(&self) -> &CardTracker {
+        &self.played_cards
     }
 
     pub fn count_cards_in_suit_for_player(&self, suit: Suit, player: Seat) -> usize {

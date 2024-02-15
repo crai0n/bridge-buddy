@@ -15,7 +15,7 @@ mod test {
 
     #[bench]
     fn dd_runner(b: &mut Bencher) {
-        const DEAL_SIZE: usize = 8;
+        const DEAL_SIZE: usize = 9;
         const N_SOLVES: usize = 10000;
 
         b.iter(|| {

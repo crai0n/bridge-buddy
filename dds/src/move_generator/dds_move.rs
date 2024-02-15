@@ -1,6 +1,6 @@
 use crate::state::virtual_card::VirtualCard;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct DdsMove {
     pub card: VirtualCard,
     pub sequence_length: usize,
