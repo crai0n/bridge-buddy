@@ -47,10 +47,10 @@ impl<const N: usize> TrickManager<N> {
 
     pub fn current_trick(&self) -> ActiveTrick {
         let cards = self.cards_in_current_trick();
-        ActiveTrick::new_with_cards(self.last_leader(), cards).unwrap()
+        ActiveTrick::new_with_cards(self.trick_leader(), cards).unwrap()
     }
 
-    pub fn last_leader(&self) -> Seat {
+    pub fn trick_leader(&self) -> Seat {
         match self.winners.last() {
             Some(leader) => *leader,
             None => self.opening_leader,
@@ -102,10 +102,10 @@ impl<const N: usize> TrickManager<N> {
         let cards = &self.played_cards[n_cards - n_cards_in_trick..];
         let winning_card = self.currently_winning_card();
         match winning_card {
-            None => self.last_leader(),
+            None => self.trick_leader(),
             Some(winning_card) => {
                 let winner_index = cards.iter().position(|card| *card == winning_card).unwrap();
-                let leader = self.last_leader();
+                let leader = self.trick_leader();
                 // println!("leader was {}, winner_index is {}", leader, winner_index);
                 leader + winner_index
             }
@@ -196,7 +196,7 @@ impl<const N: usize> TrickManager<N> {
         if !self.played_cards.is_empty() {
             if self.trick_complete() {
                 self.winners.pop();
-                self.next_to_play = self.last_leader() + 3;
+                self.next_to_play = self.trick_leader() + 3;
             } else {
                 self.next_to_play = self.next_to_play + 3;
             }
