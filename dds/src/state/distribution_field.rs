@@ -7,17 +7,21 @@ use bridge_buddy_core::primitives::deal::Seat;
 use itertools::Itertools;
 
 pub struct DistributionField {
-    fields: [u32; 4],
+    fields: Vec<[u32; 4]>,
 }
-
+#[allow(dead_code)]
 impl DistributionField {
     pub fn get_field(&self) -> [u32; 4] {
-        self.fields
+        self.fields.last().copied().unwrap()
+    }
+
+    pub fn step_back(&mut self) {
+        self.fields.pop();
     }
 
     pub fn new_for_game<const N: usize>(game: &DoubleDummyState<N>) -> Self {
         // println!("starting fields are: ");
-        // let mut fields = Vec::with_capacity(N);
+        let mut fields = Vec::with_capacity(N + 1);
         let initial = SUIT_ARRAY.map(|suit| {
             let mut field = 0u32;
             for player in SEAT_ARRAY {
@@ -37,17 +41,19 @@ impl DistributionField {
 
             field
         });
-        // fields.push(initial);
-        Self { fields: initial }
+        fields.push(initial);
+        Self { fields }
     }
 
     pub fn remove_cards(&mut self, cards: impl Iterator<Item = VirtualCard>) {
+        self.fields.push(self.fields.last().copied().unwrap());
         for card in cards.sorted_unstable_by_key(|card| card.rank) {
             self.remove_card(card)
         }
     }
 
     pub fn add_cards(&mut self, cards: impl Iterator<Item = VirtualCard>, last_leader: Seat) {
+        self.fields.push(self.fields.last().copied().unwrap());
         for (index, card) in cards.enumerate().sorted_unstable_by_key(|(_, card)| card.rank).rev() {
             self.add_card(card, last_leader + index)
         }
@@ -55,16 +61,16 @@ impl DistributionField {
 
     pub fn remove_card(&mut self, virtual_card: VirtualCard) {
         let suit_index = virtual_card.suit as usize;
-        let before = self.fields[suit_index];
+        let before = self.fields.last().unwrap()[suit_index];
         let after = Self::without_rank(before, virtual_card.rank);
-        self.fields[suit_index] = after;
+        self.fields.last_mut().unwrap()[suit_index] = after;
     }
 
     pub fn add_card(&mut self, virtual_card: VirtualCard, owner: Seat) {
         let suit_index = virtual_card.suit as usize;
-        let before = self.fields[suit_index];
+        let before = self.fields.last().unwrap()[suit_index];
         let after = Self::with_added_rank(before, virtual_card.rank, owner);
-        self.fields[suit_index] = after;
+        self.fields.last_mut().unwrap()[suit_index] = after;
     }
 
     fn without_rank(field: u32, virt_rank: VirtualRank) -> u32 {

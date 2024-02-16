@@ -84,19 +84,9 @@ impl<const N: usize> VirtualState<N> {
     pub fn undo(&mut self) {
         if self.game.trick_complete() {
             // we are moving back a trick, update virtualizer and distribution field
-            let card = self.game.undo().unwrap();
+            self.game.undo();
             self.update_virtualizer();
-            let last_leader = self.game.trick_leader();
-            // print!("Putting virt cards back into dist field: ");
-            let cards = self
-                .game
-                .cards_in_current_trick()
-                .iter()
-                .chain(std::iter::once(&card))
-                // .inspect(|card| println!("real card is {}", card))
-                .map(|card| self.virtualizer.absolute_to_virtual_card(card).unwrap());
-
-            self.distribution_field.add_cards(cards, last_leader);
+            self.distribution_field.step_back();
         } else {
             self.game.undo();
         }
