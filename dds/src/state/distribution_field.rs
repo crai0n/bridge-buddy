@@ -16,20 +16,6 @@ impl DistributionField {
         self.fields.last().copied().unwrap()
     }
 
-    pub fn get_key(&self) -> [u32; 4] {
-        // key contains the first byte of every suit, then the second byte of every suit, etc.
-        let per_suit = self.fields.last().copied().unwrap();
-        let mut output = [[0u8; 4]; 4];
-
-        for suit in SUIT_ARRAY {
-            for (index, byte) in per_suit[suit as usize].to_be_bytes().iter().enumerate() {
-                output[suit as usize][index] = *byte;
-            }
-        }
-
-        output.map(u32::from_be_bytes)
-    }
-
     pub fn step_back(&mut self) {
         self.fields.pop();
     }

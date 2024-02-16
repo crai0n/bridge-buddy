@@ -41,12 +41,12 @@ impl<const N: usize> VirtualState<N> {
     }
 
     pub fn generate_tt_key(&self) -> TTKey {
-        TTKey {
-            tricks_left: self.tricks_left(),
-            trumps: self.trump_suit(),
-            lead: self.next_to_play(),
-            remaining_cards: self.distribution_field.get_field(),
-        }
+        TTKey::new(
+            self.tricks_left(),
+            self.trump_suit(),
+            self.next_to_play(),
+            self.distribution_field.get_field(),
+        )
     }
 
     pub fn play(&mut self, virtual_card: &VirtualCard) -> Result<(), BBError> {

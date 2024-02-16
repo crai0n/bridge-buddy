@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 #[derive(Default)]
 pub struct TranspositionTable {
-    inner: HashMap<TTKey, TTValue>,
+    inner: HashMap<[u32; 4], TTValue>,
 }
 
 impl TranspositionTable {
@@ -16,11 +16,11 @@ impl TranspositionTable {
     }
 
     pub fn lookup(&self, key: &TTKey) -> Option<&TTValue> {
-        self.inner.get(key)
+        self.inner.get(&key.id)
     }
 
     pub fn update_upper_bound(&mut self, key: &TTKey, bound: usize) {
-        let new = match self.inner.get(key) {
+        let new = match self.inner.get(&key.id) {
             None => TTValue {
                 at_least: 0,
                 at_most: bound,
@@ -30,11 +30,11 @@ impl TranspositionTable {
                 at_most: min(bound, old.at_most),
             },
         };
-        self.inner.insert(*key, new);
+        self.inner.insert(key.id, new);
     }
 
     pub fn update_lower_bound(&mut self, key: &TTKey, bound: usize) {
-        let new = match self.inner.get(key) {
+        let new = match self.inner.get(&key.id) {
             None => TTValue {
                 at_least: bound,
                 at_most: key.tricks_left,
@@ -44,29 +44,24 @@ impl TranspositionTable {
                 at_most: old.at_most,
             },
         };
-        self.inner.insert(*key, new);
+        self.inner.insert(key.id, new);
     }
 }
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone, Hash)]
 pub struct TTKey {
     pub tricks_left: usize,
-    pub trumps: Option<Suit>,
-    pub lead: Seat,
-    pub remaining_cards: [u32; 4],
+    pub id: [u32; 4],
 }
 
 #[allow(dead_code)]
 impl TTKey {
     pub fn new(tricks_left: usize, trumps: Option<Suit>, lead: Seat, remaining_cards: [u32; 4]) -> Self {
-        Self {
-            tricks_left,
-            trumps,
-            lead,
-            remaining_cards,
-        }
+        let id = Self::calc_id(tricks_left, trumps, lead, remaining_cards);
+
+        Self { tricks_left, id }
     }
-    pub fn calc_id(&self) -> [u32; 4] {
+    pub fn calc_id(tricks_left: usize, trumps: Option<Suit>, lead: Seat, remaining_cards: [u32; 4]) -> [u32; 4] {
         // use a single u32 to store:
         // the number of tricks left (N:1..=13), 13 values in 4 bits
         // the trump suit (T:0..=4), 5 values in 3 bits
@@ -79,14 +74,14 @@ impl TTKey {
 
         let mut pre_id = 0u32;
 
-        pre_id |= (self.tricks_left as u32) << 28; // 0bNNNN
-        pre_id |= (self.lead as u32) << 24; // 0b00LL
+        pre_id |= (tricks_left as u32) << 28; // 0bNNNN
+        pre_id |= (lead as u32) << 24; // 0b00LL
 
-        if let Some(trumps) = self.trumps {
+        if let Some(trumps) = trumps {
             pre_id |= (trumps as u32 + 1) << 20 // 0b0TTT
         }
 
-        let trans_field = Self::mutate(self.remaining_cards);
+        let trans_field = Self::mutate(remaining_cards);
 
         for suit in SUIT_ARRAY {
             let (suit_id, index) = if suit == Suit::Clubs {
@@ -146,12 +141,12 @@ mod test {
         ];
         let mutated = super::TTKey::mutate(fields);
 
-        for field in mutated {
-            for byte in field {
-                print!("{:8b}", byte)
-            }
-            println!()
-        }
+        // for field in mutated {
+        //     for byte in field {
+        //         print!("{:8b}", byte)
+        //     }
+        //     println!()
+        // }
 
         let expected = [
             [0b0001_0100, 0b0001_0101, 0b0001_0110, 0b0001_0111],
@@ -160,19 +155,19 @@ mod test {
             [0b0000_0000, 0b0000_0000, 0b0000_0000, 0b0000_0000],
         ];
 
-        for field in expected {
-            for byte in field {
-                print!("{:8b}", byte)
-            }
-            println!()
-        }
+        // for field in expected {
+        //     for byte in field {
+        //         print!("{:8b}", byte)
+        //     }
+        //     println!()
+        // }
 
         assert_eq!(mutated, expected)
     }
 
     #[test]
     fn calc_id() {
-        let tt_key = TTKey::new(
+        let id = TTKey::calc_id(
             5,
             Some(Suit::Clubs),
             Seat::South,
@@ -184,11 +179,9 @@ mod test {
             ],
         );
 
-        let id = tt_key.calc_id();
+        // println!("NNNN00LL0TTTSSSSsAHHHHhADDDDdAcA");
 
-        println!("NNNN00LL0TTTSSSSsAHHHHhADDDDdAcA");
-
-        println!("{:032b}", id[0]);
+        // println!("{:032b}", id[0]);
 
         // 0bNNNN_00LL_0TTT_SSSS_sAHH_HHhA_DDDD_dAcA
         let expected = [
@@ -197,11 +190,11 @@ mod test {
             0,
             0,
         ];
-
-        println!("{:032b}", expected[0]);
-
-        println!("{:032b}", id[1]);
-        println!("{:032b}", expected[1]);
+        //
+        // println!("{:032b}", expected[0]);
+        //
+        // println!("{:032b}", id[1]);
+        // println!("{:032b}", expected[1]);
 
         assert_eq!(id, expected);
     }
