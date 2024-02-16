@@ -50,6 +50,28 @@ pub enum VirtualRank {
     Ace,
 }
 
+impl Iterator for VirtualRank {
+    type Item = VirtualRank;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            VirtualRank::Two => Some(VirtualRank::Three),
+            VirtualRank::Three => Some(VirtualRank::Four),
+            VirtualRank::Four => Some(VirtualRank::Five),
+            VirtualRank::Five => Some(VirtualRank::Six),
+            VirtualRank::Six => Some(VirtualRank::Seven),
+            VirtualRank::Seven => Some(VirtualRank::Eight),
+            VirtualRank::Eight => Some(VirtualRank::Nine),
+            VirtualRank::Nine => Some(VirtualRank::Ten),
+            VirtualRank::Ten => Some(VirtualRank::Jack),
+            VirtualRank::Jack => Some(VirtualRank::Queen),
+            VirtualRank::Queen => Some(VirtualRank::King),
+            VirtualRank::King => Some(VirtualRank::Ace),
+            VirtualRank::Ace => None,
+        }
+    }
+}
+
 impl From<u16> for VirtualRank {
     fn from(value: u16) -> VirtualRank {
         match value {

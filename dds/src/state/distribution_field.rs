@@ -4,6 +4,7 @@ use bridge_buddy_core::primitives::card::suit::SUIT_ARRAY;
 use bridge_buddy_core::primitives::card::virtual_rank::VirtualRank;
 use bridge_buddy_core::primitives::deal::seat::SEAT_ARRAY;
 use bridge_buddy_core::primitives::deal::Seat;
+use bridge_buddy_core::primitives::Suit;
 use itertools::Itertools;
 
 pub struct DistributionField {
@@ -13,6 +14,20 @@ pub struct DistributionField {
 impl DistributionField {
     pub fn get_field(&self) -> [u32; 4] {
         self.fields.last().copied().unwrap()
+    }
+
+    pub fn get_key(&self) -> [u32; 4] {
+        // key contains the first byte of every suit, then the second byte of every suit, etc.
+        let per_suit = self.fields.last().copied().unwrap();
+        let mut output = [[0u8; 4]; 4];
+
+        for suit in SUIT_ARRAY {
+            for (index, byte) in per_suit[suit as usize].to_be_bytes().iter().enumerate() {
+                output[suit as usize][index] = *byte;
+            }
+        }
+
+        output.map(u32::from_be_bytes)
     }
 
     pub fn step_back(&mut self) {
@@ -37,8 +52,6 @@ impl DistributionField {
                 field += count << 28; // count the cards still in play on the highest 4 bits
             }
 
-            // println!("{:032b}", field);
-
             field
         });
         fields.push(initial);
@@ -59,18 +72,24 @@ impl DistributionField {
         }
     }
 
+    pub fn remove_rank(&mut self, suit: Suit, virtual_rank: VirtualRank) {
+        let before = self.fields.last().unwrap()[suit as usize];
+        let after = Self::without_rank(before, virtual_rank);
+        self.fields.last_mut().unwrap()[suit as usize] = after;
+    }
+
     pub fn remove_card(&mut self, virtual_card: VirtualCard) {
-        let suit_index = virtual_card.suit as usize;
-        let before = self.fields.last().unwrap()[suit_index];
-        let after = Self::without_rank(before, virtual_card.rank);
-        self.fields.last_mut().unwrap()[suit_index] = after;
+        self.remove_rank(virtual_card.suit, virtual_card.rank)
+    }
+
+    pub fn add_rank(&mut self, suit: Suit, virtual_rank: VirtualRank, owner: Seat) {
+        let before = self.fields.last().unwrap()[suit as usize];
+        let after = Self::with_added_rank(before, virtual_rank, owner);
+        self.fields.last_mut().unwrap()[suit as usize] = after;
     }
 
     pub fn add_card(&mut self, virtual_card: VirtualCard, owner: Seat) {
-        let suit_index = virtual_card.suit as usize;
-        let before = self.fields.last().unwrap()[suit_index];
-        let after = Self::with_added_rank(before, virtual_card.rank, owner);
-        self.fields.last_mut().unwrap()[suit_index] = after;
+        self.add_rank(virtual_card.suit, virtual_card.rank, owner)
     }
 
     fn without_rank(field: u32, virt_rank: VirtualRank) -> u32 {
