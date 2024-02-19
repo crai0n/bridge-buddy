@@ -4,7 +4,6 @@ use itertools::Itertools;
 use crate::primitives::card::rank::RANK_ARRAY;
 use crate::primitives::card::suit::SUIT_ARRAY;
 use rand::prelude::*;
-use rand::{thread_rng, Rng};
 
 pub struct Deck<const N: usize> {
     cards: Vec<Card>,
