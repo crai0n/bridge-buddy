@@ -51,7 +51,7 @@ impl SuitField {
     }
 
     #[allow(dead_code)]
-    fn all_contained_ranks(&self) -> Vec<Rank> {
+    pub fn all_contained_ranks(&self) -> Vec<Rank> {
         let mut vec = Vec::with_capacity(self.0.count_ones() as usize);
 
         let mut tracking_field = self.0;
@@ -248,10 +248,6 @@ impl<'a> DoubleEndedIterator for SuitFieldIterator<'a> {
 
 #[cfg(test)]
 mod test {
-    extern crate test;
-    use itertools::Itertools;
-    use test::Bencher;
-
     use super::SuitField;
     use bridge_buddy_core::primitives::card::Rank;
 
@@ -286,75 +282,6 @@ mod test {
         let suit_field = SuitField::from_u16(my_field);
         assert_eq!(suit_field.highest_rank(), expected);
         assert_eq!(suit_field.highest_rank(), expected);
-    }
-
-    #[bench]
-    fn is_void(b: &mut Bencher) {
-        let val = test::black_box(8192u16);
-        b.iter(|| {
-            (0..val)
-                .map(|v| {
-                    let suit_field = SuitField::from_u16(v);
-                    suit_field.is_void()
-                })
-                .collect_vec()
-        })
-    }
-
-    #[bench]
-    fn count_cards(b: &mut Bencher) {
-        let val = test::black_box(8192u16);
-
-        b.iter(|| {
-            (0..val)
-                .map(|v| {
-                    let suit_field = SuitField::from_u16(v);
-                    suit_field.count_cards()
-                })
-                .collect_vec()
-        })
-    }
-
-    #[bench]
-    fn all_contained_ranks(b: &mut Bencher) {
-        let n = test::black_box(8192u16);
-
-        b.iter(|| {
-            (0..n)
-                .map(|v| {
-                    let suit_field = SuitField::from_u16(v);
-                    suit_field.all_contained_ranks()
-                })
-                .collect_vec()
-        })
-    }
-
-    #[bench]
-    fn bench_highest_rank(b: &mut Bencher) {
-        let n = test::black_box(8192u16);
-
-        b.iter(|| {
-            (0..n)
-                .map(|v| {
-                    let suit_field = SuitField::from_u16(v);
-                    suit_field.highest_rank()
-                })
-                .collect_vec()
-        })
-    }
-
-    #[bench]
-    fn bench_lowest_rank(b: &mut Bencher) {
-        let n = test::black_box(8192u16);
-
-        b.iter(|| {
-            (0..n)
-                .map(|v| {
-                    let suit_field = SuitField::from_u16(v);
-                    suit_field.lowest_rank()
-                })
-                .collect_vec()
-        })
     }
 
     #[test_case(0b0000_0011_0000_1000, Some(Rank::Five))]

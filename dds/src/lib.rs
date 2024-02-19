@@ -1,5 +1,4 @@
-#![feature(test)]
-mod card_manager;
+pub mod card_manager;
 mod dds_config;
 mod move_generator;
 mod state;
