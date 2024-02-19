@@ -1,3 +1,4 @@
+use crate::state::distribution_field::DistributionField;
 use bridge_buddy_core::primitives::card::suit::SUIT_ARRAY;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::Suit;
@@ -56,12 +57,12 @@ pub struct TTKey {
 
 #[allow(dead_code)]
 impl TTKey {
-    pub fn new(tricks_left: usize, trumps: Option<Suit>, lead: Seat, remaining_cards: [u32; 4]) -> Self {
-        let id = Self::calc_id(tricks_left, trumps, lead, remaining_cards);
+    pub fn new(tricks_left: usize, trumps: Option<Suit>, lead: Seat, dist_field: DistributionField) -> Self {
+        let id = Self::calc_id(tricks_left, trumps, lead, dist_field);
 
         Self { tricks_left, id }
     }
-    pub fn calc_id(tricks_left: usize, trumps: Option<Suit>, lead: Seat, remaining_cards: [u32; 4]) -> [u32; 4] {
+    pub fn calc_id(tricks_left: usize, trumps: Option<Suit>, lead: Seat, dist_field: DistributionField) -> [u32; 4] {
         // use a single u32 to store:
         // the number of tricks left (N:1..=13), 13 values in 4 bits
         // the trump suit (T:0..=4), 5 values in 3 bits
@@ -81,7 +82,7 @@ impl TTKey {
             pre_id |= (trumps as u32 + 1) << 20 // 0b0TTT
         }
 
-        let trans_field = Self::mutate(remaining_cards);
+        let trans_field = Self::mutate(dist_field);
 
         for suit in SUIT_ARRAY {
             let (suit_id, index) = if suit == Suit::Clubs {
@@ -105,12 +106,12 @@ impl TTKey {
         output
     }
 
-    pub fn mutate(fields: [u32; 4]) -> [[u8; 4]; 4] {
+    pub fn mutate(dist_field: DistributionField) -> [[u8; 4]; 4] {
         // output contains the first byte of every suit, then the second byte of every suit, etc.
         let mut output = [[0u8; 4]; 4];
 
         for suit in SUIT_ARRAY {
-            for (index, byte) in fields[suit as usize].to_be_bytes().iter().enumerate() {
+            for (index, byte) in dist_field.cards_in_suit(suit).to_be_bytes().iter().enumerate() {
                 output[index][suit as usize] = *byte;
             }
         }
@@ -127,6 +128,7 @@ pub struct TTValue {
 
 #[cfg(test)]
 mod test {
+    use crate::state::distribution_field::DistributionField;
     use crate::transposition_table::TTKey;
     use bridge_buddy_core::primitives::deal::Seat;
     use bridge_buddy_core::primitives::Suit;
@@ -139,7 +141,8 @@ mod test {
             0b0001_0110_0100_1110_0000_0000_0000_0000,
             0b0001_0111_1001_0011_0000_0000_0000_0000,
         ];
-        let mutated = super::TTKey::mutate(fields);
+        let dist_field = DistributionField::new(fields);
+        let mutated = super::TTKey::mutate(dist_field);
 
         // for field in mutated {
         //     for byte in field {
@@ -171,12 +174,12 @@ mod test {
             5,
             Some(Suit::Clubs),
             Seat::South,
-            [
+            DistributionField::new([
                 0b0001_0100_1101_1000_0000_0000_0000_0000,
                 0b0001_0101_0011_1010_0000_0000_0000_0000,
                 0b0001_0110_0100_1110_0000_0000_0000_0000,
                 0b0001_0111_1001_0011_0000_0000_0000_0000,
-            ],
+            ]),
         );
 
         // println!("NNNN00LL0TTTSSSSsAHHHHhADDDDdAcA");

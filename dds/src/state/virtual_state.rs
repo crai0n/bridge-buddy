@@ -8,13 +8,13 @@ use bridge_buddy_core::error::BBError;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::{Card, Hand, Suit};
 
-use crate::state::distribution_field::DistributionField;
+use crate::state::distribution_field::DistFieldManager;
 use bridge_buddy_core::primitives::deal::seat::SEAT_ARRAY;
 
 pub struct VirtualState<const N: usize> {
     game: DoubleDummyState<N>,
     virtualizer: Virtualizer,
-    distribution_field: DistributionField,
+    distribution_field: DistFieldManager,
 }
 
 #[allow(dead_code)]
@@ -27,7 +27,7 @@ impl<const N: usize> VirtualState<N> {
 
         Self {
             virtualizer: Virtualizer::default(),
-            distribution_field: DistributionField::new_for_game(&game),
+            distribution_field: DistFieldManager::new_for_game(&game),
             game,
         }
     }

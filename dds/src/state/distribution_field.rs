@@ -7,15 +7,29 @@ use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::Suit;
 use itertools::Itertools;
 
-pub struct DistributionField {
-    fields: Vec<[u32; 4]>,
+pub struct DistFieldManager {
+    fields: Vec<DistributionField>,
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct DistributionField([u32; 4]);
+
+#[allow(dead_code)]
+impl DistributionField {
+    pub fn new(fields: [u32; 4]) -> Self {
+        Self(fields)
+    }
+
+    pub fn cards_in_suit(&self, suit: Suit) -> u32 {
+        self.0[suit as usize]
+    }
 }
 
 const COUNT_OFFSET: usize = 26;
 
 #[allow(dead_code)]
-impl DistributionField {
-    pub fn get_field(&self) -> [u32; 4] {
+impl DistFieldManager {
+    pub fn get_field(&self) -> DistributionField {
         self.fields.last().copied().unwrap()
     }
 
@@ -43,7 +57,7 @@ impl DistributionField {
 
             field
         });
-        fields.push(initial);
+        fields.push(DistributionField(initial));
         Self { fields }
     }
 
@@ -62,9 +76,9 @@ impl DistributionField {
     }
 
     pub fn remove_rank(&mut self, suit: Suit, virtual_rank: VirtualRank) {
-        let before = self.fields.last().unwrap()[suit as usize];
+        let before = self.fields.last().unwrap().0[suit as usize];
         let after = Self::without_rank(before, virtual_rank);
-        self.fields.last_mut().unwrap()[suit as usize] = after;
+        self.fields.last_mut().unwrap().0[suit as usize] = after;
     }
 
     pub fn remove_card(&mut self, virtual_card: VirtualCard) {
@@ -72,9 +86,9 @@ impl DistributionField {
     }
 
     pub fn add_rank(&mut self, suit: Suit, virtual_rank: VirtualRank, owner: Seat) {
-        let before = self.fields.last().unwrap()[suit as usize];
+        let before = self.fields.last().unwrap().0[suit as usize];
         let after = Self::with_added_rank(before, virtual_rank, owner);
-        self.fields.last_mut().unwrap()[suit as usize] = after;
+        self.fields.last_mut().unwrap().0[suit as usize] = after;
     }
 
     pub fn add_card(&mut self, virtual_card: VirtualCard, owner: Seat) {
