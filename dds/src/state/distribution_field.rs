@@ -10,6 +10,9 @@ use itertools::Itertools;
 pub struct DistributionField {
     fields: Vec<[u32; 4]>,
 }
+
+const COUNT_OFFSET: usize = 26;
+
 #[allow(dead_code)]
 impl DistributionField {
     pub fn get_field(&self) -> [u32; 4] {
@@ -35,7 +38,7 @@ impl DistributionField {
                 }
                 let count = game.cards_of(player).count_cards_in(suit) as u32;
                 // println!("found {} cards for player {} in suit", count, player);
-                field += count << 28; // count the cards still in play on the highest 4 bits
+                field += count << COUNT_OFFSET; // count the cards still in play on bits 30-27
             }
 
             field
@@ -94,7 +97,7 @@ impl DistributionField {
 
         let suit_distribution = upper_field | lower_field;
 
-        suit_distribution - (1 << 28) // lower count
+        suit_distribution - (1 << COUNT_OFFSET) // lower count
     }
 
     fn with_added_rank(field: u32, virt_rank: VirtualRank, owner: Seat) -> u32 {
@@ -107,6 +110,6 @@ impl DistributionField {
 
         let suit_distribution = upper_field | lower_field | ((owner as u32) << index);
 
-        suit_distribution + (1 << 28) // increase count
+        suit_distribution + (1 << COUNT_OFFSET) // increase count
     }
 }
