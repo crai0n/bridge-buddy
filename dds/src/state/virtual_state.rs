@@ -191,12 +191,17 @@ impl<const N: usize> VirtualState<N> {
         VirtualCardTracker::from_card_tracker(card_tracker, &self.virtualizer)
     }
 
-    pub fn create_estimation_state(&self) -> EstimationState {
-        let my_seat = self.next_to_play();
-        let card_counts = SEAT_ARRAY.map(|player| self.cards_of(player).count_cards_per_suit());
+    pub fn create_high_card_counts(&self) -> [[usize; 4]; 4] {
         let ace_owners = SUIT_ARRAY.map(|suit| self.owner_of_winning_rank_in(suit));
         let king_owners = SUIT_ARRAY.map(|suit| self.owner_of_runner_up_in(suit));
+        self.create_high_card_counts_internal(ace_owners, king_owners)
+    }
 
+    fn create_high_card_counts_internal(
+        &self,
+        ace_owners: [Option<Seat>; 4],
+        king_owners: [Option<Seat>; 4],
+    ) -> [[usize; 4]; 4] {
         let mut high_card_counts = [[0usize; 4]; 4];
         let high_card_counts_transposed = SUIT_ARRAY.map(|suit| match ace_owners[suit as usize] {
             None => [0; 4],
@@ -214,6 +219,16 @@ impl<const N: usize> VirtualState<N> {
                 high_card_counts[player_index][suit_index] = high_card_count;
             }
         }
+        high_card_counts
+    }
+
+    pub fn create_estimation_state(&self) -> EstimationState {
+        let my_seat = self.next_to_play();
+        let card_counts = SEAT_ARRAY.map(|player| self.cards_of(player).count_cards_per_suit());
+        let ace_owners = SUIT_ARRAY.map(|suit| self.owner_of_winning_rank_in(suit));
+        let king_owners = SUIT_ARRAY.map(|suit| self.owner_of_runner_up_in(suit));
+
+        let high_card_counts = self.create_high_card_counts_internal(ace_owners, king_owners);
 
         let mut our_combined_high_card_count = [[0; 4]; 2];
 

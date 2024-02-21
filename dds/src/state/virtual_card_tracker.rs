@@ -134,11 +134,18 @@ impl<'a> VirtualCardTracker<'a> {
     }
 
     pub fn count_high_cards_in(&self, suit: Suit) -> usize {
-        self.all_ranks_in(suit)
-            .rev()
-            .zip(VIRTUAL_RANK_ARRAY.iter().rev())
-            .take_while(|(rank, &high_rank)| *rank == high_rank)
-            .count()
+        match self.contains_winning_rank_in(suit) {
+            true => match self.contains_runner_up_in(suit) {
+                true => self
+                    .all_ranks_in(suit)
+                    .rev()
+                    .zip(VIRTUAL_RANK_ARRAY.iter().rev())
+                    .take_while(|(rank, &high_rank)| *rank == high_rank)
+                    .count(),
+                false => 1,
+            },
+            false => 0,
+        }
     }
 
     pub fn count_combined_high_cards_in(&self, suit: Suit, other: &Self) -> [usize; 2] {
