@@ -14,7 +14,7 @@ impl Default for DdsConfig {
         Self {
             move_ordering: true,
             check_quick_tricks: true,
-            quick_tricks_in_second_hand: true,
+            quick_tricks_in_second_hand: false,
             use_transposition_table: true,
             check_losing_tricks: true,
             pre_estimate: false,

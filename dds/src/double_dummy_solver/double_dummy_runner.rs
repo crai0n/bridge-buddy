@@ -102,12 +102,13 @@ impl DoubleDummyRunner {
 
     fn score_node<const N: usize>(&mut self, state: &mut VirtualState<N>, estimate: usize) -> usize {
         self.statistics.node_count[state.count_cards_in_current_trick()] += 1;
-        if let Some(early_score) = self.try_early_node_score(state, estimate) {
-            return early_score;
-        }
 
         if state.is_last_trick() {
             return self.score_terminal_node(state);
+        }
+
+        if let Some(early_score) = self.try_early_node_score(state, estimate) {
+            return early_score;
         }
 
         // println!("generating possible moves!");
@@ -213,15 +214,27 @@ impl DoubleDummyRunner {
             }
         }
 
-        let estimation_state = if self.config.check_quick_tricks || self.config.check_losing_tricks {
+        let estimation_state_needed = (state.player_is_leading()
+            && (self.config.check_quick_tricks || self.config.check_losing_tricks))
+            || (state.count_cards_in_current_trick() == 1 && self.config.quick_tricks_in_second_hand);
+
+        let estimation_state = if estimation_state_needed {
             Some(state.create_estimation_state())
         } else {
             None
         };
 
-        if self.config.check_quick_tricks {
+        if self.config.check_quick_tricks && state.player_is_leading() {
             let estimation_state = estimation_state.clone().unwrap();
-            if let Some(qt_score) = self.try_score_using_quick_tricks(state, estimate, estimation_state) {
+            if let Some(qt_score) = self.try_score_using_quick_tricks_for_leader(state, estimate, estimation_state) {
+                return Some(qt_score);
+            }
+        }
+
+        if self.config.quick_tricks_in_second_hand && state.count_cards_in_current_trick() == 1 {
+            let estimation_state = estimation_state.clone().unwrap();
+            if let Some(qt_score) = self.try_score_using_quick_tricks_for_second_hand(state, estimate, estimation_state)
+            {
                 return Some(qt_score);
             }
         }
@@ -253,25 +266,37 @@ impl DoubleDummyRunner {
         None
     }
 
-    fn try_score_using_quick_tricks<const N: usize>(
+    fn try_score_using_quick_tricks_for_leader<const N: usize>(
         &mut self,
         state: &VirtualState<N>,
         estimate: usize,
         estimation_state: EstimationState,
     ) -> Option<usize> {
-        let quick_tricks = match state.count_cards_in_current_trick() {
-            0 => quick_tricks_for_leader(estimation_state),
-            1 if self.config.quick_tricks_in_second_hand => quick_tricks_for_second_hand(estimation_state),
-            _ => return None,
-        };
+        let quick_tricks = quick_tricks_for_leader(estimation_state);
         let total_with_quick_tricks = state.tricks_won_by_axis(state.next_to_play()) + quick_tricks;
         if total_with_quick_tricks >= estimate {
             if self.config.use_transposition_table && state.player_is_leading() {
                 self.store_lower_bound_in_tt(state, quick_tricks);
             }
-            return Some(total_with_quick_tricks);
+            Some(total_with_quick_tricks)
+        } else {
+            None
         }
-        None
+    }
+
+    fn try_score_using_quick_tricks_for_second_hand<const N: usize>(
+        &mut self,
+        state: &VirtualState<N>,
+        estimate: usize,
+        estimation_state: EstimationState,
+    ) -> Option<usize> {
+        let quick_tricks = quick_tricks_for_second_hand(estimation_state);
+        let total_with_quick_tricks = state.tricks_won_by_axis(state.next_to_play()) + quick_tricks;
+        if total_with_quick_tricks >= estimate {
+            Some(total_with_quick_tricks)
+        } else {
+            None
+        }
     }
 
     fn get_tt_key<const N: usize>(&mut self, state: &VirtualState<N>) -> TTKey {

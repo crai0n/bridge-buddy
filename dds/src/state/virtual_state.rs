@@ -196,10 +196,39 @@ impl<const N: usize> VirtualState<N> {
         let card_counts = SEAT_ARRAY.map(|player| self.cards_of(player).count_cards_per_suit());
         let ace_owners = SUIT_ARRAY.map(|suit| self.owner_of_winning_rank_in(suit));
         let king_owners = SUIT_ARRAY.map(|suit| self.owner_of_runner_up_in(suit));
-        let high_card_counts = SEAT_ARRAY.map(|player| self.cards_of(player).count_high_cards_per_suit());
-        let our_combined_high_card_count = self
-            .cards_of(my_seat)
-            .count_combined_high_cards_per_suit(&self.cards_of(my_seat.partner()));
+
+        let mut high_card_counts = [[0usize; 4]; 4];
+        let high_card_counts_transposed = SUIT_ARRAY.map(|suit| match ace_owners[suit as usize] {
+            None => [0; 4],
+            Some(ace_owner) => {
+                let mut arr = [0; 4];
+                arr[ace_owner as usize] = match king_owners[suit as usize] {
+                    Some(king_owner) if king_owner == ace_owner => self.cards_of(ace_owner).count_high_cards_in(suit),
+                    _ => 1,
+                };
+                arr
+            }
+        });
+        for (suit_index, suit_high_cards) in high_card_counts_transposed.into_iter().enumerate() {
+            for (player_index, high_card_count) in suit_high_cards.into_iter().enumerate() {
+                high_card_counts[player_index][suit_index] = high_card_count;
+            }
+        }
+
+        let mut our_combined_high_card_count = [[0; 4]; 2];
+
+        let transposed_combined_high_card_count = SUIT_ARRAY.map(|suit| match ace_owners[suit as usize] {
+            Some(ace_owner) if ace_owner.same_axis(&my_seat) => self
+                .cards_of(my_seat)
+                .count_combined_high_cards_in(suit, &self.cards_of(my_seat.partner())),
+            _ => [0; 2],
+        });
+
+        for (suit_index, player_counts) in transposed_combined_high_card_count.iter().enumerate() {
+            for (player_index, single_count) in player_counts.iter().enumerate() {
+                our_combined_high_card_count[player_index][suit_index] = *single_count;
+            }
+        }
 
         EstimationState {
             lead_suit: self.suit_to_follow(),

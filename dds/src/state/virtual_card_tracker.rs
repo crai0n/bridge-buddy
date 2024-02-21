@@ -106,11 +106,12 @@ impl<'a> VirtualCardTracker<'a> {
     }
 
     #[allow(dead_code)]
-    pub fn cards_in(&self, suit: Suit) -> impl DoubleEndedIterator<Item = VirtualCard> + '_ {
-        self.ranks_in(suit).map(move |vrank| VirtualCard { rank: vrank, suit })
+    pub fn all_cards_in(&self, suit: Suit) -> impl DoubleEndedIterator<Item = VirtualCard> + '_ {
+        self.all_ranks_in(suit)
+            .map(move |vrank| VirtualCard { rank: vrank, suit })
     }
 
-    pub fn ranks_in(&self, suit: Suit) -> impl DoubleEndedIterator<Item = VirtualRank> + '_ {
+    pub fn all_ranks_in(&self, suit: Suit) -> impl DoubleEndedIterator<Item = VirtualRank> + '_ {
         self.card_tracker
             .ranks_in(suit)
             .filter_map(move |rank| self.absolute_to_virtual_rank(&rank, suit))
@@ -129,37 +130,42 @@ impl<'a> VirtualCardTracker<'a> {
     }
 
     pub fn count_high_cards_per_suit(&self) -> [usize; 4] {
-        SUIT_ARRAY.map(|suit| {
-            self.ranks_in(suit)
-                .rev()
-                .zip(VIRTUAL_RANK_ARRAY.iter().rev())
-                .take_while(|(rank, &high_rank)| *rank == high_rank)
-                .count()
-        })
+        SUIT_ARRAY.map(|suit| self.count_high_cards_in(suit))
     }
 
-    pub fn count_combined_high_cards_per_suit(&self, other: &Self) -> [[usize; 4]; 2] {
-        let transposed_count = SUIT_ARRAY.map(|suit| {
-            let mut my_iter = self.cards_in(suit).rev().peekable();
-            let mut other_iter = other.cards_in(suit).rev().peekable();
+    pub fn count_high_cards_in(&self, suit: Suit) -> usize {
+        self.all_ranks_in(suit)
+            .rev()
+            .zip(VIRTUAL_RANK_ARRAY.iter().rev())
+            .take_while(|(rank, &high_rank)| *rank == high_rank)
+            .count()
+    }
 
-            let mut count = [0usize, 0];
-            for high_rank in VIRTUAL_RANK_ARRAY.into_iter().rev() {
-                if my_iter.next_if(|y| y.rank == high_rank).is_some() {
-                    count[0] += 1;
-                } else if other_iter.next_if(|y| y.rank == high_rank).is_some() {
-                    count[1] += 1;
-                } else {
-                    break;
-                }
+    pub fn count_combined_high_cards_in(&self, suit: Suit, other: &Self) -> [usize; 2] {
+        let mut my_iter = self.all_cards_in(suit).rev().peekable();
+        let mut other_iter = other.all_cards_in(suit).rev().peekable();
+
+        let mut count = [0usize, 0];
+        for high_rank in VIRTUAL_RANK_ARRAY.into_iter().rev() {
+            if my_iter.next_if(|y| y.rank == high_rank).is_some() {
+                count[0] += 1;
+            } else if other_iter.next_if(|y| y.rank == high_rank).is_some() {
+                count[1] += 1;
+            } else {
+                break;
             }
-            count
-        });
-        let mut count = [[0; 4]; 2];
+        }
+        count
+    }
 
-        for (index, counts) in transposed_count.iter().enumerate() {
-            for (jndex, single_count) in counts.iter().enumerate() {
-                count[jndex][index] = *single_count;
+    #[allow(dead_code)]
+    pub fn count_combined_high_cards_per_suit(&self, other: &Self) -> [[usize; 4]; 2] {
+        let transposed_count = SUIT_ARRAY.map(|suit| self.count_combined_high_cards_in(suit, other));
+
+        let mut count = [[0; 4]; 2];
+        for (suit_index, player_counts) in transposed_count.iter().enumerate() {
+            for (player_index, single_count) in player_counts.iter().enumerate() {
+                count[player_index][suit_index] = *single_count;
             }
         }
 

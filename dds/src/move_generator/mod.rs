@@ -22,7 +22,7 @@ impl MoveGenerator {
                 if card_tracker.is_void_in(lead_suit) {
                     Self::select_one_move_per_sequence(card_tracker.all_cards())
                 } else {
-                    Self::select_one_move_per_sequence(card_tracker.cards_in(lead_suit))
+                    Self::select_one_move_per_sequence(card_tracker.all_cards_in(lead_suit))
                 }
             }
             None => {
