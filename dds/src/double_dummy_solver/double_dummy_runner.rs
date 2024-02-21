@@ -211,15 +211,15 @@ impl DoubleDummyRunner {
             }
         }
 
-        if self.config.check_losing_tricks && state.player_is_leading() {
-            if let Some(lt_score) = self.try_score_using_losing_tricks(state, estimate) {
-                return Some(lt_score);
-            }
-        }
-
         if self.config.check_quick_tricks {
             if let Some(qt_score) = self.try_score_using_quick_tricks(state, estimate) {
                 return Some(qt_score);
+            }
+        }
+
+        if self.config.check_losing_tricks && state.player_is_leading() {
+            if let Some(lt_score) = self.try_score_using_losing_tricks(state, estimate) {
+                return Some(lt_score);
             }
         }
 
