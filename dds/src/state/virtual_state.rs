@@ -9,7 +9,6 @@ use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::{Card, Hand, Suit};
 
 use crate::state::distribution_field::DistFieldManager;
-use bridge_buddy_core::primitives::deal::seat::SEAT_ARRAY;
 
 pub struct VirtualState<const N: usize> {
     game: DoubleDummyState<N>,
@@ -51,11 +50,6 @@ impl<const N: usize> VirtualState<N> {
 
     pub fn play(&mut self, virtual_card: &VirtualCard) -> Result<(), BBError> {
         let card = self.virtual_to_absolute(virtual_card);
-        // println!(
-        //     "Playing virtual card {}, which refers to real card {}",
-        //     virtual_card,
-        //     card.unwrap()
-        // );
         match card {
             Some(card) => {
                 self.game.play(card);
@@ -76,9 +70,7 @@ impl<const N: usize> VirtualState<N> {
     }
 
     fn update_virtualizer(&mut self) {
-        // println!("virtualizer before {:?}", self.virtualizer.out_of_play);
         self.virtualizer = Virtualizer::new(self.game.out_of_play_cards().clone());
-        // println!("virtualizer  after {:?}", self.virtualizer.out_of_play);
     }
 
     pub fn undo(&mut self) {
@@ -101,21 +93,15 @@ impl<const N: usize> VirtualState<N> {
     }
 
     pub fn owner_of(&self, card: VirtualCard) -> Option<Seat> {
-        SEAT_ARRAY
-            .into_iter()
-            .find(|&player| self.cards_of(player).contains(&card))
+        self.distribution_field.owner_of(&card)
     }
 
     pub fn owner_of_winning_rank_in(&self, suit: Suit) -> Option<Seat> {
-        SEAT_ARRAY
-            .into_iter()
-            .find(|&seat| self.cards_of(seat).contains_winning_rank_in(suit))
+        self.distribution_field.owner_of_winning_rank_in(suit)
     }
 
     pub fn owner_of_runner_up_in(&self, suit: Suit) -> Option<Seat> {
-        SEAT_ARRAY
-            .into_iter()
-            .find(|&seat| self.cards_of(seat).contains_runner_up_in(suit))
+        self.distribution_field.owner_of_runner_up_in(suit)
     }
 
     pub fn player_can_ruff_suit(&self, suit: Suit, player: Seat) -> bool {

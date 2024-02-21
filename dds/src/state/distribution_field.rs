@@ -1,5 +1,6 @@
 use crate::state::double_dummy_state::DoubleDummyState;
 use crate::state::virtual_card::VirtualCard;
+use bridge_buddy_core::primitives::card::rank::N_RANKS;
 use bridge_buddy_core::primitives::card::suit::SUIT_ARRAY;
 use bridge_buddy_core::primitives::card::virtual_rank::VirtualRank;
 use bridge_buddy_core::primitives::deal::seat::SEAT_ARRAY;
@@ -23,12 +24,45 @@ impl DistributionField {
     pub fn cards_in_suit(&self, suit: Suit) -> u32 {
         self.0[suit as usize]
     }
+
+    pub fn owner_of(&self, card: &VirtualCard) -> Option<Seat> {
+        let field = self.0[card.suit as usize];
+        let index = card.rank as usize * 2;
+        if (card.rank as usize) < N_RANKS - (field as usize >> COUNT_OFFSET) {
+            return None;
+        }
+        match (field >> index) % 4 {
+            0 => Some(Seat::North),
+            1 => Some(Seat::East),
+            2 => Some(Seat::South),
+            3 => Some(Seat::West),
+            _ => unreachable!(),
+        }
+    }
 }
 
 const COUNT_OFFSET: usize = 26;
 
 #[allow(dead_code)]
 impl DistFieldManager {
+    pub fn owner_of(&self, card: &VirtualCard) -> Option<Seat> {
+        self.fields.last().unwrap().owner_of(card)
+    }
+
+    pub fn owner_of_winning_rank_in(&self, suit: Suit) -> Option<Seat> {
+        self.fields.last().unwrap().owner_of(&VirtualCard {
+            suit,
+            rank: VirtualRank::Ace,
+        })
+    }
+
+    pub fn owner_of_runner_up_in(&self, suit: Suit) -> Option<Seat> {
+        self.fields.last().unwrap().owner_of(&VirtualCard {
+            suit,
+            rank: VirtualRank::King,
+        })
+    }
+
     pub fn get_field(&self) -> DistributionField {
         self.fields.last().copied().unwrap()
     }
