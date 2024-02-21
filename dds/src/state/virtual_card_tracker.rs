@@ -51,6 +51,7 @@ impl<'a> VirtualCardTracker<'a> {
         self.has_doubleton_in(suit) && self.contains_runner_up_in(suit)
     }
 
+    #[allow(dead_code)]
     pub fn contains(&self, card: &VirtualCard) -> bool {
         let real_card = self.virtual_to_absolute_card(card);
         match real_card {
@@ -84,6 +85,7 @@ impl<'a> VirtualCardTracker<'a> {
         self.virtualizer.absolute_to_virtual_card(card)
     }
 
+    #[allow(dead_code)]
     fn virtual_to_absolute_card(&self, virtual_card: &VirtualCard) -> Option<Card> {
         self.virtualizer.virtual_to_absolute_card(virtual_card)
     }

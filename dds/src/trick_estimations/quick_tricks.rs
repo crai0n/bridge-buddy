@@ -1,65 +1,54 @@
-use crate::state::virtual_card_tracker::VirtualCardTracker;
-use crate::state::VirtualState;
-use bridge_buddy_core::primitives::Suit;
-
+use crate::trick_estimations::EstimationState;
 use std::cmp::{max, min, Ordering};
 
-fn nt_quick_tricks_for_leader<const N: usize>(state: &VirtualState<N>) -> usize {
+fn nt_quick_tricks_for_leader(estimation_state: EstimationState) -> usize {
     // Quick tricks are the tricks that an axis can take without losing the lead.
     // For this, we need to look at both hands combined
-    let player = state.next_to_play();
-    let players = [player, player + 1, player + 2, player + 3];
-    let cards = players.map(|x| state.cards_of(x));
 
-    let [my_cards, _lhos_cards, partners_cards, _rhos_cards] = cards;
+    let player = estimation_state.my_seat;
+    let my_cards_per_suit = estimation_state.card_counts[player as usize];
 
-    let high_card_tricks = nt_high_card_tricks_per_suit(&my_cards, &partners_cards);
-
-    let my_cards_per_suit = my_cards.count_cards_per_suit();
+    let high_card_tricks = nt_high_card_tricks_per_suit(estimation_state);
 
     min(high_card_tricks.iter().sum(), my_cards_per_suit.iter().sum())
 }
 
-fn trump_quick_tricks_for_leader<const N: usize>(state: &VirtualState<N>, trump_suit: Suit) -> usize {
+fn trump_quick_tricks_for_leader(estimation_state: EstimationState) -> usize {
     // Quick tricks are the tricks that an axis can take without losing the lead.
     // For this, we need to look at both hands combined
-    let player = state.next_to_play();
-    let players = [player, player + 1, player + 2, player + 3];
-    let cards = players.map(|x| state.cards_of(x));
 
-    let [my_cards, lhos_cards, partners_cards, rhos_cards] = &cards;
-
-    let high_card_tricks =
-        trump_high_card_tricks_per_suit(my_cards, partners_cards, lhos_cards, rhos_cards, trump_suit);
-
-    let my_cards_per_suit = my_cards.count_cards_per_suit();
+    let player = estimation_state.my_seat;
+    let my_cards_per_suit = estimation_state.card_counts[player as usize];
+    let high_card_tricks = trump_high_card_tricks_per_suit(estimation_state);
 
     min(high_card_tricks.iter().sum(), my_cards_per_suit.iter().sum())
 }
-pub fn quick_tricks_for_leader<const N: usize>(state: &VirtualState<N>) -> usize {
-    match state.trump_suit() {
-        None => nt_quick_tricks_for_leader(state),
-        Some(trump_suit) => trump_quick_tricks_for_leader(state, trump_suit),
+pub fn quick_tricks_for_leader(estimation_state: EstimationState) -> usize {
+    match estimation_state.trump_suit {
+        None => nt_quick_tricks_for_leader(estimation_state),
+        Some(_) => trump_quick_tricks_for_leader(estimation_state),
     }
 }
 
-pub fn quick_tricks_for_second_hand<const N: usize>(state: &VirtualState<N>) -> usize {
-    let lead_suit = state.suit_to_follow().unwrap();
+pub fn quick_tricks_for_second_hand(estimation_state: EstimationState) -> usize {
+    let lead_suit = estimation_state.lead_suit.unwrap();
 
-    let player = state.next_to_play();
-    let players = [player, player + 1, player + 2, player + 3];
-    let cards = players.map(|x| state.cards_of(x));
+    let player = estimation_state.my_seat;
+    let partner = player + 2;
+    let lho = player + 1;
+    // let rho = player + 3;
 
-    let [my_cards, lhos_cards, partners_cards, _rhos_cards] = &cards;
+    let my_card_count = estimation_state.card_counts[player as usize];
+    let partners_card_count = estimation_state.card_counts[partner as usize];
+    let lhos_card_count = estimation_state.card_counts[lho as usize];
+    // let rhos_card_count = estimation_state.card_counts[rho as usize];
 
-    let my_card_count = my_cards.count_cards_per_suit();
-    let partners_card_count = partners_cards.count_cards_per_suit();
-    let lhos_card_count = lhos_cards.count_cards_per_suit();
+    let my_simple_high_card_count = estimation_state.high_card_counts[player as usize];
+    let partners_simple_high_card_count = estimation_state.high_card_counts[partner as usize];
+    // let lhos_simple_high_card_count = estimation_state.high_card_counts[lho as usize];
+    // let rhos_simple_high_card_count = estimation_state.high_card_counts[rho as usize];
 
-    let my_simple_high_card_count = my_cards.count_high_cards_per_suit();
-    let partners_simple_high_card_count = partners_cards.count_high_cards_per_suit();
-
-    match state.trump_suit() {
+    match estimation_state.trump_suit {
         None => {
             if my_simple_high_card_count[lead_suit as usize] > 0 {
                 my_simple_high_card_count.iter().sum()
@@ -118,23 +107,23 @@ pub fn quick_tricks_for_second_hand<const N: usize>(state: &VirtualState<N>) -> 
     }
 }
 
-fn trump_high_card_tricks_per_suit(
-    my_cards: &VirtualCardTracker,
-    partners_cards: &VirtualCardTracker,
-    lhos_cards: &VirtualCardTracker,
-    rhos_cards: &VirtualCardTracker,
-    trump_suit: Suit,
-) -> [usize; 4] {
+fn trump_high_card_tricks_per_suit(estimation_state: EstimationState) -> [usize; 4] {
+    let player = estimation_state.my_seat;
+    let trump_suit = estimation_state.trump_suit.unwrap();
+    // let partner = player + 2;
+    let lho = player + 1;
+    let rho = player + 3;
+
+    let lhos_card_count = estimation_state.card_counts[lho as usize];
+    let rhos_card_count = estimation_state.card_counts[rho as usize];
+
     let (
         high_card_tricks,
         _partners_blocked_high_card_tricks,
         _my_blocked_high_card_tricks,
         _can_move_to_partner,
         mut can_move_back,
-    ) = high_card_tricks_per_suit(my_cards, partners_cards);
-
-    let lhos_card_count = lhos_cards.count_cards_per_suit();
-    let rhos_card_count = rhos_cards.count_cards_per_suit();
+    ) = high_card_tricks_per_suit(estimation_state);
 
     let opponents_trump_card_count = [
         lhos_card_count[trump_suit as usize],
@@ -192,9 +181,9 @@ fn trump_high_card_tricks_per_suit(
     }
 }
 
-fn nt_high_card_tricks_per_suit(my_cards: &VirtualCardTracker, partners_cards: &VirtualCardTracker) -> [usize; 4] {
+fn nt_high_card_tricks_per_suit(estimation_state: EstimationState) -> [usize; 4] {
     let (mut quick_tricks, partners_blocked_quick_tricks, my_blocked_quick_tricks, can_move_to_partner, can_move_back) =
-        high_card_tricks_per_suit(my_cards, partners_cards);
+        high_card_tricks_per_suit(estimation_state);
 
     // We might have "stuck tricks" left over. These can be counted in the following situations:
     // Partners blocked tricks: We can always run the "blocked" suit on our side first, so any move to partner is
@@ -219,17 +208,25 @@ fn nt_high_card_tricks_per_suit(my_cards: &VirtualCardTracker, partners_cards: &
 }
 #[allow(clippy::type_complexity)]
 fn high_card_tricks_per_suit(
-    my_cards: &VirtualCardTracker,
-    partners_cards: &VirtualCardTracker,
+    estimation_state: EstimationState,
 ) -> ([usize; 4], [usize; 4], [usize; 4], [bool; 4], [bool; 4]) {
-    let my_card_count = my_cards.count_cards_per_suit();
-    let partners_card_count = partners_cards.count_cards_per_suit();
+    let player = estimation_state.my_seat;
+    let partner = player + 2;
+    // let lho = player + 1;
+    // let rho = player + 3;
 
-    let my_simple_high_card_count = my_cards.count_high_cards_per_suit();
-    let partners_simple_high_card_count = partners_cards.count_high_cards_per_suit();
+    let my_card_count = estimation_state.card_counts[player as usize];
+    let partners_card_count = estimation_state.card_counts[partner as usize];
+    // let lhos_card_count = estimation_state.card_counts[lho as usize];
+    // let rhos_card_count = estimation_state.card_counts[rho as usize];
+
+    let my_simple_high_card_count = estimation_state.high_card_counts[player as usize];
+    let partners_simple_high_card_count = estimation_state.high_card_counts[partner as usize];
+    // let lhos_simple_high_card_count = estimation_state.high_card_counts[lho as usize];
+    // let rhos_simple_high_card_count = estimation_state.high_card_counts[rho as usize];
 
     let [my_extended_high_card_count, partners_extended_high_card_count] =
-        my_cards.count_combined_high_cards_per_suit(partners_cards);
+        estimation_state.our_combined_high_card_count;
 
     let mut quick_tricks = [0; 4];
     let mut partners_blocked_quick_tricks = [0; 4];

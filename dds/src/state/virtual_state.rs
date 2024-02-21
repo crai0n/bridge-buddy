@@ -5,10 +5,13 @@ use crate::state::virtual_card_tracker::VirtualCardTracker;
 use crate::state::virtualizer::Virtualizer;
 use crate::transposition_table::TTKey;
 use bridge_buddy_core::error::BBError;
+use bridge_buddy_core::primitives::card::suit::SUIT_ARRAY;
+use bridge_buddy_core::primitives::deal::seat::SEAT_ARRAY;
 use bridge_buddy_core::primitives::deal::Seat;
 use bridge_buddy_core::primitives::{Card, Hand, Suit};
 
 use crate::state::distribution_field::DistFieldManager;
+use crate::trick_estimations::EstimationState;
 
 pub struct VirtualState<const N: usize> {
     game: DoubleDummyState<N>,
@@ -186,5 +189,27 @@ impl<const N: usize> VirtualState<N> {
     pub fn cards_of(&self, player: Seat) -> VirtualCardTracker {
         let card_tracker = self.game.cards_of(player);
         VirtualCardTracker::from_card_tracker(card_tracker, &self.virtualizer)
+    }
+
+    pub fn create_estimation_state(&self) -> EstimationState {
+        let my_seat = self.next_to_play();
+        let card_counts = SEAT_ARRAY.map(|player| self.cards_of(player).count_cards_per_suit());
+        let ace_owners = SUIT_ARRAY.map(|suit| self.owner_of_winning_rank_in(suit));
+        let king_owners = SUIT_ARRAY.map(|suit| self.owner_of_runner_up_in(suit));
+        let high_card_counts = SEAT_ARRAY.map(|player| self.cards_of(player).count_high_cards_per_suit());
+        let our_combined_high_card_count = self
+            .cards_of(my_seat)
+            .count_combined_high_cards_per_suit(&self.cards_of(my_seat.partner()));
+
+        EstimationState {
+            lead_suit: self.suit_to_follow(),
+            trump_suit: self.trump_suit(),
+            my_seat,
+            card_counts,
+            ace_owners,
+            king_owners,
+            high_card_counts,
+            our_combined_high_card_count,
+        }
     }
 }
