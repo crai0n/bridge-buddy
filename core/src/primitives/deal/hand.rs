@@ -1,8 +1,8 @@
 use crate::error::BBError;
+use crate::primitives::card::suit::SUIT_ARRAY;
 use crate::primitives::{card::Rank, Card, Suit};
 use std::cmp::Ordering;
 use std::str::FromStr;
-use strum::IntoEnumIterator;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Hand<const N: usize> {
@@ -11,7 +11,7 @@ pub struct Hand<const N: usize> {
 
 impl<const N: usize> std::fmt::Display for Hand<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        for suit in Suit::iter().rev() {
+        for suit in SUIT_ARRAY.into_iter().rev() {
             // Spades, then Hearts, ...
             write!(f, "{}: ", suit)?;
             for card in self.cards_in(suit).rev() {
@@ -97,7 +97,7 @@ impl<const N: usize> Hand<N> {
 
 impl Hand<13> {
     pub fn hand_type(&self) -> crate::primitives::deal::hand::HandType {
-        let mut suit_lengths = Suit::iter().map(|s| (s, self.length_in(s))).collect::<Vec<_>>();
+        let mut suit_lengths = SUIT_ARRAY.map(|s| (s, self.length_in(s)));
 
         suit_lengths.sort_unstable_by(Hand::descending_length_and_suit_value);
 

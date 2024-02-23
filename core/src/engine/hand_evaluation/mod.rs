@@ -1,9 +1,10 @@
+use crate::primitives::card::rank::RANK_ARRAY;
+use crate::primitives::card::suit::SUIT_ARRAY;
 use crate::primitives::card::Rank::*;
 use crate::primitives::hand_info::suit_quality::SuitQuality;
 use crate::primitives::{card::Rank, Card, Hand, Suit};
 use itertools::Itertools;
 use std::cmp::Ordering;
-use strum::IntoEnumIterator;
 
 #[derive(Debug)]
 pub struct ForumDPlus2015Evaluator {}
@@ -47,7 +48,7 @@ impl ForumDPlus2015Evaluator {
 
     pub fn adjustment_unguarded_honors(hand: &Hand<13>) -> f64 {
         let mut acc = 0.0;
-        for suit in Suit::iter() {
+        for suit in SUIT_ARRAY {
             let cards_vec = hand.cards_in(suit).rev().map(|x| x.rank).collect_vec();
             acc += match cards_vec.len() {
                 1 if (cards_vec[0] >= Jack) => -1.0, // downgrade single honors, even single Ace
@@ -122,13 +123,13 @@ impl ForumDPlus2015Evaluator {
 
     fn count_honors_out_of_top(n: usize, cards: &[Rank]) -> usize {
         let l = std::cmp::min(5, n); // there are only 5 honors
-        Rank::iter().rev().take(l).filter(|d| cards.contains(d)).count()
+        RANK_ARRAY.iter().rev().take(l).filter(|d| cards.contains(d)).count()
     }
 
     pub fn length_points(hand: &Hand<13>, trump_suit: Option<Suit>, long_suits_shown_by_opponents: &[Suit]) -> f64 {
         let mut acc = 0.0;
         //in each suit that contains at least 3 HCP, is not the trump suit, and for which no opponent has shown 5+ cards, count 1 point for each card past the fourth.
-        for suit in Suit::iter() {
+        for suit in SUIT_ARRAY {
             if trump_suit == Some(suit) || long_suits_shown_by_opponents.contains(&suit) {
                 continue;
             }
@@ -144,7 +145,7 @@ impl ForumDPlus2015Evaluator {
 
     pub fn side_suit_distribution_points(hand: &Hand<13>, trump_suit: Suit) -> f64 {
         let mut acc = 0.0;
-        for suit in Suit::iter() {
+        for suit in SUIT_ARRAY {
             if trump_suit == suit {
                 continue;
             }
@@ -234,7 +235,7 @@ impl ForumDPlus2015Evaluator {
     // For now, we implement a basic approach, where we only evaluate at most the first three cards of the suit.
     pub fn playing_trick_count<const N: usize>(hand: &Hand<N>) -> f64 {
         let mut acc = 0.0;
-        for suit in Suit::iter() {
+        for suit in SUIT_ARRAY {
             let card_vec = hand.cards_in(suit).rev().map(|c| c.rank).collect_vec();
             acc += match card_vec.len() {
                 0 => 0.0,
@@ -310,7 +311,7 @@ impl ForumDPlus2015Evaluator {
     // This means that Qxx is valued the same as Axx though, which should be refined todo!
     pub fn losing_trick_count<const N: usize>(hand: &Hand<N>) -> f64 {
         let mut acc = 0.0;
-        for suit in Suit::iter() {
+        for suit in SUIT_ARRAY {
             let card_vec = hand.cards_in(suit).rev().map(|c| c.rank).collect_vec();
             acc += match card_vec.len() {
                 1 | 11..=12 => match &card_vec[..1] {
@@ -381,7 +382,7 @@ impl ForumDPlus2015Evaluator {
 
     pub fn honor_in(suit: Suit, hand: &Hand<13>) -> bool {
         let card_vec = hand.cards_in(suit).rev().map(|c| c.rank).collect_vec();
-        Rank::iter().rev().take(5).filter(|x| card_vec.contains(x)).count() >= 1
+        RANK_ARRAY.iter().rev().take(5).filter(|x| card_vec.contains(x)).count() >= 1
     }
 
     pub fn stops(suit: Suit, hand: &Hand<13>, is_declarer: bool) -> bool {
@@ -433,7 +434,8 @@ impl ForumDPlus2015Evaluator {
     }
 
     pub fn rule_of_twenty(hand: &Hand<13>) -> bool {
-        Suit::iter()
+        SUIT_ARRAY
+            .into_iter()
             .map(|x| hand.length_in(x))
             .sorted()
             .rev()
@@ -451,8 +453,7 @@ impl ForumDPlus2015Evaluator {
 #[cfg(test)]
 mod test {
     use crate::engine::hand_evaluation::*;
-    use crate::primitives::Hand;
-    use crate::primitives::Suit;
+
     use std::str::FromStr;
     use test_case::test_case;
 

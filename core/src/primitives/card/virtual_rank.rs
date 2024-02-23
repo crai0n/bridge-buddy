@@ -1,8 +1,26 @@
 use crate::error::BBError;
 use std::cmp::Ordering;
-use strum::{Display, EnumIter};
+use strum::Display;
 
-#[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
+pub const N_VIRTUAL_RANKS: usize = 13;
+
+pub const VIRTUAL_RANK_ARRAY: [VirtualRank; N_VIRTUAL_RANKS] = [
+    VirtualRank::Two,
+    VirtualRank::Three,
+    VirtualRank::Four,
+    VirtualRank::Five,
+    VirtualRank::Six,
+    VirtualRank::Seven,
+    VirtualRank::Eight,
+    VirtualRank::Nine,
+    VirtualRank::Ten,
+    VirtualRank::Jack,
+    VirtualRank::Queen,
+    VirtualRank::King,
+    VirtualRank::Ace,
+];
+
+#[derive(Clone, Copy, Debug, Display, PartialEq, Eq, PartialOrd, Ord)]
 pub enum VirtualRank {
     #[strum(serialize = "2")]
     Two = 0,
@@ -30,6 +48,28 @@ pub enum VirtualRank {
     King,
     #[strum(serialize = "A")]
     Ace,
+}
+
+impl Iterator for VirtualRank {
+    type Item = VirtualRank;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            VirtualRank::Two => Some(VirtualRank::Three),
+            VirtualRank::Three => Some(VirtualRank::Four),
+            VirtualRank::Four => Some(VirtualRank::Five),
+            VirtualRank::Five => Some(VirtualRank::Six),
+            VirtualRank::Six => Some(VirtualRank::Seven),
+            VirtualRank::Seven => Some(VirtualRank::Eight),
+            VirtualRank::Eight => Some(VirtualRank::Nine),
+            VirtualRank::Nine => Some(VirtualRank::Ten),
+            VirtualRank::Ten => Some(VirtualRank::Jack),
+            VirtualRank::Jack => Some(VirtualRank::Queen),
+            VirtualRank::Queen => Some(VirtualRank::King),
+            VirtualRank::King => Some(VirtualRank::Ace),
+            VirtualRank::Ace => None,
+        }
+    }
 }
 
 impl From<u16> for VirtualRank {

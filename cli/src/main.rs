@@ -2,9 +2,11 @@ use bridge_buddy_core::actors::game_client::GameClient;
 use bridge_buddy_core::actors::table::Table;
 use bridge_buddy_core::engine::hand_evaluation::ForumDPlus2015Evaluator;
 use bridge_buddy_core::engine::mock_bridge_engine::MockBridgeEngine;
-use bridge_buddy_core::primitives::card::Suit;
+
+use bridge_buddy_core::primitives::card::suit::SUIT_ARRAY;
+use bridge_buddy_core::primitives::deal::seat::SEAT_ARRAY;
+use bridge_buddy_core::primitives::deal::Hand;
 use bridge_buddy_core::primitives::deal::Seat::{East, North, South, West};
-use bridge_buddy_core::primitives::deal::{Hand, Seat};
 use bridge_buddy_core::primitives::Deal;
 use bridge_buddy_dds::DoubleDummySolver;
 use clap::{Parser, Subcommand};
@@ -12,7 +14,6 @@ use std::io::stdin;
 use std::process::exit;
 use std::str::FromStr;
 use std::time::SystemTime;
-use strum::IntoEnumIterator;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -50,27 +51,26 @@ fn main() {
             west,
         } => {
             let hands = [&north, &east, &south, &west];
-            let hand_results: Vec<Result<Hand<13>, _>> = Seat::iter()
-                .map(|seat| match hands[seat as usize].clone() {
-                    None => {
-                        let mut hand = String::new();
-                        println!("Which cards does {} hold in clubs?", seat);
-                        hand += "♣:";
-                        stdin().read_line(&mut hand).unwrap();
-                        println!("Which cards does {} hold in diamonds?", seat);
-                        hand += "♦:";
-                        stdin().read_line(&mut hand).unwrap();
-                        println!("Which cards does {} hold in hearts?", seat);
-                        hand += "♥:";
-                        stdin().read_line(&mut hand).unwrap();
-                        println!("Which cards does {} hold in spades?", seat);
-                        hand += "♠:";
-                        stdin().read_line(&mut hand).unwrap();
-                        Hand::from_str(&hand)
-                    }
-                    Some(hand) => Hand::<13>::from_str(&hand),
-                })
-                .collect();
+            let hand_results: [Result<Hand<13>, _>; 4] = SEAT_ARRAY.map(|seat| match hands[seat as usize].clone() {
+                None => {
+                    let mut hand = String::new();
+                    println!("Which cards does {} hold in clubs?", seat);
+                    hand += "♣:";
+                    stdin().read_line(&mut hand).unwrap();
+                    println!("Which cards does {} hold in diamonds?", seat);
+                    hand += "♦:";
+                    stdin().read_line(&mut hand).unwrap();
+                    println!("Which cards does {} hold in hearts?", seat);
+                    hand += "♥:";
+                    stdin().read_line(&mut hand).unwrap();
+                    println!("Which cards does {} hold in spades?", seat);
+                    hand += "♠:";
+                    stdin().read_line(&mut hand).unwrap();
+                    Hand::from_str(&hand)
+                }
+                Some(hand) => Hand::<13>::from_str(&hand),
+            });
+
             let hands: [Hand<13>; 4] = hand_results
                 .into_iter()
                 .map(|result| match result {
@@ -146,7 +146,7 @@ fn main() {
                         ForumDPlus2015Evaluator::adjustment_unguarded_honors(&hand)
                     );
                     println!("suit qualities:");
-                    for suit in Suit::iter().rev() {
+                    for suit in SUIT_ARRAY.into_iter().rev() {
                         println!("{}: {}", suit, ForumDPlus2015Evaluator::suit_quality(&hand, suit));
                     }
                 }

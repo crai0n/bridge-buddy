@@ -9,7 +9,7 @@ use itertools::Itertools;
 
 pub struct CardManager {
     pub remaining_cards: [CardTracker; 4],
-    pub played_cards: CardTracker,
+    pub out_of_play_cards: CardTracker,
 }
 
 impl CardManager {
@@ -22,19 +22,36 @@ impl CardManager {
             .unwrap();
         Self {
             remaining_cards,
-            played_cards: CardTracker::for_n_cards_per_suit(N),
+            out_of_play_cards: CardTracker::for_n_cards_per_suit(N),
         }
     }
 
     pub fn play(&mut self, card: Card, player: Seat) {
         // println!("{} played {}", self.next_to_play(), card);
         self.remaining_cards[player as usize].remove_card(card);
-        self.played_cards.add_card(card);
     }
 
     pub fn unplay(&mut self, card: Card, player: Seat) {
-        self.played_cards.remove_card(card);
         self.remaining_cards[player as usize].add_card(card);
+    }
+
+    pub fn remove_cards(&mut self, cards: &[Card]) {
+        // print!("Taking real cards out of play: ");
+        for card in cards {
+            // print!("{} ", card);
+            self.out_of_play_cards.add_card(*card);
+        }
+        // println!();
+    }
+
+    pub fn replace_cards(&mut self, cards: &[Card]) {
+        // print!("Putting real cards back into play: ");
+
+        for card in cards {
+            // print!("{} ", card);
+            self.out_of_play_cards.remove_card(*card);
+        }
+        // println!();
     }
 
     pub fn remaining_cards_for_player(&self, player: Seat) -> &CardTracker {
@@ -54,8 +71,8 @@ impl CardManager {
             .has_higher_cards_in_suit_than(suit, self.remaining_cards_for_player(other))
     }
 
-    pub fn played_cards(&self) -> CardTracker {
-        self.played_cards
+    pub fn out_of_play_cards(&self) -> &CardTracker {
+        &self.out_of_play_cards
     }
 
     pub fn count_cards_in_suit_for_player(&self, suit: Suit, player: Seat) -> usize {

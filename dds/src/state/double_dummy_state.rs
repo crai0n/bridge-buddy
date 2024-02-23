@@ -95,7 +95,8 @@ impl<const N: usize> DoubleDummyState<N> {
         self.count_trump_cards_for_axis(self.next_to_play() + 1)
     }
 
-    pub fn out_of_play_cards(&self) -> &[Card] {
+    #[allow(dead_code)]
+    pub fn slice_out_of_play_cards(&self) -> &[Card] {
         self.trick_manager.out_of_play_cards()
     }
 
@@ -133,29 +134,50 @@ impl<const N: usize> DoubleDummyState<N> {
 
     pub fn play(&mut self, card: Card) {
         self.card_manager.play(card, self.next_to_play());
-        self.trick_manager.play(card)
-    }
+        self.trick_manager.play(card);
 
-    pub fn undo(&mut self) {
-        if let Some(card) = self.trick_manager.undo() {
-            self.card_manager.unplay(card, self.next_to_play());
+        if self.trick_manager.trick_complete() {
+            let last_trick_cards = self.trick_manager.cards_in_last_trick();
+            self.card_manager.remove_cards(last_trick_cards);
         }
     }
 
-    pub fn valid_moves_for(&self, player: Seat) -> Vec<Card> {
-        self.cards_of(player).valid_moves(self.suit_to_follow())
-    }
+    pub fn undo(&mut self) -> Option<Card> {
+        if self.trick_manager.trick_complete() {
+            let last_trick_cards = self.trick_manager.cards_in_last_trick();
+            self.card_manager.replace_cards(last_trick_cards);
+        }
 
-    pub fn valid_moves(&self) -> Vec<Card> {
-        self.valid_moves_for(self.next_to_play())
+        if let Some(card) = self.trick_manager.undo() {
+            self.card_manager.unplay(card, self.next_to_play());
+            Some(card)
+        } else {
+            None
+        }
     }
 
     pub fn list_played_cards(&self) -> &[Card] {
         self.trick_manager.played_cards()
     }
 
-    pub fn played_cards(&self) -> CardTracker {
-        self.card_manager.played_cards()
+    pub fn out_of_play_cards(&self) -> &CardTracker {
+        self.card_manager.out_of_play_cards()
+    }
+
+    pub fn cards_in_current_trick(&self) -> &[Card] {
+        self.trick_manager.cards_in_current_trick()
+    }
+
+    pub fn cards_in_last_trick(&self) -> &[Card] {
+        self.trick_manager.cards_in_last_trick()
+    }
+
+    pub fn trick_complete(&self) -> bool {
+        self.trick_manager.trick_complete()
+    }
+
+    pub fn trick_leader(&self) -> Seat {
+        self.trick_manager.trick_leader()
     }
 }
 

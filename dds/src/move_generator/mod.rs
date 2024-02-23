@@ -4,17 +4,32 @@ mod playing_last;
 mod playing_second;
 mod playing_third;
 
-use crate::card_manager::card_tracker::SUIT_ARRAY;
+use crate::state::virtual_card::VirtualCard;
 use crate::state::VirtualState;
+use bridge_buddy_core::primitives::card::suit::SUIT_ARRAY;
 pub use dds_move::DdsMove;
+use itertools::Itertools;
 use rand::Rng;
 
 pub struct MoveGenerator {}
 
 impl MoveGenerator {
     pub fn generate_moves<const N: usize>(state: &VirtualState<N>, move_ordering: bool) -> Vec<DdsMove> {
-        let valid_moves = state.valid_moves().map(DdsMove::new);
-        let mut unique_moves = Self::select_one_move_per_sequence(valid_moves);
+        let player = state.next_to_play();
+        let mut unique_moves = match state.suit_to_follow() {
+            Some(lead_suit) => {
+                let card_tracker = state.cards_of(player);
+                if card_tracker.is_void_in(lead_suit) {
+                    Self::select_one_move_per_sequence(card_tracker.all_cards())
+                } else {
+                    Self::select_one_move_per_sequence(card_tracker.all_cards_in(lead_suit))
+                }
+            }
+            None => {
+                let card_tracker = state.cards_of(player);
+                Self::select_one_move_per_sequence(card_tracker.all_cards())
+            }
+        };
         if move_ordering {
             Self::calc_priority(&mut unique_moves, state);
             Self::sort_moves_by_priority_descending(&mut unique_moves);
@@ -79,19 +94,20 @@ impl MoveGenerator {
         moves.sort_unstable_by(|a, b| b.priority.cmp(&a.priority));
     }
 
-    fn select_one_move_per_sequence(moves: impl Iterator<Item = DdsMove>) -> Vec<DdsMove> {
-        let mut output: Vec<DdsMove> = vec![];
-        for candidate_move in moves {
-            if let Some(last) = output.last_mut() {
-                if candidate_move.card.touches(&last.card) {
-                    last.sequence_length += 1;
-                } else {
-                    output.push(candidate_move);
+    fn select_one_move_per_sequence(moves: impl Iterator<Item = VirtualCard>) -> Vec<DdsMove> {
+        moves
+            .peekable()
+            .batching(|peekable| match peekable.next() {
+                None => None,
+                Some(x) => {
+                    let mut mve = DdsMove::new(x);
+                    while let Some(y) = peekable.next_if(|y| mve.card.touches(y)) {
+                        mve.card = y;
+                        mve.sequence_length += 1;
+                    }
+                    Some(mve)
                 }
-            } else {
-                output.push(candidate_move);
-            }
-        }
-        output
+            })
+            .collect_vec()
     }
 }

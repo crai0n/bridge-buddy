@@ -1,6 +1,7 @@
 use crate::error::BBError;
 use crate::game::scoring::ScoreCalculator;
 use crate::game::GameState;
+use crate::primitives::deal::seat::SEAT_ARRAY;
 use crate::primitives::deal::Seat;
 use crate::primitives::game_event::{
     BiddingEndedEvent, DiscloseHandEvent, DummyUncoveredEvent, GameEndedEvent, GameEvent, NewGameEvent,
@@ -9,7 +10,6 @@ use crate::primitives::game_result::GameResult;
 use crate::primitives::player_event::PlayerEvent;
 use crate::primitives::{Contract, Deal};
 use itertools::Itertools;
-use strum::IntoEnumIterator;
 
 pub struct GameManager {
     deal: Deal<13>,
@@ -109,7 +109,7 @@ impl GameManager {
     }
 
     fn disclose_hands(&mut self) {
-        for player in Seat::iter() {
+        for player in SEAT_ARRAY {
             let game_event = GameEvent::DiscloseHand(DiscloseHandEvent {
                 seat: player,
                 hand: *self.deal.hand_of(player),

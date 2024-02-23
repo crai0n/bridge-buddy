@@ -1,9 +1,9 @@
-use crate::primitives::card::Rank;
-use crate::primitives::{Card, Hand, Suit};
+use crate::primitives::{Card, Hand};
 use itertools::Itertools;
+
+use crate::primitives::card::rank::RANK_ARRAY;
+use crate::primitives::card::suit::SUIT_ARRAY;
 use rand::prelude::*;
-use rand::{thread_rng, Rng};
-use strum::IntoEnumIterator;
 
 pub struct Deck<const N: usize> {
     cards: Vec<Card>,
@@ -13,9 +13,10 @@ impl<const N: usize> Deck<N> {
     pub fn new() -> Self {
         assert!(N <= 13, "Cannot create Decks with more than thirteen cards per suit!");
         let mut cards = Vec::<Card>::from_iter(
-            Suit::iter()
-                .cartesian_product(Rank::iter().rev().take(N))
-                .map(|(suit, rank)| Card { suit, rank }),
+            SUIT_ARRAY
+                .iter()
+                .cartesian_product(RANK_ARRAY.into_iter().rev().take(N))
+                .map(|(&suit, rank)| Card { suit, rank }),
         );
 
         cards.sort_unstable();
