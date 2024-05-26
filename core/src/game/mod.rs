@@ -199,7 +199,7 @@ mod test {
     #[test]
     fn init() {
         let mut rng = thread_rng();
-        let deal: Deal<13> = Deal::from_rng(&mut rng);
+        let deal: Deal<13> = Deal::random_from_rng(&mut rng);
         let game = GameState::new_from_board(deal.board);
         assert!(matches!(game, GameState::Bidding(_)))
     }

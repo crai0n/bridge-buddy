@@ -200,7 +200,13 @@ impl BidManager {
     }
 
     fn calculate_state(&self) -> State {
-        match self.bids().iter().rev().map_while(|x| x.access_auxiliary_bid()).max() {
+        match self
+            .bids()
+            .iter()
+            .rev()
+            .map_while(|x| x.try_as_auxiliary_bid().ok())
+            .max()
+        {
             Some(AuxiliaryBid::Pass) => State::Passed,
             Some(AuxiliaryBid::Double) => State::Doubled,
             Some(AuxiliaryBid::Redouble) => State::Redoubled,

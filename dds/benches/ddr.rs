@@ -21,7 +21,7 @@ mod test {
         b.iter(|| {
             let mut runner = DoubleDummyRunner::default();
             let deals: [usize; N_SOLVES] = (0..N_SOLVES)
-                .map(|_| Deal::<DEAL_SIZE>::new())
+                .map(|_| Deal::<DEAL_SIZE>::random())
                 .map(|deal| runner.solve_initial_position(deal, Strain::NoTrump, Seat::North))
                 .collect_vec()
                 .try_into()

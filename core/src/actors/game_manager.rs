@@ -38,7 +38,7 @@ impl GameManager {
     }
 
     pub fn new() -> Self {
-        let deal = Deal::new();
+        let deal = Deal::random();
         Self::new_from_deal(deal)
     }
 

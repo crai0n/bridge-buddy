@@ -184,7 +184,7 @@ mod test {
         let time = SystemTime::now();
 
         for _ in 0..N_AVERAGE {
-            let deal: Deal<N_TRICKS> = Deal::new();
+            let deal: Deal<N_TRICKS> = Deal::random();
 
             let statistics = match strain {
                 Some(strain) => {

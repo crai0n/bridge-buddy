@@ -10,12 +10,12 @@ pub struct Board {
 impl Board {
     pub const MAX_NUMBER: usize = 32;
 
-    pub fn new() -> Self {
+    pub fn random() -> Self {
         let mut rng = thread_rng();
-        Self::from_rng(&mut rng)
+        Self::random_from_rng(&mut rng)
     }
 
-    pub fn from_rng(rng: &mut impl Rng) -> Self {
+    pub fn random_from_rng(rng: &mut impl Rng) -> Self {
         let num = rng.gen_range(1..=Self::MAX_NUMBER);
         Self::from_number(num)
     }
@@ -65,7 +65,7 @@ impl Board {
 
 impl Default for Board {
     fn default() -> Self {
-        Board::new()
+        Board::random()
     }
 }
 
@@ -149,7 +149,7 @@ mod test {
     #[test_case(18446744073709551615u64, 13; "Test Max")]
     fn determinism(seed: u64, expected: usize) {
         let mut rng = ChaCha8Rng::seed_from_u64(seed);
-        let board = Board::from_rng(&mut rng);
+        let board = Board::random_from_rng(&mut rng);
         assert_eq!(board.number(), expected);
     }
 }
