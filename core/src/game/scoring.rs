@@ -58,6 +58,13 @@ impl ScoreCalculator {
     const GRAND_SLAM_BONUS_VULNERABLE: ScorePoints = ScorePoints(1500);
     const GRAND_SLAM_BONUS_NOT_VULNERABLE: ScorePoints = ScorePoints(1000);
     const FOR_INSULT: ScorePoints = ScorePoints(50);
+    const OVERTRICK_DOUBLED_NOT_VULNERABLE: ScorePoints = ScorePoints(100);
+
+    const OVERTRICK_DOUBLED_VULNERABLE: ScorePoints = ScorePoints(200);
+
+    const OVERTRICK_REDOUBLED_NOT_VULNERABLE: ScorePoints = ScorePoints(200);
+
+    const OVERTRICK_REDOUBLED_VULNERABLE: ScorePoints = ScorePoints(400);
 
     pub fn score_result(result: GameResult, vulnerability: Vulnerability) -> ScorePoints {
         match result {
@@ -111,7 +118,7 @@ impl ScoreCalculator {
 
         score += Self::score_slam_bonus(contract, declarer_is_vulnerable);
 
-        score += Self::score_overtricks(contract, overtricks);
+        score += Self::score_overtricks(contract, overtricks, declarer_is_vulnerable);
 
         score += Self::score_insult(contract);
 
@@ -172,10 +179,20 @@ impl ScoreCalculator {
         }
     }
 
-    fn score_overtricks(contract: Contract, overtricks: usize) -> ScorePoints {
-        match contract.strain {
-            Strain::Trump(suit) if suit.is_minor() => Self::MINOR_TRICK_POINTS * overtricks,
-            _ => Self::MAJOR_TRICK_POINTS * overtricks,
+    fn score_overtricks(contract: Contract, overtricks: usize, declarer_is_vulnerable: bool) -> ScorePoints {
+        match contract.state {
+            State::Doubled => match declarer_is_vulnerable {
+                true => Self::OVERTRICK_DOUBLED_VULNERABLE * overtricks,
+                false => Self::OVERTRICK_DOUBLED_NOT_VULNERABLE * overtricks,
+            },
+            State::Redoubled => match declarer_is_vulnerable {
+                true => Self::OVERTRICK_REDOUBLED_VULNERABLE * overtricks,
+                false => Self::OVERTRICK_REDOUBLED_NOT_VULNERABLE * overtricks,
+            },
+            State::Passed => match contract.strain {
+                Strain::Trump(suit) if suit.is_minor() => Self::MINOR_TRICK_POINTS * overtricks,
+                _ => Self::MAJOR_TRICK_POINTS * overtricks,
+            },
         }
     }
 }
@@ -207,6 +224,9 @@ mod test {
     #[test_case("S5S", 10,  None, -50; "Board 14")]
     #[test_case("E4H", 11,  NorthSouth, -450; "Board 15")]
     #[test_case("N3NT", 9, EastWest, 400; "Board 16")]
+    #[test_case("W4HXX", 12,  All, -1880; "Board 17")]
+    #[test_case("W4HXX", 12,  NorthSouth, -1280; "Board 18")]
+    #[test_case("W4HX", 13,  All, -1390; "Board 19")]
     fn score(contract_string: &str, actual_tricks: usize, vulnerability: Vulnerability, expected: isize) {
         let contract = Contract::from_str(contract_string).unwrap();
 
