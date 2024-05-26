@@ -20,11 +20,11 @@ mod subjective_vulnerability;
 pub mod subjectiviser;
 
 pub enum SubjectiveGameStateView<'a> {
-    Bidding(SubjectiveGameDataView<'a, BiddingState>),
-    OpeningLead(SubjectiveGameDataView<'a, OpeningLeadState>),
-    WaitingForDummy(SubjectiveGameDataView<'a, WaitingForDummyState>),
-    CardPlay(SubjectiveGameDataView<'a, CardPlayState>),
-    Ended(SubjectiveGameDataView<'a, EndedState>),
+    Bidding(SubjectiveGamePhaseStateView<'a, BiddingState>),
+    OpeningLead(SubjectiveGamePhaseStateView<'a, OpeningLeadState>),
+    WaitingForDummy(SubjectiveGamePhaseStateView<'a, WaitingForDummyState>),
+    CardPlay(SubjectiveGamePhaseStateView<'a, CardPlayState>),
+    Ended(SubjectiveGamePhaseStateView<'a, EndedState>),
 }
 
 impl<'a> SubjectiveGameStateView<'a> {
@@ -39,13 +39,15 @@ impl<'a> SubjectiveGameStateView<'a> {
     }
     pub fn new(game_state: &'a GameState, seat: Seat) -> Self {
         match game_state {
-            GameState::Bidding(data) => Self::Bidding(SubjectiveGameDataView::new_bidding(data, seat)),
-            GameState::OpeningLead(data) => Self::OpeningLead(SubjectiveGameDataView::new_opening_lead(data, seat)),
-            GameState::WaitingForDummy(data) => {
-                Self::WaitingForDummy(SubjectiveGameDataView::new_waiting_for_dummy(data, seat))
+            GameState::Bidding(data) => Self::Bidding(SubjectiveGamePhaseStateView::new_bidding(data, seat)),
+            GameState::OpeningLead(data) => {
+                Self::OpeningLead(SubjectiveGamePhaseStateView::new_opening_lead(data, seat))
             }
-            GameState::CardPlay(data) => Self::CardPlay(SubjectiveGameDataView::new_card_play(data, seat)),
-            GameState::Ended(data) => Self::Ended(SubjectiveGameDataView::new_ended(data, seat)),
+            GameState::WaitingForDummy(data) => {
+                Self::WaitingForDummy(SubjectiveGamePhaseStateView::new_waiting_for_dummy(data, seat))
+            }
+            GameState::CardPlay(data) => Self::CardPlay(SubjectiveGamePhaseStateView::new_card_play(data, seat)),
+            GameState::Ended(data) => Self::Ended(SubjectiveGamePhaseStateView::new_ended(data, seat)),
         }
     }
 
@@ -100,13 +102,13 @@ impl<'a> SubjectiveGameStateView<'a> {
     }
 }
 
-pub struct SubjectiveGameDataView<'a, T> {
+pub struct SubjectiveGamePhaseStateView<'a, T> {
     seat: Seat,
     subjectiviser: Subjectiviser,
     game_data: &'a T,
 }
 
-impl<'a, T> SubjectiveGameDataView<'a, T>
+impl<'a, T> SubjectiveGamePhaseStateView<'a, T>
 where
     T: NextToPlay,
 {
@@ -116,7 +118,7 @@ where
     }
 }
 
-impl<'a> SubjectiveGameDataView<'a, BiddingState> {
+impl<'a> SubjectiveGamePhaseStateView<'a, BiddingState> {
     pub fn new_bidding(game_data: &'a BiddingState, seat: Seat) -> Self {
         Self {
             seat,
@@ -168,7 +170,7 @@ impl<'a> SubjectiveGameDataView<'a, BiddingState> {
     }
 }
 
-impl<'a> SubjectiveGameDataView<'a, OpeningLeadState> {
+impl<'a> SubjectiveGamePhaseStateView<'a, OpeningLeadState> {
     pub fn new_opening_lead(game_data: &'a OpeningLeadState, seat: Seat) -> Self {
         Self {
             seat,
@@ -213,7 +215,7 @@ impl<'a> SubjectiveGameDataView<'a, OpeningLeadState> {
     }
 }
 
-impl<'a> SubjectiveGameDataView<'a, WaitingForDummyState> {
+impl<'a> SubjectiveGamePhaseStateView<'a, WaitingForDummyState> {
     pub fn new_waiting_for_dummy(game_data: &'a WaitingForDummyState, seat: Seat) -> Self {
         Self {
             seat,
@@ -250,7 +252,7 @@ impl<'a> SubjectiveGameDataView<'a, WaitingForDummyState> {
     }
 }
 
-impl<'a> SubjectiveGameDataView<'a, CardPlayState> {
+impl<'a> SubjectiveGamePhaseStateView<'a, CardPlayState> {
     pub fn new_card_play(game_data: &'a CardPlayState, seat: Seat) -> Self {
         Self {
             seat,
@@ -313,7 +315,7 @@ impl<'a> SubjectiveGameDataView<'a, CardPlayState> {
     }
 }
 
-impl<'a> SubjectiveGameDataView<'a, EndedState> {
+impl<'a> SubjectiveGamePhaseStateView<'a, EndedState> {
     pub fn new_ended(game_data: &'a EndedState, seat: Seat) -> Self {
         Self {
             seat,

@@ -1,5 +1,5 @@
 use crate::engine::card_play_engine::SelectCard;
-use crate::engine::subjective_game_view::SubjectiveGameDataView;
+use crate::engine::subjective_game_view::SubjectiveGamePhaseStateView;
 use crate::game::game_phase_states::{CardPlayState, OpeningLeadState};
 use crate::interactive::cli_presenter::CliPresenter;
 use crate::primitives::deal::Seat;
@@ -17,7 +17,7 @@ impl CliCardSelector {
         CliCardSelector { seat }
     }
 
-    fn get_card_from_user(&self, state: SubjectiveGameDataView<CardPlayState>) -> Card {
+    fn get_card_from_user(&self, state: SubjectiveGamePhaseStateView<CardPlayState>) -> Card {
         CliPresenter::display_dummys_hand_for_user(&state.dummys_remaining_cards(), state.declarer());
         CliPresenter::display_trick_for_user(&state);
         CliPresenter::display_hand_for_user(&state.my_remaining_cards());
@@ -55,7 +55,7 @@ impl CliCardSelector {
         user_card
     }
 
-    fn get_opening_lead_from_user(&self, state: SubjectiveGameDataView<OpeningLeadState>) -> Card {
+    fn get_opening_lead_from_user(&self, state: SubjectiveGamePhaseStateView<OpeningLeadState>) -> Card {
         CliPresenter::display_hand_for_user(&state.my_remaining_cards());
 
         println!("What card do you want to play?");
@@ -86,11 +86,11 @@ impl CliCardSelector {
 }
 
 impl SelectCard for CliCardSelector {
-    fn select_card(&self, state: SubjectiveGameDataView<CardPlayState>) -> Card {
+    fn select_card(&self, state: SubjectiveGamePhaseStateView<CardPlayState>) -> Card {
         self.get_card_from_user(state)
     }
 
-    fn select_opening_lead(&self, state: SubjectiveGameDataView<OpeningLeadState>) -> Card {
+    fn select_opening_lead(&self, state: SubjectiveGamePhaseStateView<OpeningLeadState>) -> Card {
         self.get_opening_lead_from_user(state)
     }
 }

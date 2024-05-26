@@ -1,6 +1,6 @@
 use crate::engine::bidding_engine::SelectBid;
 use crate::engine::card_play_engine::SelectCard;
-use crate::engine::subjective_game_view::{SubjectiveGameDataView, SubjectiveGameStateView};
+use crate::engine::subjective_game_view::{SubjectiveGamePhaseStateView, SubjectiveGameStateView};
 use crate::engine::SelectMove;
 use crate::error::BBError;
 
@@ -40,17 +40,17 @@ impl SelectMove for CliMoveSelector {
 }
 
 impl SelectBid for CliMoveSelector {
-    fn select_bid(&self, game_state: SubjectiveGameDataView<BiddingState>) -> Bid {
+    fn select_bid(&self, game_state: SubjectiveGamePhaseStateView<BiddingState>) -> Bid {
         self.bid_selector.select_bid(game_state)
     }
 }
 
 impl SelectCard for CliMoveSelector {
-    fn select_card(&self, game_state: SubjectiveGameDataView<CardPlayState>) -> Card {
+    fn select_card(&self, game_state: SubjectiveGamePhaseStateView<CardPlayState>) -> Card {
         self.card_selector.select_card(game_state)
     }
 
-    fn select_opening_lead(&self, game_state: SubjectiveGameDataView<OpeningLeadState>) -> Card {
+    fn select_opening_lead(&self, game_state: SubjectiveGamePhaseStateView<OpeningLeadState>) -> Card {
         self.card_selector.select_opening_lead(game_state)
     }
 }

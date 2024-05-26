@@ -3,7 +3,7 @@ use crate::engine::bidding_engine::SelectBid;
 use crate::engine::card_play_engine::mock_card_play_engine::MockCardPlayEngine;
 use crate::engine::card_play_engine::SelectCard;
 use crate::engine::engine_state::EngineState;
-use crate::engine::subjective_game_view::{SubjectiveGameDataView, SubjectiveGameStateView};
+use crate::engine::subjective_game_view::{SubjectiveGamePhaseStateView, SubjectiveGameStateView};
 use crate::engine::SelectMove;
 use crate::error::BBError;
 use crate::game::game_phase_states::{BiddingState, CardPlayState, OpeningLeadState};
@@ -33,17 +33,17 @@ impl MockBridgeEngine {
 }
 
 impl SelectBid for MockBridgeEngine {
-    fn select_bid(&self, state: SubjectiveGameDataView<BiddingState>) -> Bid {
+    fn select_bid(&self, state: SubjectiveGamePhaseStateView<BiddingState>) -> Bid {
         self.bidding_engine.select_bid(state)
     }
 }
 
 impl SelectCard for MockBridgeEngine {
-    fn select_card(&self, state: SubjectiveGameDataView<CardPlayState>) -> Card {
+    fn select_card(&self, state: SubjectiveGamePhaseStateView<CardPlayState>) -> Card {
         self.card_play_engine.select_card(state)
     }
 
-    fn select_opening_lead(&self, state: SubjectiveGameDataView<OpeningLeadState>) -> Card {
+    fn select_opening_lead(&self, state: SubjectiveGamePhaseStateView<OpeningLeadState>) -> Card {
         self.card_play_engine.select_opening_lead(state)
     }
 }
@@ -86,7 +86,11 @@ impl MockBridgeEngine {
         }
     }
 
-    fn interpret_bid(&mut self, _event: BidEvent, _data: SubjectiveGameDataView<BiddingState>) -> Result<(), BBError> {
+    fn interpret_bid(
+        &mut self,
+        _event: BidEvent,
+        _data: SubjectiveGamePhaseStateView<BiddingState>,
+    ) -> Result<(), BBError> {
         // let player = data.next_to_play();
         Ok(())
     }
@@ -110,7 +114,7 @@ impl MockBridgeEngine {
     fn interpret_opening_lead(
         &mut self,
         _event: CardEvent,
-        _data: SubjectiveGameDataView<OpeningLeadState>,
+        _data: SubjectiveGamePhaseStateView<OpeningLeadState>,
     ) -> Result<(), BBError> {
         Ok(())
     }
@@ -118,7 +122,7 @@ impl MockBridgeEngine {
     fn interpret_card(
         &mut self,
         _event: CardEvent,
-        _data: SubjectiveGameDataView<CardPlayState>,
+        _data: SubjectiveGamePhaseStateView<CardPlayState>,
     ) -> Result<(), BBError> {
         Ok(())
     }
