@@ -30,29 +30,70 @@ impl NextToPlay for GameData<CardPlayState> {
         self.inner.trick_manager.next_to_play()
     }
 }
+impl NextToPlay for CardPlayState {
+    fn next_to_play(&self) -> Seat {
+        self.trick_manager.next_to_play()
+    }
+}
 
 impl GameData<CardPlayState> {
     pub fn hand_of(&self, player: Seat) -> Result<Hand<13>, BBError> {
-        self.inner.hand_manager.hand_of(player)
+        self.inner.hand_of(player)
     }
 
     pub fn declarer(&self) -> Seat {
-        self.inner.contract.declarer
+        self.inner.declarer()
+    }
+
+    pub fn process_play_card_event(&mut self, card_event: CardEvent) -> Result<(), BBError> {
+        self.inner.process_play_card_event(card_event)
+    }
+
+    pub fn validate_play_card_event(&self, card_event: CardEvent) -> Result<(), BBError> {
+        self.inner.validate_play_card_event(card_event)
+    }
+
+    pub fn validate_suit_rule(&self, player: Seat, card: Card) -> Result<(), BBError> {
+        self.inner.validate_suit_rule(player, card)
+    }
+
+    pub fn card_play_has_ended(&self) -> bool {
+        self.inner.card_play_has_ended()
+    }
+
+    pub fn move_from_card_play_to_ended(self) -> GameData<EndedState> {
+        self.inner.move_from_card_play_to_ended()
+    }
+
+    pub fn calculate_game_result(&self) -> GameResult {
+        self.inner.calculate_game_result()
+    }
+
+    pub fn board(&self) -> Board {
+        self.inner.board()
+    }
+}
+
+impl CardPlayState {
+    pub fn hand_of(&self, player: Seat) -> Result<Hand<13>, BBError> {
+        self.hand_manager.hand_of(player)
+    }
+
+    pub fn declarer(&self) -> Seat {
+        self.contract.declarer
     }
 
     pub fn process_play_card_event(&mut self, card_event: CardEvent) -> Result<(), BBError> {
         self.validate_play_card_event(card_event)?;
-        self.inner.trick_manager.play(card_event.card);
-        self.inner
-            .hand_manager
+        self.trick_manager.play(card_event.card);
+        self.hand_manager
             .process_play_card_event(card_event.card, card_event.player)?;
         Ok(())
     }
 
     pub fn validate_play_card_event(&self, card_event: CardEvent) -> Result<(), BBError> {
         self.validate_turn_order(card_event.player)?;
-        self.inner
-            .hand_manager
+        self.hand_manager
             .validate_play_card_event(card_event.card, card_event.player)?;
 
         self.validate_suit_rule(card_event.player, card_event.card)?;
@@ -60,10 +101,9 @@ impl GameData<CardPlayState> {
     }
 
     pub fn validate_suit_rule(&self, player: Seat, card: Card) -> Result<(), BBError> {
-        if let Some(suit) = &self.inner.trick_manager.suit_to_follow() {
+        if let Some(suit) = &self.trick_manager.suit_to_follow() {
             if card.suit != *suit
                 && self
-                    .inner
                     .hand_manager
                     .player_is_known_to_have_cards_left_in_suit(player, *suit)
             {
@@ -77,20 +117,20 @@ impl GameData<CardPlayState> {
     }
 
     pub fn card_play_has_ended(&self) -> bool {
-        self.inner.trick_manager.card_play_has_ended()
+        self.trick_manager.card_play_has_ended()
     }
 
     pub fn move_from_card_play_to_ended(self) -> GameData<EndedState> {
-        let tricks = self.inner.trick_manager.played_tricks();
+        let tricks = self.trick_manager.played_tricks();
 
         let result = self.calculate_game_result();
 
         let inner = EndedState {
-            bids: self.inner.bids,
+            bids: self.bids,
             tricks,
-            hands: self.inner.hand_manager,
+            hands: self.hand_manager,
             result,
-            board: self.inner.board,
+            board: self.board,
         };
 
         GameData { inner }
@@ -98,14 +138,12 @@ impl GameData<CardPlayState> {
 
     pub fn calculate_game_result(&self) -> GameResult {
         GameResult::calculate_game_result(
-            self.inner.contract,
-            self.inner
-                .trick_manager
-                .tricks_won_by_axis(self.inner.contract.declarer),
+            self.contract,
+            self.trick_manager.tricks_won_by_axis(self.contract.declarer),
         )
     }
 
     pub fn board(&self) -> Board {
-        self.inner.board
+        self.board
     }
 }
