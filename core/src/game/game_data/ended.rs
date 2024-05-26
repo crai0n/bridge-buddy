@@ -6,7 +6,7 @@ use crate::primitives::bid_line::BidLine;
 use crate::primitives::deal::{Board, Seat};
 use crate::primitives::game_result::GameResult;
 use crate::primitives::trick::PlayedTrick;
-use crate::primitives::Hand;
+use crate::primitives::{Contract, Hand};
 
 #[derive(Debug, Clone)]
 pub struct EndedState {
@@ -17,7 +17,11 @@ pub struct EndedState {
     pub board: Board,
 }
 
-impl GamePhaseState for EndedState {}
+impl GamePhaseState for EndedState {
+    fn implied_contract(&self) -> Option<Contract> {
+        self.result.played_contract()
+    }
+}
 
 impl GameData<EndedState> {
     pub fn hand_of(&self, player: Seat) -> Result<Hand<13>, BBError> {

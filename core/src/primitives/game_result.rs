@@ -9,6 +9,14 @@ pub enum GameResult {
 }
 
 impl GameResult {
+    pub fn played_contract(&self) -> Option<Contract> {
+        match self {
+            GameResult::Unplayed => None,
+            GameResult::Made { contract, .. } => Some(*contract),
+            GameResult::Failed { contract, .. } => Some(*contract),
+        }
+    }
+
     pub fn calculate_game_result(contract: Contract, actual_tricks: usize) -> GameResult {
         let exp = contract.expected_tricks();
         let act = actual_tricks;

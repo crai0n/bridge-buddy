@@ -18,7 +18,11 @@ pub struct BiddingState {
     pub board: Board,
 }
 
-impl GamePhaseState for BiddingState {}
+impl GamePhaseState for BiddingState {
+    fn implied_contract(&self) -> Option<Contract> {
+        self.bid_manager.implied_contract()
+    }
+}
 
 impl BiddingState {
     pub fn new(board: Board) -> Self {

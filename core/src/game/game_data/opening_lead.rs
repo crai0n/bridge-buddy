@@ -18,7 +18,11 @@ pub struct OpeningLeadState {
     pub board: Board,
 }
 
-impl GamePhaseState for OpeningLeadState {}
+impl GamePhaseState for OpeningLeadState {
+    fn implied_contract(&self) -> Option<Contract> {
+        Some(self.contract)
+    }
+}
 
 impl NextToPlay for GameData<OpeningLeadState> {
     fn next_to_play(&self) -> Seat {

@@ -18,7 +18,11 @@ pub struct WaitingForDummyState {
     pub board: Board,
 }
 
-impl GamePhaseState for WaitingForDummyState {}
+impl GamePhaseState for WaitingForDummyState {
+    fn implied_contract(&self) -> Option<Contract> {
+        Some(self.contract)
+    }
+}
 
 impl NextToPlay for GameData<WaitingForDummyState> {
     fn next_to_play(&self) -> Seat {

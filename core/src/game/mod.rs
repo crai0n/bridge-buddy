@@ -18,7 +18,7 @@ use crate::primitives::game_event::{
     NewGameEvent,
 };
 use crate::primitives::game_result::GameResult;
-use crate::primitives::Hand;
+use crate::primitives::{Contract, Hand};
 
 #[derive(Debug, Clone)]
 pub enum GameState {
@@ -30,7 +30,9 @@ pub enum GameState {
 }
 
 #[allow(dead_code)]
-trait GamePhaseState {}
+pub trait GamePhaseState {
+    fn implied_contract(&self) -> Option<Contract>;
+}
 
 impl GameState {
     pub fn next_to_play(&self) -> Option<Seat> {

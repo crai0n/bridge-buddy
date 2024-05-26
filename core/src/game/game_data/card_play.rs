@@ -19,7 +19,11 @@ pub struct CardPlayState {
     pub board: Board,
 }
 
-impl GamePhaseState for CardPlayState {}
+impl GamePhaseState for CardPlayState {
+    fn implied_contract(&self) -> Option<Contract> {
+        Some(self.contract)
+    }
+}
 
 impl NextToPlay for GameData<CardPlayState> {
     fn next_to_play(&self) -> Seat {
