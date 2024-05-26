@@ -39,17 +39,17 @@ impl FromStr for Bid {
 }
 
 impl Bid {
-    pub fn access_auxiliary_bid(&self) -> Option<AuxiliaryBid> {
+    pub fn try_as_auxiliary_bid(self) -> Result<AuxiliaryBid, BBError> {
         match self {
-            Bid::Auxiliary(auxiliary_bid) => Some(*auxiliary_bid),
-            _ => None,
+            Bid::Auxiliary(auxiliary_bid) => Ok(auxiliary_bid),
+            i => Err(BBError::WrongBidType(i)),
         }
     }
 
-    pub fn access_contract_bid(&self) -> Option<ContractBid> {
+    pub fn try_as_contract_bid(self) -> Result<ContractBid, BBError> {
         match self {
-            Bid::Contract(contract_bid) => Some(*contract_bid),
-            _ => None,
+            Bid::Contract(contract_bid) => Ok(contract_bid),
+            i => Err(BBError::WrongBidType(i)),
         }
     }
 }
@@ -118,11 +118,11 @@ mod test {
     #[test_case(Auxiliary(Pass), Some(Pass); "Pass is an Auxiliary")]
     #[test_case(Contract(ContractBid { level: Four, strain: Trump(Hearts)}), None; "4H is not an Auxiliary")]
     fn access_auxiliary(bid: Bid, inner: Option<AuxiliaryBid>) {
-        assert_eq!(bid.access_auxiliary_bid(), inner);
+        assert_eq!(bid.try_as_auxiliary_bid().ok(), inner);
     }
     #[test_case(Auxiliary(Pass), None; "Pass is an Auxiliary")]
     #[test_case(Contract(ContractBid { level: Four, strain: Trump(Hearts)}), Some(ContractBid { level: Four, strain: Trump(Hearts)}); "4H is not a Contract Bid")]
     fn access_contract(bid: Bid, inner: Option<ContractBid>) {
-        assert_eq!(bid.access_contract_bid(), inner);
+        assert_eq!(bid.try_as_contract_bid().ok(), inner);
     }
 }

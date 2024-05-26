@@ -1,6 +1,6 @@
 use crate::engine::bidding_engine::SelectBid;
-use crate::engine::subjective_game_view::SubjectiveGameDataView;
-use crate::game::game_data::Bidding;
+use crate::engine::subjective_game_view::SubjectiveGamePhaseStateView;
+use crate::game::game_phase_states::BiddingState;
 use crate::interactive::cli_presenter::CliPresenter;
 use crate::primitives::bid::Bid;
 use crate::primitives::deal::Seat;
@@ -16,7 +16,7 @@ impl CliBidSelector {
         CliBidSelector { _seat: seat }
     }
 
-    pub fn get_bid_from_user(&self, state: SubjectiveGameDataView<Bidding>) -> Bid {
+    pub fn get_bid_from_user(&self, state: SubjectiveGamePhaseStateView<BiddingState>) -> Bid {
         CliPresenter::display_bidding_state_for_user(&state);
         CliPresenter::display_starting_hand_for_user(state.my_starting_hand().unwrap());
 
@@ -48,7 +48,7 @@ impl CliBidSelector {
 }
 
 impl SelectBid for CliBidSelector {
-    fn select_bid(&self, state: SubjectiveGameDataView<Bidding>) -> Bid {
+    fn select_bid(&self, state: SubjectiveGamePhaseStateView<BiddingState>) -> Bid {
         self.get_bid_from_user(state)
     }
 }

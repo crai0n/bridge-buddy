@@ -31,7 +31,7 @@ impl<'a> Table<'a> {
     }
 
     pub fn new_game(&mut self) -> Result<(), BBError> {
-        let deal = Deal::new();
+        let deal = Deal::random();
         self.new_game_from_deal(deal)
     }
 

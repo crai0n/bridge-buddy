@@ -29,12 +29,12 @@ pub struct Deal<const N: usize> {
 impl<const N: usize> Deal<N> {
     pub fn from_u64_seed(seed: u64) -> Self {
         let mut rng = ChaCha8Rng::seed_from_u64(seed);
-        Self::from_rng(&mut rng)
+        Self::random_from_rng(&mut rng)
     }
 
-    pub fn new() -> Deal<N> {
+    pub fn random() -> Deal<N> {
         let mut rng = thread_rng();
-        Self::from_rng(&mut rng)
+        Self::random_from_rng(&mut rng)
     }
 
     pub fn from_hands(hands: [Hand<N>; 4]) -> Self {
@@ -42,16 +42,16 @@ impl<const N: usize> Deal<N> {
         Deal { board, hands }
     }
 
-    pub fn from_rng(rng: &mut impl Rng) -> Self {
+    pub fn random_from_rng(rng: &mut impl Rng) -> Self {
         let board_number = rng.gen_range(1..=Board::MAX_NUMBER);
-        Self::from_rng_with_board_number(board_number, rng)
+        Self::random_from_rng_with_board_number(board_number, rng)
     }
-    pub fn new_with_board_number(board_number: usize) -> Self {
+    pub fn random_with_board_number(board_number: usize) -> Self {
         let mut rng = thread_rng();
-        Self::from_rng_with_board_number(board_number, &mut rng)
+        Self::random_from_rng_with_board_number(board_number, &mut rng)
     }
 
-    fn from_rng_with_board_number(board_number: usize, rng: &mut impl Rng) -> Self {
+    fn random_from_rng_with_board_number(board_number: usize, rng: &mut impl Rng) -> Self {
         let board = Board::from_number(board_number);
         let hands = Self::hands_from_rng(rng);
 
@@ -59,7 +59,7 @@ impl<const N: usize> Deal<N> {
     }
 
     fn hands_from_rng(rng: &mut impl Rng) -> [Hand<N>; 4] {
-        let deck = Deck::<N>::shuffled_from_rng(rng);
+        let deck = Deck::<N>::new().shuffled_with_rng(rng);
         deck.deal()
     }
 
@@ -134,7 +134,7 @@ impl<const N: usize> Display for Deal<N> {
 
 impl<const N: usize> Default for Deal<N> {
     fn default() -> Self {
-        Deal::new()
+        Deal::random()
     }
 }
 
@@ -166,7 +166,7 @@ mod tests {
     #[ignore]
     #[test]
     fn display() {
-        let deal = Deal::<13>::new();
+        let deal = Deal::<13>::random();
         println!("{}", deal)
     }
 }

@@ -1,14 +1,16 @@
 // pub mod player_queue_map;
 pub mod trick_manager;
 
-pub mod game_data;
+pub mod game_phase_states;
 // mod bid_manager;
 pub mod bid_manager;
 pub mod hand_manager;
 pub mod scoring;
 
 use crate::error::BBError;
-use crate::game::game_data::{Bidding, CardPlay, Ended, GameData, NextToPlay, OpeningLead, WaitingForDummy};
+use crate::game::game_phase_states::{
+    BiddingState, CardPlayState, EndedState, GamePhaseState, NextToPlay, OpeningLeadState, WaitingForDummyState,
+};
 
 use crate::primitives::deal::{Board, Seat};
 use crate::primitives::game_event::{
@@ -20,11 +22,11 @@ use crate::primitives::Hand;
 
 #[derive(Debug, Clone)]
 pub enum GameState {
-    Bidding(GameData<Bidding>),
-    OpeningLead(GameData<OpeningLead>),
-    WaitingForDummy(GameData<WaitingForDummy>),
-    CardPlay(GameData<CardPlay>),
-    Ended(GameData<Ended>),
+    Bidding(BiddingState),
+    OpeningLead(OpeningLeadState),
+    WaitingForDummy(WaitingForDummyState),
+    CardPlay(CardPlayState),
+    Ended(EndedState),
 }
 
 impl GameState {
@@ -85,9 +87,7 @@ impl GameState {
     pub fn process_bidding_ended_event(&mut self, bidding_ended_event: BiddingEndedEvent) -> Result<(), BBError> {
         match self {
             GameState::Bidding(state) => {
-                if state.inner.bid_manager.implied_contract() != Some(bidding_ended_event.final_contract)
-                    || !state.bidding_has_ended()
-                {
+                if state.implied_contract() != Some(bidding_ended_event.final_contract) || !state.bidding_has_ended() {
                     Err(BBError::InvalidEvent(Box::new(GameEvent::BiddingEnded(
                         bidding_ended_event,
                     ))))?
@@ -163,7 +163,7 @@ impl GameState {
     }
 
     pub fn new_from_board(board: Board) -> Self {
-        let state = GameData::new(board);
+        let state = BiddingState::new(board);
         GameState::Bidding(state)
     }
 
@@ -185,7 +185,7 @@ impl GameState {
 #[cfg(test)]
 mod test {
     use crate::game::scoring::ScoreCalculator;
-    use crate::game::GameState;
+    use crate::game::{GamePhaseState, GameState};
     use crate::primitives::bid::Bid;
     use crate::primitives::deal::Seat;
     use crate::primitives::game_event::{
@@ -199,7 +199,7 @@ mod test {
     #[test]
     fn init() {
         let mut rng = thread_rng();
-        let deal: Deal<13> = Deal::from_rng(&mut rng);
+        let deal: Deal<13> = Deal::random_from_rng(&mut rng);
         let game = GameState::new_from_board(deal.board);
         assert!(matches!(game, GameState::Bidding(_)))
     }
@@ -226,7 +226,7 @@ mod test {
         match game {
             GameState::Bidding(state) => {
                 assert!(state.bidding_has_ended());
-                assert_eq!(state.inner.bid_manager.implied_contract(), None);
+                assert_eq!(state.implied_contract(), None);
             }
             _ => panic!(),
         }
@@ -253,8 +253,8 @@ mod test {
 
         let final_contract = match &game {
             GameState::Bidding(state) => {
-                assert!(state.inner.bid_manager.bidding_has_ended());
-                state.inner.bid_manager.implied_contract().unwrap()
+                assert!(state.bidding_has_ended());
+                state.implied_contract().unwrap()
             }
             _ => panic!(),
         };
@@ -276,7 +276,7 @@ mod test {
 
         match &mut game {
             GameState::WaitingForDummy(state) => {
-                let dummy = state.inner.contract.declarer.partner();
+                let dummy = state.dummy();
                 let dummy_event = DummyUncoveredEvent {
                     dummy: *deal.hand_of(dummy),
                 };
@@ -316,9 +316,9 @@ mod test {
 
         match game {
             GameState::Ended(state) => {
-                assert_eq!(state.inner.hands.count_played_cards(), 52);
+                assert_eq!(state.hands.count_played_cards(), 52);
                 assert_eq!(
-                    state.inner.result,
+                    state.result,
                     GameResult::Failed {
                         contract: Contract::from_str("N4S").unwrap(),
                         undertricks: 3

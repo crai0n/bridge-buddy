@@ -1,6 +1,6 @@
 use crate::engine::bidding_engine::SelectBid;
-use crate::engine::subjective_game_view::SubjectiveGameDataView;
-use crate::game::game_data::Bidding;
+use crate::engine::subjective_game_view::SubjectiveGamePhaseStateView;
+use crate::game::game_phase_states::BiddingState;
 use crate::primitives::bid::{AuxiliaryBid, Bid, ContractBid};
 use crate::primitives::contract::{Level, Strain};
 use crate::primitives::Suit;
@@ -38,7 +38,7 @@ impl MockBiddingEngine {
         ContractBid { level, strain }
     }
 
-    fn find_bid(&self, data: SubjectiveGameDataView<Bidding>) -> Bid {
+    fn find_bid(&self, data: SubjectiveGamePhaseStateView<BiddingState>) -> Bid {
         let my_target_bid = Self::select_random_contract_bid_as_target();
 
         match data.lowest_available_contract_bid() {
@@ -58,7 +58,7 @@ impl Default for MockBiddingEngine {
 }
 
 impl SelectBid for MockBiddingEngine {
-    fn select_bid(&self, data: SubjectiveGameDataView<Bidding>) -> Bid {
+    fn select_bid(&self, data: SubjectiveGamePhaseStateView<BiddingState>) -> Bid {
         self.find_bid(data)
     }
 }

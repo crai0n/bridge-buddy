@@ -92,12 +92,12 @@ impl Virtualizer {
 
     pub fn virtual_to_absolute_rank(&self, virtual_rank: &VirtualRank, suit: Suit) -> Option<Rank> {
         let out_of_play = self.out_of_play.suit_state(suit);
-        TO_ABSOLUTE_GIVEN_OUT_OF_PLAY[out_of_play.0 as usize][*virtual_rank as usize]
+        TO_ABSOLUTE_GIVEN_OUT_OF_PLAY[u16::from(*out_of_play) as usize][*virtual_rank as usize]
     }
 
     pub fn absolute_to_virtual_rank(&self, rank: &Rank, suit: Suit) -> Option<VirtualRank> {
         let out_of_play = self.out_of_play.suit_state(suit);
-        TO_VIRTUAL_GIVEN_OUT_OF_PLAY[out_of_play.0 as usize][*rank as usize]
+        TO_VIRTUAL_GIVEN_OUT_OF_PLAY[u16::from(*out_of_play) as usize][*rank as usize]
     }
 }
 

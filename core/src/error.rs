@@ -46,6 +46,7 @@ pub enum BBError {
     FollowSuit(Suit),
     NotYourCard(Card),
     AlreadyPlayed(Card),
+    WrongBidType(Bid),
 }
 
 impl Display for BBError {
@@ -87,6 +88,7 @@ impl Display for BBError {
             BBError::FollowSuit(suit) => writeln!(f, "You have to follow suit: {}.", suit),
             BBError::NotYourCard(card) => writeln!(f, "Card {} belongs to another player.", card),
             BBError::AlreadyPlayed(card) => writeln!(f, "Card {} has already been played.", card),
+            BBError::WrongBidType(bid) => writeln!(f, "Bid has wrong type: {}", bid),
         }
     }
 }

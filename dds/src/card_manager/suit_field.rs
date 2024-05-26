@@ -4,7 +4,13 @@ use bridge_buddy_core::primitives::card::Rank;
 use std::ops::BitXor;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
-pub struct SuitField(pub(crate) u16);
+pub struct SuitField(u16);
+
+impl From<SuitField> for u16 {
+    fn from(value: SuitField) -> Self {
+        value.0
+    }
+}
 
 #[allow(dead_code)]
 impl SuitField {
