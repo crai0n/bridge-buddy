@@ -1,14 +1,14 @@
 // pub mod player_queue_map;
 pub mod trick_manager;
 
-pub mod game_data;
+pub mod game_phase_states;
 // mod bid_manager;
 pub mod bid_manager;
 pub mod hand_manager;
 pub mod scoring;
 
 use crate::error::BBError;
-use crate::game::game_data::{
+use crate::game::game_phase_states::{
     BiddingState, CardPlayState, EndedState, NextToPlay, OpeningLeadState, WaitingForDummyState,
 };
 

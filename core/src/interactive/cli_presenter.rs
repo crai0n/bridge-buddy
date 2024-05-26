@@ -1,5 +1,5 @@
 use crate::engine::subjective_game_view::{SubjectiveGameDataView, SubjectiveSeat};
-use crate::game::game_data::{BiddingState, CardPlayState};
+use crate::game::game_phase_states::{BiddingState, CardPlayState};
 use itertools::Itertools;
 
 use crate::primitives::card::suit::SUIT_ARRAY;

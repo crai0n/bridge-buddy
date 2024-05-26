@@ -1,5 +1,5 @@
 use crate::engine::subjective_game_view::SubjectiveGameDataView;
-use crate::game::game_data::BiddingState;
+use crate::game::game_phase_states::BiddingState;
 use crate::primitives::bid::Bid;
 
 pub mod mock_bidding_engine;

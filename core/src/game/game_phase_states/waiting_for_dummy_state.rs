@@ -1,5 +1,5 @@
 use crate::error::BBError;
-use crate::game::game_data::{CardPlayState, NextToPlay};
+use crate::game::game_phase_states::{CardPlayState, NextToPlay};
 use crate::game::hand_manager::HandManager;
 use crate::game::trick_manager::TrickManager;
 use crate::game::GamePhaseState;

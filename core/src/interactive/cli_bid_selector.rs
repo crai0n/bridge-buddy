@@ -1,6 +1,6 @@
 use crate::engine::bidding_engine::SelectBid;
 use crate::engine::subjective_game_view::SubjectiveGameDataView;
-use crate::game::game_data::BiddingState;
+use crate::game::game_phase_states::BiddingState;
 use crate::interactive::cli_presenter::CliPresenter;
 use crate::primitives::bid::Bid;
 use crate::primitives::deal::Seat;

@@ -1,6 +1,6 @@
 use crate::engine::bidding_engine::SelectBid;
 use crate::engine::subjective_game_view::SubjectiveGameDataView;
-use crate::game::game_data::BiddingState;
+use crate::game::game_phase_states::BiddingState;
 use crate::primitives::bid::{AuxiliaryBid, Bid, ContractBid};
 use crate::primitives::contract::{Level, Strain};
 use crate::primitives::Suit;

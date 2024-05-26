@@ -1,8 +1,8 @@
 use crate::engine::subjective_game_view::subjective_vulnerability::SubjectiveVulnerability;
 use crate::engine::subjective_game_view::subjectiviser::Subjectiviser;
 use crate::error::BBError;
-use crate::game::game_data::{BiddingState, CardPlayState, EndedState, NextToPlay};
-use crate::game::game_data::{OpeningLeadState, WaitingForDummyState};
+use crate::game::game_phase_states::{BiddingState, CardPlayState, EndedState, NextToPlay};
+use crate::game::game_phase_states::{OpeningLeadState, WaitingForDummyState};
 use crate::game::GameState;
 use crate::primitives::bid::{Bid, ContractBid};
 use crate::primitives::deal::Seat;

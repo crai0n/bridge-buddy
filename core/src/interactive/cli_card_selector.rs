@@ -1,6 +1,6 @@
 use crate::engine::card_play_engine::SelectCard;
 use crate::engine::subjective_game_view::SubjectiveGameDataView;
-use crate::game::game_data::{CardPlayState, OpeningLeadState};
+use crate::game::game_phase_states::{CardPlayState, OpeningLeadState};
 use crate::interactive::cli_presenter::CliPresenter;
 use crate::primitives::deal::Seat;
 use crate::primitives::Card;

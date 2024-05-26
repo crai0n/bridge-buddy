@@ -4,7 +4,7 @@ use crate::engine::subjective_game_view::{SubjectiveGameDataView, SubjectiveGame
 use crate::engine::SelectMove;
 use crate::error::BBError;
 
-use crate::game::game_data::{BiddingState, CardPlayState, OpeningLeadState};
+use crate::game::game_phase_states::{BiddingState, CardPlayState, OpeningLeadState};
 
 use crate::interactive::cli_bid_selector::CliBidSelector;
 use crate::interactive::cli_card_selector::CliCardSelector;

@@ -6,7 +6,7 @@ use crate::engine::engine_state::EngineState;
 use crate::engine::subjective_game_view::{SubjectiveGameDataView, SubjectiveGameStateView};
 use crate::engine::SelectMove;
 use crate::error::BBError;
-use crate::game::game_data::{BiddingState, CardPlayState, OpeningLeadState};
+use crate::game::game_phase_states::{BiddingState, CardPlayState, OpeningLeadState};
 
 use crate::primitives::bid::Bid;
 use crate::primitives::deal::Seat;

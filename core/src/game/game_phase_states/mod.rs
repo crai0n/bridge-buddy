@@ -1,16 +1,16 @@
 use crate::error::BBError;
 use crate::primitives::deal::Seat;
-pub use bidding::BiddingState;
-pub use card_play::CardPlayState;
-pub use ended::EndedState;
-pub use opening_lead::OpeningLeadState;
-pub use waiting_for_dummy::WaitingForDummyState;
+pub use bidding_state::BiddingState;
+pub use card_play_state::CardPlayState;
+pub use ended_state::EndedState;
+pub use opening_lead_state::OpeningLeadState;
+pub use waiting_for_dummy_state::WaitingForDummyState;
 
-mod bidding;
-mod card_play;
-mod ended;
-mod opening_lead;
-mod waiting_for_dummy;
+mod bidding_state;
+mod card_play_state;
+mod ended_state;
+mod opening_lead_state;
+mod waiting_for_dummy_state;
 
 pub trait NextToPlay {
     fn next_to_play(&self) -> Seat;

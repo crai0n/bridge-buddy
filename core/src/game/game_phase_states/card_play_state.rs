@@ -1,6 +1,6 @@
 use crate::error::BBError;
-use crate::game::game_data::ended::EndedState;
-use crate::game::game_data::NextToPlay;
+use crate::game::game_phase_states::ended_state::EndedState;
+use crate::game::game_phase_states::NextToPlay;
 use crate::game::hand_manager::HandManager;
 use crate::game::trick_manager::TrickManager;
 use crate::game::GamePhaseState;
