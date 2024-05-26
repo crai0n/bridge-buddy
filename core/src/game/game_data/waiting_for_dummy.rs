@@ -39,6 +39,10 @@ impl GameData<WaitingForDummyState> {
         self.inner.declarer()
     }
 
+    pub fn dummy(&self) -> Seat {
+        self.inner.dummy()
+    }
+
     pub fn hand_of(&self, player: Seat) -> Result<Hand<13>, BBError> {
         self.inner.hand_of(player)
     }
@@ -59,6 +63,10 @@ impl WaitingForDummyState {
 
     pub fn declarer(&self) -> Seat {
         self.contract.declarer
+    }
+
+    pub fn dummy(&self) -> Seat {
+        self.declarer().partner()
     }
 
     pub fn hand_of(&self, player: Seat) -> Result<Hand<13>, BBError> {

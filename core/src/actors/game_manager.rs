@@ -1,6 +1,6 @@
 use crate::error::BBError;
 use crate::game::scoring::ScoreCalculator;
-use crate::game::GameState;
+use crate::game::{GamePhaseState, GameState};
 use crate::primitives::deal::seat::SEAT_ARRAY;
 use crate::primitives::deal::Seat;
 use crate::primitives::game_event::{
@@ -74,7 +74,7 @@ impl GameManager {
         match &mut self.game.as_mut().unwrap() {
             GameState::Bidding(state) => {
                 if state.bidding_has_ended() {
-                    match state.inner.bid_manager.implied_contract() {
+                    match state.implied_contract() {
                         Some(contract) => {
                             self.end_bidding(contract);
                         }
@@ -86,7 +86,7 @@ impl GameManager {
                 }
             }
             GameState::WaitingForDummy(state) => {
-                let dummy = state.inner.contract.declarer.partner();
+                let dummy = state.dummy();
                 self.disclose_dummy(dummy);
             }
             GameState::CardPlay(state) => {

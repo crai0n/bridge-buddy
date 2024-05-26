@@ -92,9 +92,7 @@ impl GameState {
     pub fn process_bidding_ended_event(&mut self, bidding_ended_event: BiddingEndedEvent) -> Result<(), BBError> {
         match self {
             GameState::Bidding(state) => {
-                if state.inner.bid_manager.implied_contract() != Some(bidding_ended_event.final_contract)
-                    || !state.bidding_has_ended()
-                {
+                if state.implied_contract() != Some(bidding_ended_event.final_contract) || !state.bidding_has_ended() {
                     Err(BBError::InvalidEvent(Box::new(GameEvent::BiddingEnded(
                         bidding_ended_event,
                     ))))?
@@ -192,7 +190,7 @@ impl GameState {
 #[cfg(test)]
 mod test {
     use crate::game::scoring::ScoreCalculator;
-    use crate::game::GameState;
+    use crate::game::{GamePhaseState, GameState};
     use crate::primitives::bid::Bid;
     use crate::primitives::deal::Seat;
     use crate::primitives::game_event::{
@@ -233,7 +231,7 @@ mod test {
         match game {
             GameState::Bidding(state) => {
                 assert!(state.bidding_has_ended());
-                assert_eq!(state.inner.bid_manager.implied_contract(), None);
+                assert_eq!(state.implied_contract(), None);
             }
             _ => panic!(),
         }
@@ -260,8 +258,8 @@ mod test {
 
         let final_contract = match &game {
             GameState::Bidding(state) => {
-                assert!(state.inner.bid_manager.bidding_has_ended());
-                state.inner.bid_manager.implied_contract().unwrap()
+                assert!(state.bidding_has_ended());
+                state.implied_contract().unwrap()
             }
             _ => panic!(),
         };
@@ -283,7 +281,7 @@ mod test {
 
         match &mut game {
             GameState::WaitingForDummy(state) => {
-                let dummy = state.inner.contract.declarer.partner();
+                let dummy = state.dummy();
                 let dummy_event = DummyUncoveredEvent {
                     dummy: *deal.hand_of(dummy),
                 };
