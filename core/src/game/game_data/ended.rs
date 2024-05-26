@@ -25,11 +25,25 @@ impl GamePhaseState for EndedState {
 
 impl GameData<EndedState> {
     pub fn hand_of(&self, player: Seat) -> Result<Hand<13>, BBError> {
-        self.inner.hands.hand_of(player)
+        self.inner.hand_of(player)
     }
 
     pub fn declarer(&self) -> Option<Seat> {
-        match self.inner.result {
+        self.inner.declarer()
+    }
+
+    pub fn board(&self) -> Board {
+        self.inner.board()
+    }
+}
+
+impl EndedState {
+    pub fn hand_of(&self, player: Seat) -> Result<Hand<13>, BBError> {
+        self.hands.hand_of(player)
+    }
+
+    pub fn declarer(&self) -> Option<Seat> {
+        match self.result {
             GameResult::Unplayed => None,
             GameResult::Made {
                 contract,
@@ -43,6 +57,6 @@ impl GameData<EndedState> {
     }
 
     pub fn board(&self) -> Board {
-        self.inner.board
+        self.board
     }
 }

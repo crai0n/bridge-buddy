@@ -32,32 +32,53 @@ impl NextToPlay for GameData<WaitingForDummyState> {
 
 impl GameData<WaitingForDummyState> {
     pub fn board(&self) -> Board {
-        self.inner.board
+        self.inner.board()
     }
 
     pub fn declarer(&self) -> Seat {
-        self.inner.contract.declarer
+        self.inner.declarer()
     }
 
     pub fn hand_of(&self, player: Seat) -> Result<Hand<13>, BBError> {
-        self.inner.hand_manager.hand_of(player)
+        self.inner.hand_of(player)
     }
 
     pub fn process_dummy_uncovered_event(&mut self, event: DummyUncoveredEvent) -> Result<(), BBError> {
-        self.inner
-            .hand_manager
-            .register_known_hand(event.dummy, self.inner.contract.declarer.partner())?;
+        self.inner.process_dummy_uncovered_event(event)
+    }
+
+    pub fn move_to_card_play(self) -> GameData<CardPlayState> {
+        self.inner.move_to_card_play()
+    }
+}
+
+impl WaitingForDummyState {
+    pub fn board(&self) -> Board {
+        self.board
+    }
+
+    pub fn declarer(&self) -> Seat {
+        self.contract.declarer
+    }
+
+    pub fn hand_of(&self, player: Seat) -> Result<Hand<13>, BBError> {
+        self.hand_manager.hand_of(player)
+    }
+
+    pub fn process_dummy_uncovered_event(&mut self, event: DummyUncoveredEvent) -> Result<(), BBError> {
+        self.hand_manager
+            .register_known_hand(event.dummy, self.contract.declarer.partner())?;
 
         Ok(())
     }
 
     pub fn move_to_card_play(self) -> GameData<CardPlayState> {
         let inner = CardPlayState {
-            bids: self.inner.bids,
-            trick_manager: self.inner.trick_manager,
-            hand_manager: self.inner.hand_manager,
-            contract: self.inner.contract,
-            board: self.inner.board,
+            bids: self.bids,
+            trick_manager: self.trick_manager,
+            hand_manager: self.hand_manager,
+            contract: self.contract,
+            board: self.board,
         };
 
         GameData { inner }
