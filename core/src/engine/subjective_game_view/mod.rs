@@ -2,7 +2,7 @@ use crate::engine::subjective_game_view::subjective_vulnerability::SubjectiveVul
 use crate::engine::subjective_game_view::subjectiviser::Subjectiviser;
 use crate::error::BBError;
 use crate::game::game_data::{BiddingState, CardPlayState, EndedState, NextToPlay};
-use crate::game::game_data::{GameData, OpeningLeadState, WaitingForDummyState};
+use crate::game::game_data::{OpeningLeadState, WaitingForDummyState};
 use crate::game::GameState;
 use crate::primitives::bid::{Bid, ContractBid};
 use crate::primitives::deal::Seat;
@@ -103,12 +103,12 @@ impl<'a> SubjectiveGameStateView<'a> {
 pub struct SubjectiveGameDataView<'a, T> {
     seat: Seat,
     subjectiviser: Subjectiviser,
-    game_data: &'a GameData<T>,
+    game_data: &'a T,
 }
 
 impl<'a, T> SubjectiveGameDataView<'a, T>
 where
-    GameData<T>: NextToPlay,
+    T: NextToPlay,
 {
     pub fn next_to_play(&self) -> SubjectiveSeat {
         let next = self.game_data.next_to_play();
@@ -117,7 +117,7 @@ where
 }
 
 impl<'a> SubjectiveGameDataView<'a, BiddingState> {
-    pub fn new_bidding(game_data: &'a GameData<BiddingState>, seat: Seat) -> Self {
+    pub fn new_bidding(game_data: &'a BiddingState, seat: Seat) -> Self {
         Self {
             seat,
             subjectiviser: Subjectiviser::new(seat),
@@ -126,11 +126,11 @@ impl<'a> SubjectiveGameDataView<'a, BiddingState> {
     }
 
     pub fn bids(&self) -> Vec<Bid> {
-        self.game_data.inner.bid_manager.bids().to_vec()
+        self.game_data.bid_manager.bids().to_vec()
     }
 
     pub fn validate_bid(&self, bid: Bid) -> Result<(), BBError> {
-        self.game_data.inner.bid_manager.validate_bid(bid)
+        self.game_data.bid_manager.validate_bid(bid)
     }
 
     pub fn my_starting_hand(&self) -> Result<Hand<13>, BBError> {
@@ -138,7 +138,7 @@ impl<'a> SubjectiveGameDataView<'a, BiddingState> {
     }
 
     pub fn my_remaining_cards(&self) -> Vec<Card> {
-        self.game_data.inner.hand_manager.known_remaining_cards_of(self.seat)
+        self.game_data.hand_manager.known_remaining_cards_of(self.seat)
     }
 
     pub fn declarer(&self) -> Option<SubjectiveSeat> {
@@ -160,16 +160,16 @@ impl<'a> SubjectiveGameDataView<'a, BiddingState> {
     }
 
     pub fn last_contract_bid(&self) -> Option<ContractBid> {
-        self.game_data.inner.bid_manager.last_contract_bid().copied()
+        self.game_data.bid_manager.last_contract_bid().copied()
     }
 
     pub fn lowest_available_contract_bid(&self) -> Option<ContractBid> {
-        self.game_data.inner.bid_manager.lowest_available_contract_bid()
+        self.game_data.bid_manager.lowest_available_contract_bid()
     }
 }
 
 impl<'a> SubjectiveGameDataView<'a, OpeningLeadState> {
-    pub fn new_opening_lead(game_data: &'a GameData<OpeningLeadState>, seat: Seat) -> Self {
+    pub fn new_opening_lead(game_data: &'a OpeningLeadState, seat: Seat) -> Self {
         Self {
             seat,
             subjectiviser: Subjectiviser::new(seat),
@@ -182,7 +182,7 @@ impl<'a> SubjectiveGameDataView<'a, OpeningLeadState> {
     }
 
     pub fn my_remaining_cards(&self) -> Vec<Card> {
-        self.game_data.inner.hand_manager.known_remaining_cards_of(self.seat)
+        self.game_data.hand_manager.known_remaining_cards_of(self.seat)
     }
 
     pub fn declarer(&self) -> SubjectiveSeat {
@@ -214,7 +214,7 @@ impl<'a> SubjectiveGameDataView<'a, OpeningLeadState> {
 }
 
 impl<'a> SubjectiveGameDataView<'a, WaitingForDummyState> {
-    pub fn new_waiting_for_dummy(game_data: &'a GameData<WaitingForDummyState>, seat: Seat) -> Self {
+    pub fn new_waiting_for_dummy(game_data: &'a WaitingForDummyState, seat: Seat) -> Self {
         Self {
             seat,
             subjectiviser: Subjectiviser::new(seat),
@@ -227,7 +227,7 @@ impl<'a> SubjectiveGameDataView<'a, WaitingForDummyState> {
     }
 
     pub fn my_remaining_cards(&self) -> Vec<Card> {
-        self.game_data.inner.hand_manager.known_remaining_cards_of(self.seat)
+        self.game_data.hand_manager.known_remaining_cards_of(self.seat)
     }
 
     pub fn declarer(&self) -> SubjectiveSeat {
@@ -251,7 +251,7 @@ impl<'a> SubjectiveGameDataView<'a, WaitingForDummyState> {
 }
 
 impl<'a> SubjectiveGameDataView<'a, CardPlayState> {
-    pub fn new_card_play(game_data: &'a GameData<CardPlayState>, seat: Seat) -> Self {
+    pub fn new_card_play(game_data: &'a CardPlayState, seat: Seat) -> Self {
         Self {
             seat,
             subjectiviser: Subjectiviser::new(seat),
@@ -260,7 +260,7 @@ impl<'a> SubjectiveGameDataView<'a, CardPlayState> {
     }
 
     pub fn suit_to_follow(&self) -> Option<Suit> {
-        self.game_data.inner.trick_manager.suit_to_follow()
+        self.game_data.trick_manager.suit_to_follow()
     }
 
     pub fn my_starting_hand(&self) -> Result<Hand<13>, BBError> {
@@ -268,7 +268,7 @@ impl<'a> SubjectiveGameDataView<'a, CardPlayState> {
     }
 
     pub fn my_remaining_cards(&self) -> Vec<Card> {
-        self.game_data.inner.hand_manager.known_remaining_cards_of(self.seat)
+        self.game_data.hand_manager.known_remaining_cards_of(self.seat)
     }
 
     pub fn validate_card_play(&self, card: Card, seat: SubjectiveSeat) -> Result<(), BBError> {
@@ -283,7 +283,6 @@ impl<'a> SubjectiveGameDataView<'a, CardPlayState> {
 
     pub fn dummys_remaining_cards(&self) -> Vec<Card> {
         self.game_data
-            .inner
             .hand_manager
             .known_remaining_cards_of(self.game_data.declarer().partner())
     }
@@ -308,14 +307,14 @@ impl<'a> SubjectiveGameDataView<'a, CardPlayState> {
     }
 
     pub fn active_trick(&self) -> SubjectiveTrick {
-        let active_trick = self.game_data.inner.trick_manager.current_trick();
+        let active_trick = self.game_data.trick_manager.current_trick();
         let lead = self.subjectiviser.subjective_seat(active_trick.lead());
         SubjectiveTrick::with_cards(lead, active_trick.cards())
     }
 }
 
 impl<'a> SubjectiveGameDataView<'a, EndedState> {
-    pub fn new_ended(game_data: &'a GameData<EndedState>, seat: Seat) -> Self {
+    pub fn new_ended(game_data: &'a EndedState, seat: Seat) -> Self {
         Self {
             seat,
             subjectiviser: Subjectiviser::new(seat),

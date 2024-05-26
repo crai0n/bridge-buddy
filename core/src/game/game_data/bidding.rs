@@ -68,28 +68,24 @@ impl BiddingState {
         Ok(())
     }
 
-    pub fn move_to_opening_lead(self, contract: Contract) -> GameData<OpeningLeadState> {
-        let inner = OpeningLeadState {
+    pub fn move_to_opening_lead(self, contract: Contract) -> OpeningLeadState {
+        OpeningLeadState {
             bids: self.bid_manager.bid_line().clone(),
             trick_manager: TrickManager::new(contract.declarer + 1, contract.trump_suit()),
             hand_manager: self.hand_manager,
             contract,
             board: self.board,
-        };
-
-        GameData { inner }
+        }
     }
 
-    pub fn move_to_ended_without_card_play(self) -> GameData<EndedState> {
-        let inner = EndedState {
+    pub fn move_to_ended_without_card_play(self) -> EndedState {
+        EndedState {
             bids: self.bid_manager.bid_line(),
             tricks: Vec::new(),
             hands: self.hand_manager,
             result: GameResult::Unplayed,
             board: self.board,
-        };
-
-        GameData { inner }
+        }
     }
 }
 
@@ -139,11 +135,11 @@ impl GameData<BiddingState> {
         self.inner.process_make_bid_event(bid_event)
     }
 
-    pub fn move_to_opening_lead(self, contract: Contract) -> GameData<OpeningLeadState> {
+    pub fn move_to_opening_lead(self, contract: Contract) -> OpeningLeadState {
         self.inner.move_to_opening_lead(contract)
     }
 
-    pub fn move_to_ended_without_card_play(self) -> GameData<EndedState> {
+    pub fn move_to_ended_without_card_play(self) -> EndedState {
         self.inner.move_to_ended_without_card_play()
     }
 }

@@ -26,7 +26,13 @@ impl GamePhaseState for WaitingForDummyState {
 
 impl NextToPlay for GameData<WaitingForDummyState> {
     fn next_to_play(&self) -> Seat {
-        self.inner.trick_manager.next_to_play()
+        self.inner.next_to_play()
+    }
+}
+
+impl NextToPlay for WaitingForDummyState {
+    fn next_to_play(&self) -> Seat {
+        self.trick_manager.next_to_play()
     }
 }
 
@@ -51,7 +57,7 @@ impl GameData<WaitingForDummyState> {
         self.inner.process_dummy_uncovered_event(event)
     }
 
-    pub fn move_to_card_play(self) -> GameData<CardPlayState> {
+    pub fn move_to_card_play(self) -> CardPlayState {
         self.inner.move_to_card_play()
     }
 }
@@ -80,15 +86,13 @@ impl WaitingForDummyState {
         Ok(())
     }
 
-    pub fn move_to_card_play(self) -> GameData<CardPlayState> {
-        let inner = CardPlayState {
+    pub fn move_to_card_play(self) -> CardPlayState {
+        CardPlayState {
             bids: self.bids,
             trick_manager: self.trick_manager,
             hand_manager: self.hand_manager,
             contract: self.contract,
             board: self.board,
-        };
-
-        GameData { inner }
+        }
     }
 }

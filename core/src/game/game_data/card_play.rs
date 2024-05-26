@@ -61,7 +61,7 @@ impl GameData<CardPlayState> {
         self.inner.card_play_has_ended()
     }
 
-    pub fn move_from_card_play_to_ended(self) -> GameData<EndedState> {
+    pub fn move_from_card_play_to_ended(self) -> EndedState {
         self.inner.move_from_card_play_to_ended()
     }
 
@@ -120,20 +120,18 @@ impl CardPlayState {
         self.trick_manager.card_play_has_ended()
     }
 
-    pub fn move_from_card_play_to_ended(self) -> GameData<EndedState> {
+    pub fn move_from_card_play_to_ended(self) -> EndedState {
         let tricks = self.trick_manager.played_tricks();
 
         let result = self.calculate_game_result();
 
-        let inner = EndedState {
+        EndedState {
             bids: self.bids,
             tricks,
             hands: self.hand_manager,
             result,
             board: self.board,
-        };
-
-        GameData { inner }
+        }
     }
 
     pub fn calculate_game_result(&self) -> GameResult {

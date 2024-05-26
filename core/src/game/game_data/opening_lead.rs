@@ -57,7 +57,7 @@ impl GameData<OpeningLeadState> {
         self.inner.player_violates_suit_rule(player, card)
     }
 
-    pub fn move_to_waiting_for_dummy(self) -> GameData<WaitingForDummyState> {
+    pub fn move_to_waiting_for_dummy(self) -> WaitingForDummyState {
         self.inner.move_to_waiting_for_dummy()
     }
 
@@ -105,16 +105,14 @@ impl OpeningLeadState {
         }
     }
 
-    pub fn move_to_waiting_for_dummy(self) -> GameData<WaitingForDummyState> {
-        let inner = WaitingForDummyState {
+    pub fn move_to_waiting_for_dummy(self) -> WaitingForDummyState {
+        WaitingForDummyState {
             bids: self.bids,
             trick_manager: self.trick_manager,
             hand_manager: self.hand_manager,
             contract: self.contract,
             board: self.board,
-        };
-
-        GameData { inner }
+        }
     }
 
     pub fn board(&self) -> Board {

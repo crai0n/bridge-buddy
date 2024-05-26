@@ -9,7 +9,7 @@ pub mod scoring;
 
 use crate::error::BBError;
 use crate::game::game_data::{
-    BiddingState, CardPlayState, EndedState, GameData, NextToPlay, OpeningLeadState, WaitingForDummyState,
+    BiddingState, CardPlayState, EndedState, NextToPlay, OpeningLeadState, WaitingForDummyState,
 };
 
 use crate::primitives::deal::{Board, Seat};
@@ -22,11 +22,11 @@ use crate::primitives::{Contract, Hand};
 
 #[derive(Debug, Clone)]
 pub enum GameState {
-    Bidding(GameData<BiddingState>),
-    OpeningLead(GameData<OpeningLeadState>),
-    WaitingForDummy(GameData<WaitingForDummyState>),
-    CardPlay(GameData<CardPlayState>),
-    Ended(GameData<EndedState>),
+    Bidding(BiddingState),
+    OpeningLead(OpeningLeadState),
+    WaitingForDummy(WaitingForDummyState),
+    CardPlay(CardPlayState),
+    Ended(EndedState),
 }
 
 #[allow(dead_code)]
@@ -168,7 +168,7 @@ impl GameState {
     }
 
     pub fn new_from_board(board: Board) -> Self {
-        let state = GameData::new(board);
+        let state = BiddingState::new(board);
         GameState::Bidding(state)
     }
 
@@ -321,9 +321,9 @@ mod test {
 
         match game {
             GameState::Ended(state) => {
-                assert_eq!(state.inner.hands.count_played_cards(), 52);
+                assert_eq!(state.hands.count_played_cards(), 52);
                 assert_eq!(
-                    state.inner.result,
+                    state.result,
                     GameResult::Failed {
                         contract: Contract::from_str("N4S").unwrap(),
                         undertricks: 3
