@@ -1,8 +1,7 @@
 use crate::error::BBError;
-use crate::game::game_phase_states::{CardPlayState, NextToPlay};
+use crate::game::game_phase_states::{CardPlayState, GamePhaseState, NextToPlay};
 use crate::game::hand_manager::HandManager;
 use crate::game::trick_manager::TrickManager;
-use crate::game::GamePhaseState;
 
 use crate::primitives::bid_line::BidLine;
 use crate::primitives::deal::{Board, Seat};

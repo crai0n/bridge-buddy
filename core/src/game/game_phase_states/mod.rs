@@ -1,5 +1,6 @@
 use crate::error::BBError;
 use crate::primitives::deal::Seat;
+use crate::primitives::Contract;
 pub use bidding_state::BiddingState;
 pub use card_play_state::CardPlayState;
 pub use ended_state::EndedState;
@@ -22,4 +23,9 @@ pub trait NextToPlay {
         }
         Ok(())
     }
+}
+
+pub trait GamePhaseState {
+    fn implied_contract(&self) -> Option<Contract>;
+    fn dealer(&self) -> Seat;
 }

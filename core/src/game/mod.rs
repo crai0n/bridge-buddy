@@ -9,7 +9,7 @@ pub mod scoring;
 
 use crate::error::BBError;
 use crate::game::game_phase_states::{
-    BiddingState, CardPlayState, EndedState, NextToPlay, OpeningLeadState, WaitingForDummyState,
+    BiddingState, CardPlayState, EndedState, GamePhaseState, NextToPlay, OpeningLeadState, WaitingForDummyState,
 };
 
 use crate::primitives::deal::{Board, Seat};
@@ -18,7 +18,7 @@ use crate::primitives::game_event::{
     NewGameEvent,
 };
 use crate::primitives::game_result::GameResult;
-use crate::primitives::{Contract, Hand};
+use crate::primitives::Hand;
 
 #[derive(Debug, Clone)]
 pub enum GameState {
@@ -27,12 +27,6 @@ pub enum GameState {
     WaitingForDummy(WaitingForDummyState),
     CardPlay(CardPlayState),
     Ended(EndedState),
-}
-
-#[allow(dead_code)]
-pub trait GamePhaseState {
-    fn implied_contract(&self) -> Option<Contract>;
-    fn dealer(&self) -> Seat;
 }
 
 impl GameState {
