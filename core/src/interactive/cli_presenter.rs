@@ -1,5 +1,5 @@
 use crate::engine::subjective_game_view::{SubjectiveGameDataView, SubjectiveSeat};
-use crate::game::game_data::{Bidding, CardPlay};
+use crate::game::game_data::{BiddingState, CardPlayState};
 use itertools::Itertools;
 
 use crate::primitives::card::suit::SUIT_ARRAY;
@@ -73,7 +73,7 @@ impl CliPresenter {
         println!("{}", event.dummy)
     }
 
-    pub fn display_bidding_state_for_user(data: &SubjectiveGameDataView<Bidding>) {
+    pub fn display_bidding_state_for_user(data: &SubjectiveGameDataView<BiddingState>) {
         println!("You  LHO  Ptn  RHO");
         println!("------------------");
 
@@ -161,7 +161,7 @@ impl CliPresenter {
         }
     }
 
-    pub fn display_trick_for_user(state: &SubjectiveGameDataView<CardPlay>) {
+    pub fn display_trick_for_user(state: &SubjectiveGameDataView<CardPlayState>) {
         let trick = state.active_trick();
 
         match (trick.cards(), trick.lead(), state.next_to_play()) {

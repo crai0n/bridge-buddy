@@ -1,6 +1,7 @@
 use crate::error::BBError;
 use crate::game::game_data::GameData;
 use crate::game::hand_manager::HandManager;
+use crate::game::GamePhaseState;
 use crate::primitives::bid_line::BidLine;
 use crate::primitives::deal::{Board, Seat};
 use crate::primitives::game_result::GameResult;
@@ -8,7 +9,7 @@ use crate::primitives::trick::PlayedTrick;
 use crate::primitives::Hand;
 
 #[derive(Debug, Clone)]
-pub struct Ended {
+pub struct EndedState {
     pub bids: BidLine,
     pub tricks: Vec<PlayedTrick>,
     pub hands: HandManager,
@@ -16,7 +17,9 @@ pub struct Ended {
     pub board: Board,
 }
 
-impl GameData<Ended> {
+impl GamePhaseState for EndedState {}
+
+impl GameData<EndedState> {
     pub fn hand_of(&self, player: Seat) -> Result<Hand<13>, BBError> {
         self.inner.hands.hand_of(player)
     }

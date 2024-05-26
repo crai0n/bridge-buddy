@@ -1,15 +1,16 @@
 use crate::error::BBError;
-use crate::game::game_data::waiting_for_dummy::WaitingForDummy;
+use crate::game::game_data::waiting_for_dummy::WaitingForDummyState;
 use crate::game::game_data::{GameData, NextToPlay};
 use crate::game::hand_manager::HandManager;
 use crate::game::trick_manager::TrickManager;
+use crate::game::GamePhaseState;
 use crate::primitives::bid_line::BidLine;
 use crate::primitives::deal::{Board, Seat};
 use crate::primitives::game_event::CardEvent;
 use crate::primitives::{Card, Contract, Hand};
 
 #[derive(Debug, Clone)]
-pub struct OpeningLead {
+pub struct OpeningLeadState {
     pub bids: BidLine,
     pub trick_manager: TrickManager<13>,
     pub hand_manager: HandManager,
@@ -17,13 +18,15 @@ pub struct OpeningLead {
     pub board: Board,
 }
 
-impl NextToPlay for GameData<OpeningLead> {
+impl GamePhaseState for OpeningLeadState {}
+
+impl NextToPlay for GameData<OpeningLeadState> {
     fn next_to_play(&self) -> Seat {
         self.inner.trick_manager.next_to_play()
     }
 }
 
-impl GameData<OpeningLead> {
+impl GameData<OpeningLeadState> {
     pub fn hand_of(&self, player: Seat) -> Result<Hand<13>, BBError> {
         self.inner.hand_manager.hand_of(player)
     }
@@ -65,8 +68,8 @@ impl GameData<OpeningLead> {
         }
     }
 
-    pub fn move_to_waiting_for_dummy(self) -> GameData<WaitingForDummy> {
-        let inner = WaitingForDummy {
+    pub fn move_to_waiting_for_dummy(self) -> GameData<WaitingForDummyState> {
+        let inner = WaitingForDummyState {
             bids: self.inner.bids,
             trick_manager: self.inner.trick_manager,
             hand_manager: self.inner.hand_manager,

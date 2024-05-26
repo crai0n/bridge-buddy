@@ -1,8 +1,9 @@
 use crate::error::BBError;
-use crate::game::game_data::ended::Ended;
+use crate::game::game_data::ended::EndedState;
 use crate::game::game_data::{GameData, NextToPlay};
 use crate::game::hand_manager::HandManager;
 use crate::game::trick_manager::TrickManager;
+use crate::game::GamePhaseState;
 use crate::primitives::bid_line::BidLine;
 use crate::primitives::deal::{Board, Seat};
 use crate::primitives::game_event::CardEvent;
@@ -10,7 +11,7 @@ use crate::primitives::game_result::GameResult;
 use crate::primitives::{Card, Contract, Hand};
 
 #[derive(Debug, Clone)]
-pub struct CardPlay {
+pub struct CardPlayState {
     pub bids: BidLine,
     pub trick_manager: TrickManager<13>,
     pub hand_manager: HandManager,
@@ -18,13 +19,15 @@ pub struct CardPlay {
     pub board: Board,
 }
 
-impl NextToPlay for GameData<CardPlay> {
+impl GamePhaseState for CardPlayState {}
+
+impl NextToPlay for GameData<CardPlayState> {
     fn next_to_play(&self) -> Seat {
         self.inner.trick_manager.next_to_play()
     }
 }
 
-impl GameData<CardPlay> {
+impl GameData<CardPlayState> {
     pub fn hand_of(&self, player: Seat) -> Result<Hand<13>, BBError> {
         self.inner.hand_manager.hand_of(player)
     }
@@ -73,12 +76,12 @@ impl GameData<CardPlay> {
         self.inner.trick_manager.card_play_has_ended()
     }
 
-    pub fn move_from_card_play_to_ended(self) -> GameData<Ended> {
+    pub fn move_from_card_play_to_ended(self) -> GameData<EndedState> {
         let tricks = self.inner.trick_manager.played_tricks();
 
         let result = self.calculate_game_result();
 
-        let inner = Ended {
+        let inner = EndedState {
             bids: self.inner.bids,
             tricks,
             hands: self.inner.hand_manager,

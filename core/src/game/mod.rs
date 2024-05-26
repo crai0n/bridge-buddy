@@ -8,7 +8,9 @@ pub mod hand_manager;
 pub mod scoring;
 
 use crate::error::BBError;
-use crate::game::game_data::{Bidding, CardPlay, Ended, GameData, NextToPlay, OpeningLead, WaitingForDummy};
+use crate::game::game_data::{
+    BiddingState, CardPlayState, EndedState, GameData, NextToPlay, OpeningLeadState, WaitingForDummyState,
+};
 
 use crate::primitives::deal::{Board, Seat};
 use crate::primitives::game_event::{
@@ -20,12 +22,15 @@ use crate::primitives::Hand;
 
 #[derive(Debug, Clone)]
 pub enum GameState {
-    Bidding(GameData<Bidding>),
-    OpeningLead(GameData<OpeningLead>),
-    WaitingForDummy(GameData<WaitingForDummy>),
-    CardPlay(GameData<CardPlay>),
-    Ended(GameData<Ended>),
+    Bidding(GameData<BiddingState>),
+    OpeningLead(GameData<OpeningLeadState>),
+    WaitingForDummy(GameData<WaitingForDummyState>),
+    CardPlay(GameData<CardPlayState>),
+    Ended(GameData<EndedState>),
 }
+
+#[allow(dead_code)]
+trait GamePhaseState {}
 
 impl GameState {
     pub fn next_to_play(&self) -> Option<Seat> {

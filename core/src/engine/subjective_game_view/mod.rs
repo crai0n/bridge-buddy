@@ -1,8 +1,8 @@
 use crate::engine::subjective_game_view::subjective_vulnerability::SubjectiveVulnerability;
 use crate::engine::subjective_game_view::subjectiviser::Subjectiviser;
 use crate::error::BBError;
-use crate::game::game_data::{Bidding, CardPlay, Ended, NextToPlay};
-use crate::game::game_data::{GameData, OpeningLead, WaitingForDummy};
+use crate::game::game_data::{BiddingState, CardPlayState, EndedState, NextToPlay};
+use crate::game::game_data::{GameData, OpeningLeadState, WaitingForDummyState};
 use crate::game::GameState;
 use crate::primitives::bid::{Bid, ContractBid};
 use crate::primitives::deal::Seat;
@@ -20,11 +20,11 @@ mod subjective_vulnerability;
 pub mod subjectiviser;
 
 pub enum SubjectiveGameStateView<'a> {
-    Bidding(SubjectiveGameDataView<'a, Bidding>),
-    OpeningLead(SubjectiveGameDataView<'a, OpeningLead>),
-    WaitingForDummy(SubjectiveGameDataView<'a, WaitingForDummy>),
-    CardPlay(SubjectiveGameDataView<'a, CardPlay>),
-    Ended(SubjectiveGameDataView<'a, Ended>),
+    Bidding(SubjectiveGameDataView<'a, BiddingState>),
+    OpeningLead(SubjectiveGameDataView<'a, OpeningLeadState>),
+    WaitingForDummy(SubjectiveGameDataView<'a, WaitingForDummyState>),
+    CardPlay(SubjectiveGameDataView<'a, CardPlayState>),
+    Ended(SubjectiveGameDataView<'a, EndedState>),
 }
 
 impl<'a> SubjectiveGameStateView<'a> {
@@ -116,8 +116,8 @@ where
     }
 }
 
-impl<'a> SubjectiveGameDataView<'a, Bidding> {
-    pub fn new_bidding(game_data: &'a GameData<Bidding>, seat: Seat) -> Self {
+impl<'a> SubjectiveGameDataView<'a, BiddingState> {
+    pub fn new_bidding(game_data: &'a GameData<BiddingState>, seat: Seat) -> Self {
         Self {
             seat,
             subjectiviser: Subjectiviser::new(seat),
@@ -168,8 +168,8 @@ impl<'a> SubjectiveGameDataView<'a, Bidding> {
     }
 }
 
-impl<'a> SubjectiveGameDataView<'a, OpeningLead> {
-    pub fn new_opening_lead(game_data: &'a GameData<OpeningLead>, seat: Seat) -> Self {
+impl<'a> SubjectiveGameDataView<'a, OpeningLeadState> {
+    pub fn new_opening_lead(game_data: &'a GameData<OpeningLeadState>, seat: Seat) -> Self {
         Self {
             seat,
             subjectiviser: Subjectiviser::new(seat),
@@ -213,8 +213,8 @@ impl<'a> SubjectiveGameDataView<'a, OpeningLead> {
     }
 }
 
-impl<'a> SubjectiveGameDataView<'a, WaitingForDummy> {
-    pub fn new_waiting_for_dummy(game_data: &'a GameData<WaitingForDummy>, seat: Seat) -> Self {
+impl<'a> SubjectiveGameDataView<'a, WaitingForDummyState> {
+    pub fn new_waiting_for_dummy(game_data: &'a GameData<WaitingForDummyState>, seat: Seat) -> Self {
         Self {
             seat,
             subjectiviser: Subjectiviser::new(seat),
@@ -250,8 +250,8 @@ impl<'a> SubjectiveGameDataView<'a, WaitingForDummy> {
     }
 }
 
-impl<'a> SubjectiveGameDataView<'a, CardPlay> {
-    pub fn new_card_play(game_data: &'a GameData<CardPlay>, seat: Seat) -> Self {
+impl<'a> SubjectiveGameDataView<'a, CardPlayState> {
+    pub fn new_card_play(game_data: &'a GameData<CardPlayState>, seat: Seat) -> Self {
         Self {
             seat,
             subjectiviser: Subjectiviser::new(seat),
@@ -314,8 +314,8 @@ impl<'a> SubjectiveGameDataView<'a, CardPlay> {
     }
 }
 
-impl<'a> SubjectiveGameDataView<'a, Ended> {
-    pub fn new_ended(game_data: &'a GameData<Ended>, seat: Seat) -> Self {
+impl<'a> SubjectiveGameDataView<'a, EndedState> {
+    pub fn new_ended(game_data: &'a GameData<EndedState>, seat: Seat) -> Self {
         Self {
             seat,
             subjectiviser: Subjectiviser::new(seat),

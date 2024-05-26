@@ -1,25 +1,28 @@
 use crate::error::BBError;
 use crate::game::bid_manager::BidManager;
-use crate::game::game_data::ended::Ended;
-use crate::game::game_data::opening_lead::OpeningLead;
+use crate::game::game_data::ended::EndedState;
+use crate::game::game_data::opening_lead::OpeningLeadState;
 use crate::game::game_data::{GameData, NextToPlay};
 use crate::game::hand_manager::HandManager;
 use crate::game::trick_manager::TrickManager;
+use crate::game::GamePhaseState;
 use crate::primitives::deal::{Board, Seat};
 use crate::primitives::game_event::{BidEvent, DiscloseHandEvent};
 use crate::primitives::game_result::GameResult;
 use crate::primitives::{Contract, Hand};
 
 #[derive(Debug, Clone)]
-pub struct Bidding {
+pub struct BiddingState {
     pub bid_manager: BidManager,
     pub hand_manager: HandManager,
     pub board: Board,
 }
 
-impl Bidding {
+impl GamePhaseState for BiddingState {}
+
+impl BiddingState {
     pub fn new(board: Board) -> Self {
-        Bidding {
+        BiddingState {
             bid_manager: BidManager::new(board.dealer()),
             hand_manager: HandManager::new(),
             board,
@@ -27,15 +30,15 @@ impl Bidding {
     }
 }
 
-impl NextToPlay for GameData<Bidding> {
+impl NextToPlay for GameData<BiddingState> {
     fn next_to_play(&self) -> Seat {
         self.inner.bid_manager.next_to_play()
     }
 }
 
-impl GameData<Bidding> {
+impl GameData<BiddingState> {
     pub fn new(board: Board) -> Self {
-        let inner = Bidding::new(board);
+        let inner = BiddingState::new(board);
         GameData { inner }
     }
 
@@ -74,8 +77,8 @@ impl GameData<Bidding> {
         Ok(())
     }
 
-    pub fn move_to_opening_lead(self, contract: Contract) -> GameData<OpeningLead> {
-        let inner = OpeningLead {
+    pub fn move_to_opening_lead(self, contract: Contract) -> GameData<OpeningLeadState> {
+        let inner = OpeningLeadState {
             bids: self.inner.bid_manager.bid_line().clone(),
             trick_manager: TrickManager::new(contract.declarer + 1, contract.trump_suit()),
             hand_manager: self.inner.hand_manager,
@@ -86,8 +89,8 @@ impl GameData<Bidding> {
         GameData { inner }
     }
 
-    pub fn move_to_ended_without_card_play(self) -> GameData<Ended> {
-        let inner = Ended {
+    pub fn move_to_ended_without_card_play(self) -> GameData<EndedState> {
+        let inner = EndedState {
             bids: self.inner.bid_manager.bid_line(),
             tricks: Vec::new(),
             hands: self.inner.hand_manager,

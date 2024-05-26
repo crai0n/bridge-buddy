@@ -1,10 +1,10 @@
 use crate::error::BBError;
 use crate::primitives::deal::Seat;
-pub use bidding::Bidding;
-pub use card_play::CardPlay;
-pub use ended::Ended;
-pub use opening_lead::OpeningLead;
-pub use waiting_for_dummy::WaitingForDummy;
+pub use bidding::BiddingState;
+pub use card_play::CardPlayState;
+pub use ended::EndedState;
+pub use opening_lead::OpeningLeadState;
+pub use waiting_for_dummy::WaitingForDummyState;
 
 mod bidding;
 mod card_play;
