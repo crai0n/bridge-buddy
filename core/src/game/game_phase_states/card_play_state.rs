@@ -23,6 +23,10 @@ impl GamePhaseState for CardPlayState {
     fn implied_contract(&self) -> Option<Contract> {
         Some(self.contract)
     }
+
+    fn dealer(&self) -> Seat {
+        self.board.dealer()
+    }
 }
 
 impl NextToPlay for CardPlayState {

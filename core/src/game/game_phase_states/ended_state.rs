@@ -20,6 +20,9 @@ impl GamePhaseState for EndedState {
     fn implied_contract(&self) -> Option<Contract> {
         self.result.played_contract()
     }
+    fn dealer(&self) -> Seat {
+        self.board.dealer()
+    }
 }
 
 impl EndedState {

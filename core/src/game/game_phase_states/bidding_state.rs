@@ -22,6 +22,10 @@ impl GamePhaseState for BiddingState {
     fn implied_contract(&self) -> Option<Contract> {
         self.bid_manager.implied_contract()
     }
+
+    fn dealer(&self) -> Seat {
+        self.board.dealer()
+    }
 }
 
 impl BiddingState {

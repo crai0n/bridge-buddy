@@ -32,6 +32,7 @@ pub enum GameState {
 #[allow(dead_code)]
 pub trait GamePhaseState {
     fn implied_contract(&self) -> Option<Contract>;
+    fn dealer(&self) -> Seat;
 }
 
 impl GameState {

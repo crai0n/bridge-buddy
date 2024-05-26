@@ -3,7 +3,7 @@ use crate::engine::subjective_game_view::subjectiviser::Subjectiviser;
 use crate::error::BBError;
 use crate::game::game_phase_states::{BiddingState, CardPlayState, EndedState, NextToPlay};
 use crate::game::game_phase_states::{OpeningLeadState, WaitingForDummyState};
-use crate::game::GameState;
+use crate::game::{GamePhaseState, GameState};
 use crate::primitives::bid::{Bid, ContractBid};
 use crate::primitives::deal::Seat;
 use crate::primitives::{Card, Hand, Suit};
@@ -102,6 +102,16 @@ impl<'a> SubjectiveGameStateView<'a> {
     }
 }
 
+impl<'a, T> SubjectiveGamePhaseStateView<'a, T>
+where
+    T: GamePhaseState,
+{
+    pub fn dealer(&self) -> SubjectiveSeat {
+        let dealer = self.game_data.dealer();
+        self.subjectiviser.subjective_seat(dealer)
+    }
+}
+
 pub struct SubjectiveGamePhaseStateView<'a, T> {
     seat: Seat,
     subjectiviser: Subjectiviser,
@@ -147,11 +157,6 @@ impl<'a> SubjectiveGamePhaseStateView<'a, BiddingState> {
         self.game_data.declarer().map(|x| self.subjectiviser.subjective_seat(x))
     }
 
-    pub fn dealer(&self) -> SubjectiveSeat {
-        let dealer = self.game_data.board().dealer();
-        self.subjectiviser.subjective_seat(dealer)
-    }
-
     pub fn is_my_turn(&self) -> bool {
         self.game_data.next_to_play() == self.seat
     }
@@ -192,11 +197,6 @@ impl<'a> SubjectiveGamePhaseStateView<'a, OpeningLeadState> {
         self.subjectiviser.subjective_seat(declarer)
     }
 
-    pub fn dealer(&self) -> SubjectiveSeat {
-        let dealer = self.game_data.board().dealer();
-        self.subjectiviser.subjective_seat(dealer)
-    }
-
     pub fn is_my_turn(&self) -> bool {
         self.game_data.next_to_play() == self.seat
     }
@@ -235,11 +235,6 @@ impl<'a> SubjectiveGamePhaseStateView<'a, WaitingForDummyState> {
     pub fn declarer(&self) -> SubjectiveSeat {
         let declarer = self.game_data.declarer();
         self.subjectiviser.subjective_seat(declarer)
-    }
-
-    pub fn dealer(&self) -> SubjectiveSeat {
-        let dealer = self.game_data.board().dealer();
-        self.subjectiviser.subjective_seat(dealer)
     }
 
     pub fn is_my_turn(&self) -> bool {
@@ -294,11 +289,6 @@ impl<'a> SubjectiveGamePhaseStateView<'a, CardPlayState> {
         self.subjectiviser.subjective_seat(declarer)
     }
 
-    pub fn dealer(&self) -> SubjectiveSeat {
-        let dealer = self.game_data.board().dealer();
-        self.subjectiviser.subjective_seat(dealer)
-    }
-
     pub fn is_my_turn(&self) -> bool {
         self.game_data.next_to_play() == self.seat
     }
@@ -330,11 +320,6 @@ impl<'a> SubjectiveGamePhaseStateView<'a, EndedState> {
 
     pub fn declarer(&self) -> Option<SubjectiveSeat> {
         self.game_data.declarer().map(|x| self.subjectiviser.subjective_seat(x))
-    }
-
-    pub fn dealer(&self) -> SubjectiveSeat {
-        let dealer = self.game_data.board().dealer();
-        self.subjectiviser.subjective_seat(dealer)
     }
 
     pub fn is_my_turn(&self) -> bool {
