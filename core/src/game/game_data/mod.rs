@@ -1,7 +1,5 @@
 use crate::error::BBError;
-use crate::game::GamePhaseState;
 use crate::primitives::deal::Seat;
-use crate::primitives::Contract;
 pub use bidding::BiddingState;
 pub use card_play::CardPlayState;
 pub use ended::EndedState;
@@ -13,20 +11,6 @@ mod card_play;
 mod ended;
 mod opening_lead;
 mod waiting_for_dummy;
-
-#[derive(Debug, Clone)]
-pub struct GameData<Phase> {
-    pub inner: Phase,
-}
-
-impl<T> GamePhaseState for GameData<T>
-where
-    T: GamePhaseState,
-{
-    fn implied_contract(&self) -> Option<Contract> {
-        self.inner.implied_contract()
-    }
-}
 
 pub trait NextToPlay {
     fn next_to_play(&self) -> Seat;

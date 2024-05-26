@@ -2,7 +2,7 @@ use crate::error::BBError;
 use crate::game::bid_manager::BidManager;
 use crate::game::game_data::ended::EndedState;
 use crate::game::game_data::opening_lead::OpeningLeadState;
-use crate::game::game_data::{GameData, NextToPlay};
+use crate::game::game_data::NextToPlay;
 use crate::game::hand_manager::HandManager;
 use crate::game::trick_manager::TrickManager;
 use crate::game::GamePhaseState;
@@ -89,57 +89,8 @@ impl BiddingState {
     }
 }
 
-impl NextToPlay for GameData<BiddingState> {
-    fn next_to_play(&self) -> Seat {
-        self.inner.bid_manager.next_to_play()
-    }
-}
-
 impl NextToPlay for BiddingState {
     fn next_to_play(&self) -> Seat {
         self.bid_manager.next_to_play()
-    }
-}
-
-impl GameData<BiddingState> {
-    pub fn new(board: Board) -> Self {
-        let inner = BiddingState::new(board);
-        GameData { inner }
-    }
-
-    pub fn declarer(&self) -> Option<Seat> {
-        None
-    }
-
-    pub fn hand_of(&self, player: Seat) -> Result<Hand<13>, BBError> {
-        self.inner.hand_of(player)
-    }
-
-    pub fn bidding_has_ended(&self) -> bool {
-        self.inner.bidding_has_ended()
-    }
-
-    pub fn board(&self) -> Board {
-        self.inner.board()
-    }
-
-    pub fn validate_make_bid_event(&self, bid_event: BidEvent) -> Result<(), BBError> {
-        self.inner.validate_make_bid_event(bid_event)
-    }
-
-    pub fn process_disclose_hand_event(&mut self, event: DiscloseHandEvent) -> Result<(), BBError> {
-        self.inner.process_disclose_hand_event(event)
-    }
-
-    pub fn process_make_bid_event(&mut self, bid_event: BidEvent) -> Result<(), BBError> {
-        self.inner.process_make_bid_event(bid_event)
-    }
-
-    pub fn move_to_opening_lead(self, contract: Contract) -> OpeningLeadState {
-        self.inner.move_to_opening_lead(contract)
-    }
-
-    pub fn move_to_ended_without_card_play(self) -> EndedState {
-        self.inner.move_to_ended_without_card_play()
     }
 }

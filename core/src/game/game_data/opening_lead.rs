@@ -1,6 +1,6 @@
 use crate::error::BBError;
 use crate::game::game_data::waiting_for_dummy::WaitingForDummyState;
-use crate::game::game_data::{GameData, NextToPlay};
+use crate::game::game_data::NextToPlay;
 use crate::game::hand_manager::HandManager;
 use crate::game::trick_manager::TrickManager;
 use crate::game::GamePhaseState;
@@ -24,45 +24,9 @@ impl GamePhaseState for OpeningLeadState {
     }
 }
 
-impl NextToPlay for GameData<OpeningLeadState> {
-    fn next_to_play(&self) -> Seat {
-        self.inner.trick_manager.next_to_play()
-    }
-}
-
 impl NextToPlay for OpeningLeadState {
     fn next_to_play(&self) -> Seat {
         self.trick_manager.next_to_play()
-    }
-}
-
-impl GameData<OpeningLeadState> {
-    pub fn hand_of(&self, player: Seat) -> Result<Hand<13>, BBError> {
-        self.inner.hand_of(player)
-    }
-
-    pub fn declarer(&self) -> Seat {
-        self.inner.declarer()
-    }
-
-    pub fn process_play_card_event(&mut self, card_event: CardEvent) -> Result<(), BBError> {
-        self.inner.process_play_card_event(card_event)
-    }
-
-    pub fn validate_play_card_event(&self, card_event: CardEvent) -> Result<(), BBError> {
-        self.inner.validate_play_card_event(card_event)
-    }
-
-    pub fn player_violates_suit_rule(&self, player: Seat, card: Card) -> bool {
-        self.inner.player_violates_suit_rule(player, card)
-    }
-
-    pub fn move_to_waiting_for_dummy(self) -> WaitingForDummyState {
-        self.inner.move_to_waiting_for_dummy()
-    }
-
-    pub fn board(&self) -> Board {
-        self.inner.board()
     }
 }
 

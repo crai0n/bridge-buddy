@@ -1,6 +1,6 @@
 use crate::error::BBError;
 use crate::game::game_data::ended::EndedState;
-use crate::game::game_data::{GameData, NextToPlay};
+use crate::game::game_data::NextToPlay;
 use crate::game::hand_manager::HandManager;
 use crate::game::trick_manager::TrickManager;
 use crate::game::GamePhaseState;
@@ -25,52 +25,9 @@ impl GamePhaseState for CardPlayState {
     }
 }
 
-impl NextToPlay for GameData<CardPlayState> {
-    fn next_to_play(&self) -> Seat {
-        self.inner.trick_manager.next_to_play()
-    }
-}
 impl NextToPlay for CardPlayState {
     fn next_to_play(&self) -> Seat {
         self.trick_manager.next_to_play()
-    }
-}
-
-impl GameData<CardPlayState> {
-    pub fn hand_of(&self, player: Seat) -> Result<Hand<13>, BBError> {
-        self.inner.hand_of(player)
-    }
-
-    pub fn declarer(&self) -> Seat {
-        self.inner.declarer()
-    }
-
-    pub fn process_play_card_event(&mut self, card_event: CardEvent) -> Result<(), BBError> {
-        self.inner.process_play_card_event(card_event)
-    }
-
-    pub fn validate_play_card_event(&self, card_event: CardEvent) -> Result<(), BBError> {
-        self.inner.validate_play_card_event(card_event)
-    }
-
-    pub fn validate_suit_rule(&self, player: Seat, card: Card) -> Result<(), BBError> {
-        self.inner.validate_suit_rule(player, card)
-    }
-
-    pub fn card_play_has_ended(&self) -> bool {
-        self.inner.card_play_has_ended()
-    }
-
-    pub fn move_from_card_play_to_ended(self) -> EndedState {
-        self.inner.move_from_card_play_to_ended()
-    }
-
-    pub fn calculate_game_result(&self) -> GameResult {
-        self.inner.calculate_game_result()
-    }
-
-    pub fn board(&self) -> Board {
-        self.inner.board()
     }
 }
 

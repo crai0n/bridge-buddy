@@ -1,5 +1,5 @@
 use crate::error::BBError;
-use crate::game::game_data::{CardPlayState, GameData, NextToPlay};
+use crate::game::game_data::{CardPlayState, NextToPlay};
 use crate::game::hand_manager::HandManager;
 use crate::game::trick_manager::TrickManager;
 use crate::game::GamePhaseState;
@@ -24,41 +24,9 @@ impl GamePhaseState for WaitingForDummyState {
     }
 }
 
-impl NextToPlay for GameData<WaitingForDummyState> {
-    fn next_to_play(&self) -> Seat {
-        self.inner.next_to_play()
-    }
-}
-
 impl NextToPlay for WaitingForDummyState {
     fn next_to_play(&self) -> Seat {
         self.trick_manager.next_to_play()
-    }
-}
-
-impl GameData<WaitingForDummyState> {
-    pub fn board(&self) -> Board {
-        self.inner.board()
-    }
-
-    pub fn declarer(&self) -> Seat {
-        self.inner.declarer()
-    }
-
-    pub fn dummy(&self) -> Seat {
-        self.inner.dummy()
-    }
-
-    pub fn hand_of(&self, player: Seat) -> Result<Hand<13>, BBError> {
-        self.inner.hand_of(player)
-    }
-
-    pub fn process_dummy_uncovered_event(&mut self, event: DummyUncoveredEvent) -> Result<(), BBError> {
-        self.inner.process_dummy_uncovered_event(event)
-    }
-
-    pub fn move_to_card_play(self) -> CardPlayState {
-        self.inner.move_to_card_play()
     }
 }
 

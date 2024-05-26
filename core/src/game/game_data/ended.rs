@@ -1,5 +1,4 @@
 use crate::error::BBError;
-use crate::game::game_data::GameData;
 use crate::game::hand_manager::HandManager;
 use crate::game::GamePhaseState;
 use crate::primitives::bid_line::BidLine;
@@ -20,20 +19,6 @@ pub struct EndedState {
 impl GamePhaseState for EndedState {
     fn implied_contract(&self) -> Option<Contract> {
         self.result.played_contract()
-    }
-}
-
-impl GameData<EndedState> {
-    pub fn hand_of(&self, player: Seat) -> Result<Hand<13>, BBError> {
-        self.inner.hand_of(player)
-    }
-
-    pub fn declarer(&self) -> Option<Seat> {
-        self.inner.declarer()
-    }
-
-    pub fn board(&self) -> Board {
-        self.inner.board()
     }
 }
 
