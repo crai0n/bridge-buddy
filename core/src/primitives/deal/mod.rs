@@ -10,10 +10,13 @@ pub use seat::Seat;
 use std::cmp::max;
 use std::fmt::{Display, Formatter};
 
+use crate::primitives::card::Rank;
+use crate::primitives::{Card, Suit};
 pub use vulnerability::Vulnerability;
 
 pub mod axis;
 pub mod board;
+mod choose;
 pub mod deck;
 pub mod hand;
 pub mod seat;
@@ -77,11 +80,103 @@ impl<const N: usize> Deal<N> {
 }
 
 impl Deal<13> {
-    pub fn from_andrews_page(_page: u128) -> Option<Self> {
+    pub fn from_andrews_page(_page: u128) -> Self {
         // This calculates the deal according to Thomas Andrews' Algorithm
         // https://bridge.thomasoandrews.com/bridge/impossible/algorithm.html
 
-        unimplemented!()
+        // const N_PAGES: u128 = 53644737765488792839237440000;
+        // const NORTH_MAX: u128 = 635013559600; // 52 choose 13
+        const EAST_MAX: u128 = 8122425444; // 39 choose 13
+        const SOUTH_MAX: u128 = 10400600; // 26 choose 13
+
+        let s_index = _page % SOUTH_MAX;
+
+        let temp = _page / SOUTH_MAX;
+        let e_index = temp % EAST_MAX;
+
+        let n_index = temp / EAST_MAX;
+
+        let n_seq = choose::index_to_sequence(n_index);
+
+        let e_seq = choose::index_to_sequence(e_index);
+
+        let s_seq = choose::index_to_sequence(s_index);
+
+        let mut result = [Seat::West; 52];
+
+        let [mut index_n, mut count_n, mut index_e, mut count_e, mut index_s, mut count_s] = [0; 6];
+
+        for res in &mut result {
+            index_n += 1;
+            if count_n < 13 && n_seq[count_n] == index_n as u8 - 1 {
+                *res = Seat::North;
+                count_n += 1;
+                continue;
+            }
+
+            index_e += 1;
+            if count_e < 13 && e_seq[count_e] == index_e as u8 - 1 {
+                *res = Seat::East;
+                count_e += 1;
+                continue;
+            }
+
+            index_s += 1;
+            if count_s < 13 && s_seq[count_s] == index_s as u8 - 1 {
+                *res = Seat::South;
+                count_s += 1;
+                continue;
+            }
+        }
+
+        let n_cards: [Card; 13] = result
+            .iter()
+            .enumerate()
+            .filter(|(_, seat)| **seat == Seat::North)
+            .map(|(i, _)| Self::u8_to_card(i as u8))
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();
+
+        let s_cards: [Card; 13] = result
+            .iter()
+            .enumerate()
+            .filter(|(_, seat)| **seat == Seat::South)
+            .map(|(i, _)| Self::u8_to_card(i as u8))
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();
+
+        let e_cards: [Card; 13] = result
+            .iter()
+            .enumerate()
+            .filter(|(_, seat)| **seat == Seat::East)
+            .map(|(i, _)| Self::u8_to_card(i as u8))
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();
+
+        let w_cards: [Card; 13] = result
+            .iter()
+            .enumerate()
+            .filter(|(_, seat)| **seat == Seat::West)
+            .map(|(i, _)| Self::u8_to_card(i as u8))
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();
+
+        let n_hand = Hand::<13>::from_cards(&n_cards).unwrap();
+        let s_hand = Hand::<13>::from_cards(&s_cards).unwrap();
+        let e_hand = Hand::<13>::from_cards(&e_cards).unwrap();
+        let w_hand = Hand::<13>::from_cards(&w_cards).unwrap();
+
+        Deal::<13>::from_hands([n_hand, e_hand, s_hand, w_hand])
+    }
+
+    fn u8_to_card(n: u8) -> Card {
+        let suit = Suit::from(3 - (n as u16 / 13));
+        let rank = Rank::try_from(12 - (n as u32 % 13)).unwrap();
+        Card { suit, rank }
     }
 
     pub fn from_pavlicek_page(_page: u128) -> Option<Self> {
@@ -209,7 +304,7 @@ mod tests {
 
         let expected = Deal::from_hands([north, east, south, west]);
 
-        let deal = Deal::from_andrews_page(page).unwrap();
+        let deal = Deal::from_andrews_page(page);
 
         assert_eq!(deal, expected)
     }
