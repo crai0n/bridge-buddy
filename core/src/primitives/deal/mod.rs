@@ -76,6 +76,22 @@ impl<const N: usize> Deal<N> {
     }
 }
 
+impl Deal<13> {
+    pub fn from_andrews_page(_page: u128) -> Option<Self> {
+        // This calculates the deal according to Thomas Andrews' Algorithm
+        // https://bridge.thomasoandrews.com/bridge/impossible/algorithm.html
+
+        unimplemented!()
+    }
+
+    pub fn from_pavlicek_page(_page: u128) -> Option<Self> {
+        // This calculates the deal according to Richard Pavlicek's Algorithm
+        // http://www.rpbridge.net/7z68.htm
+
+        unimplemented!()
+    }
+}
+
 impl<const N: usize> Display for Deal<N> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let max_lengths: [usize; 4] = SEAT_ARRAY.map(|seat| {
@@ -140,7 +156,7 @@ impl<const N: usize> Default for Deal<N> {
 
 #[cfg(test)]
 mod tests {
-    use crate::primitives::{Card, Deal};
+    use crate::primitives::{Card, Deal, Hand};
     use std::str::FromStr;
     use test_case::test_case;
 
@@ -168,5 +184,33 @@ mod tests {
     fn display() {
         let deal = Deal::<13>::random();
         println!("{}", deal)
+    }
+
+    #[test_case(1, "S:AKQJT98765432", "H:AKQJT98765432", "D:AKQJT98765432", "C:AKQJT98765432")]
+    #[test_case(
+        10,
+        "S:AKQJT98765432",
+        "H:AKQJT98765432",
+        "D:AKQJ98765432, C:A",
+        "C:KQJT98765432, D:T"
+    )]
+    #[test_case(
+        1000000000000000000000000000,
+        "♠:KT862,♥:J62,♦:9632,♣:A",
+        "♠:A93,♥:K94,♦:J4,♣:K9765",
+        "♠:4,♥:A5,♦:AKT75,♣:QJT43",
+        "♠:QJ75,♥:QT873,♦:Q8,♣:82"
+    )]
+    fn from_andrews(page: u128, north: &str, east: &str, south: &str, west: &str) {
+        let north = Hand::<13>::from_str(north).unwrap();
+        let east = Hand::<13>::from_str(east).unwrap();
+        let south = Hand::<13>::from_str(south).unwrap();
+        let west = Hand::<13>::from_str(west).unwrap();
+
+        let expected = Deal::from_hands([north, east, south, west]);
+
+        let deal = Deal::from_andrews_page(page).unwrap();
+
+        assert_eq!(deal, expected)
     }
 }
