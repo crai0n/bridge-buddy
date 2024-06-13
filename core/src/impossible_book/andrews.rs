@@ -1,6 +1,7 @@
 use crate::impossible_book;
 use crate::impossible_book::helper::u8_to_card;
 use crate::impossible_book::{helper, N_PAGES};
+use crate::primitives::deal::seat::SEAT_ARRAY;
 use crate::primitives::deal::Seat;
 use crate::primitives::{Deal, Hand};
 
@@ -100,30 +101,23 @@ fn mark_cards(sequences: [[u8; 13]; 3]) -> [Seat; 52] {
     // Creates a list of the Form NSENWNWNENSNE...NSW
     // Describing which player gets each card from a sorted deck
     let mut result = [Seat::West; 52];
-    let [n_seq, e_seq, s_seq] = sequences;
 
-    let [mut index_n, mut count_n, mut index_e, mut count_e, mut index_s, mut count_s] = [0; 6];
+    let mut counts = [0; 3];
+    let mut cards_seen_by_player = [0; 3];
 
-    for res in &mut result {
-        index_n += 1;
-        if count_n < 13 && n_seq[count_n] == index_n as u8 - 1 {
-            *res = Seat::North;
-            count_n += 1;
-            continue;
-        }
+    for owner in &mut result {
+        for player_index in 0..3 {
+            cards_seen_by_player[player_index] += 1; // skip this card next
 
-        index_e += 1;
-        if count_e < 13 && e_seq[count_e] == index_e as u8 - 1 {
-            *res = Seat::East;
-            count_e += 1;
-            continue;
-        }
-
-        index_s += 1;
-        if count_s < 13 && s_seq[count_s] == index_s as u8 - 1 {
-            *res = Seat::South;
-            count_s += 1;
-            continue;
+            if counts[player_index] < 13 {
+                let player_should_get_this_card =
+                    sequences[player_index][counts[player_index]] == cards_seen_by_player[player_index] as u8 - 1;
+                if player_should_get_this_card {
+                    *owner = SEAT_ARRAY[player_index];
+                    counts[player_index] += 1;
+                    break;
+                }
+            }
         }
     }
     result
