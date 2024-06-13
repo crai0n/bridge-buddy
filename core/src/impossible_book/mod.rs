@@ -35,8 +35,7 @@ pub fn find_internal_page_number_for_deal_in_andrews_book(deal: Deal<13>) -> u12
         indexes[0], indexes[1], indexes[2]
     );
 
-    let page_number = indexes_to_page(indexes);
-    page_number
+    indexes_to_page(indexes)
 }
 
 pub fn find_human_page_number_for_deal_in_andrews_book(deal: Deal<13>) -> u128 {
@@ -133,8 +132,7 @@ fn distribute_cards(result: [Seat; 52]) -> [Hand<13>; 4] {
 
     let cards = values.map(|x| x.map(u8_to_card));
 
-    let hands = cards.map(|c| Hand::<13>::from_cards(&c).unwrap());
-    hands
+    cards.map(|c| Hand::<13>::from_cards(&c).unwrap())
 }
 
 fn mark_cards(sequences: [[u8; 13]; 3]) -> [Seat; 52] {
@@ -204,38 +202,38 @@ pub fn deal_from_internal_pavlicek_page(page: u128) -> Deal<13> {
 
     assert!(page < N_PAGES);
 
-    let mut k = N_PAGES;
+    let mut deals_remaining = N_PAGES;
     let mut i = page;
 
-    let mut counts = [13usize; 4];
+    let mut vacant_places = [13usize; 4];
     let mut values = [[0; 13]; 4];
 
     for c in (1..=52usize).rev() {
-        let mut x = k * counts[0] as u128 / c as u128;
-        if i < x {
-            values[0][counts[0] - 1] = 52 - c as u8;
-            counts[0] -= 1;
+        let mut part_size = deals_remaining * vacant_places[0] as u128 / c as u128;
+        if i < part_size {
+            values[0][vacant_places[0] - 1] = 52 - c as u8;
+            vacant_places[0] -= 1;
         } else {
-            i -= x;
-            x = k * counts[1] as u128 / c as u128;
-            if i < x {
-                values[1][counts[1] - 1] = 52 - c as u8;
-                counts[1] -= 1;
+            i -= part_size;
+            part_size = deals_remaining * vacant_places[1] as u128 / c as u128;
+            if i < part_size {
+                values[1][vacant_places[1] - 1] = 52 - c as u8;
+                vacant_places[1] -= 1;
             } else {
-                i -= x;
-                x = k * counts[2] as u128 / c as u128;
-                if i < x {
-                    values[2][counts[2] - 1] = 52 - c as u8;
-                    counts[2] -= 1;
+                i -= part_size;
+                part_size = deals_remaining * vacant_places[2] as u128 / c as u128;
+                if i < part_size {
+                    values[2][vacant_places[2] - 1] = 52 - c as u8;
+                    vacant_places[2] -= 1;
                 } else {
-                    i -= x;
-                    x = k * counts[3] as u128 / c as u128;
-                    values[3][counts[3] - 1] = 52 - c as u8;
-                    counts[3] -= 1;
+                    i -= part_size;
+                    part_size = deals_remaining * vacant_places[3] as u128 / c as u128;
+                    values[3][vacant_places[3] - 1] = 52 - c as u8;
+                    vacant_places[3] -= 1;
                 }
             }
         }
-        k = x;
+        deals_remaining = part_size;
     }
 
     let cards = values.map(|x| x.map(u8_to_card));
@@ -248,35 +246,38 @@ pub fn deal_from_internal_pavlicek_page(page: u128) -> Deal<13> {
 pub fn find_internal_page_number_for_deal_in_pavliceks_book(deal: Deal<13>) -> u128 {
     let marked_deck = create_marked_deck_from_deal(deal);
 
-    let mut counts = [13u8; 4];
-    let mut k = N_PAGES;
-    let mut i = 0;
+    let mut vacant_places = [13u8; 4];
+    let mut possible_pages = N_PAGES;
+    let mut page_number = 0;
 
     for (j, seat) in marked_deck.iter().enumerate() {
-        let c = 52 - j;
-        let mut x = k * counts[0] as u128 / c as u128;
+        let card_index = 52 - j;
+        let mut part_size = possible_pages * vacant_places[0] as u128 / card_index as u128;
         if *seat == Seat::North {
-            counts[0] -= 1;
+            vacant_places[0] -= 1;
+            possible_pages = part_size;
         } else {
-            i += x;
-            x = k * counts[1] as u128 / c as u128;
+            page_number += part_size;
+            part_size = possible_pages * vacant_places[1] as u128 / card_index as u128;
             if *seat == Seat::East {
-                counts[1] -= 1;
+                vacant_places[1] -= 1;
+                possible_pages = part_size;
             } else {
-                i += x;
-                x = k * counts[2] as u128 / c as u128;
+                page_number += part_size;
+                part_size = possible_pages * vacant_places[2] as u128 / card_index as u128;
                 if *seat == Seat::South {
-                    counts[2] -= 1;
+                    vacant_places[2] -= 1;
+                    possible_pages = part_size;
                 } else {
-                    i += x;
-                    x = k * counts[3] as u128 / c as u128;
-                    counts[3] -= 1;
+                    page_number += part_size;
+                    part_size = possible_pages * vacant_places[3] as u128 / card_index as u128;
+                    vacant_places[3] -= 1;
+                    possible_pages = part_size;
                 }
             }
         }
-        k = x;
     }
-    i
+    page_number
 }
 
 pub fn choose(n: u8, k: u8) -> u128 {
