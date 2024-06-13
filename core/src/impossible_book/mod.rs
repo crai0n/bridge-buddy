@@ -43,6 +43,10 @@ pub fn find_human_page_number_for_deal_in_andrews_book(deal: Deal<13>) -> u128 {
     find_internal_page_number_for_deal_in_andrews_book(deal) + 1
 }
 
+pub fn find_human_page_number_for_deal_in_pavliceks_book(deal: Deal<13>) -> u128 {
+    find_internal_page_number_for_deal_in_pavliceks_book(deal) + 1
+}
+
 fn create_sequences_from_marked_deck(marked_deck: [Seat; 52]) -> [[usize; 13]; 3] {
     let mut sequences = [[0; 13]; 3];
     let mut counts = [0; 3];
@@ -189,11 +193,90 @@ fn u8_to_card(n: u8) -> Card {
     Card { suit, rank }
 }
 
-pub fn pavlicek_page(_page: u128) -> Option<Deal<13>> {
+pub fn deal_from_human_pavlicek_page(page: u128) -> Deal<13> {
+    assert!(page > 0);
+    deal_from_internal_pavlicek_page(page - 1)
+}
+
+pub fn deal_from_internal_pavlicek_page(page: u128) -> Deal<13> {
     // This calculates the deal according to Richard Pavlicek's Algorithm
     // http://www.rpbridge.net/7z68.htm
 
-    unimplemented!()
+    assert!(page < N_PAGES);
+
+    let mut k = N_PAGES;
+    let mut i = page;
+
+    let mut counts = [13usize; 4];
+    let mut values = [[0; 13]; 4];
+
+    for c in (1..=52usize).rev() {
+        let mut x = k * counts[0] as u128 / c as u128;
+        if i < x {
+            values[0][counts[0] - 1] = 52 - c as u8;
+            counts[0] -= 1;
+        } else {
+            i -= x;
+            x = k * counts[1] as u128 / c as u128;
+            if i < x {
+                values[1][counts[1] - 1] = 52 - c as u8;
+                counts[1] -= 1;
+            } else {
+                i -= x;
+                x = k * counts[2] as u128 / c as u128;
+                if i < x {
+                    values[2][counts[2] - 1] = 52 - c as u8;
+                    counts[2] -= 1;
+                } else {
+                    i -= x;
+                    x = k * counts[3] as u128 / c as u128;
+                    values[3][counts[3] - 1] = 52 - c as u8;
+                    counts[3] -= 1;
+                }
+            }
+        }
+        k = x;
+    }
+
+    let cards = values.map(|x| x.map(u8_to_card));
+
+    let hands = cards.map(|c| Hand::<13>::from_cards(&c).unwrap());
+
+    Deal::<13>::from_hands(hands)
+}
+
+pub fn find_internal_page_number_for_deal_in_pavliceks_book(deal: Deal<13>) -> u128 {
+    let marked_deck = create_marked_deck_from_deal(deal);
+
+    let mut counts = [13u8; 4];
+    let mut k = N_PAGES;
+    let mut i = 0;
+
+    for (j, seat) in marked_deck.iter().enumerate() {
+        let c = 52 - j;
+        let mut x = k * counts[0] as u128 / c as u128;
+        if *seat == Seat::North {
+            counts[0] -= 1;
+        } else {
+            i += x;
+            x = k * counts[1] as u128 / c as u128;
+            if *seat == Seat::East {
+                counts[1] -= 1;
+            } else {
+                i += x;
+                x = k * counts[2] as u128 / c as u128;
+                if *seat == Seat::South {
+                    counts[2] -= 1;
+                } else {
+                    i += x;
+                    x = k * counts[3] as u128 / c as u128;
+                    counts[3] -= 1;
+                }
+            }
+        }
+        k = x;
+    }
+    i
 }
 
 pub fn choose(n: u8, k: u8) -> u128 {
@@ -262,7 +345,7 @@ mod test {
         "♠:4,♥:A5,♦:AKT75,♣:QJT43",
         "♠:QJ75,♥:QT873,♦:Q8,♣:82"
     )]
-    fn from_andrews(page: u128, north: &str, east: &str, south: &str, west: &str) {
+    fn andrews_book(page: u128, north: &str, east: &str, south: &str, west: &str) {
         let north = Hand::<13>::from_str(north).unwrap();
         let east = Hand::<13>::from_str(east).unwrap();
         let south = Hand::<13>::from_str(south).unwrap();
@@ -273,6 +356,37 @@ mod test {
         let deal = super::deal_from_human_andrews_page(page);
 
         let constructed_page = super::find_human_page_number_for_deal_in_andrews_book(deal);
+
+        assert_eq!(deal, expected);
+        assert_eq!(constructed_page, page);
+    }
+
+    #[test_case(1, "S:AKQJT98765432", "H:AKQJT98765432", "D:AKQJT98765432", "C:AKQJT98765432")]
+    #[test_case(
+        10,
+        "S:AKQJT98765432",
+        "H:AKQJT98765432",
+        "D:AKQJT9876543, C:6",
+        "C:AKQJT9875432, D:2"
+    )]
+    #[test_case(
+        1000000000000000000000000000,
+        "♠:AK72,♥:Q543,♦:T863,♣:8",
+        "♠:QJ84,♥:KT762,♦:AK4,♣:7",
+        "♠:T953,♥:9,♦:972,♣:QJ643",
+        "♠:6,♥:AJ8,♦:QJ5,♣:AKT952"
+    )]
+    fn pavliceks_book(page: u128, north: &str, east: &str, south: &str, west: &str) {
+        let north = Hand::<13>::from_str(north).unwrap();
+        let east = Hand::<13>::from_str(east).unwrap();
+        let south = Hand::<13>::from_str(south).unwrap();
+        let west = Hand::<13>::from_str(west).unwrap();
+
+        let expected = Deal::from_hands([north, east, south, west]);
+
+        let deal = super::deal_from_human_pavlicek_page(page);
+
+        let constructed_page = super::find_human_page_number_for_deal_in_pavliceks_book(deal);
 
         assert_eq!(deal, expected);
         assert_eq!(constructed_page, page);
