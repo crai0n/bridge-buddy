@@ -4,6 +4,7 @@ use crate::primitives::card::Rank;
 use crate::primitives::deal::seat::SEAT_ARRAY;
 use crate::primitives::deal::Seat;
 use crate::primitives::{Card, Deal, Hand, Suit};
+use itertools::Itertools;
 
 const N_PAGES: u128 = 53644737765488792839237440000;
 const NORTH_MAX: u128 = 635013559600; // 52 choose 13
@@ -210,36 +211,39 @@ pub fn deal_from_internal_pavlicek_page(page: u128) -> Deal<13> {
 
     for cards_left in (1..=52usize).rev() {
         let card_index = 52 - cards_left;
-        let deals_where_north_owns_this_card = remaining_possible_deals * vacant_places[0] as u128 / cards_left as u128;
-        if relative_deal_index < deals_where_north_owns_this_card {
+        let deals_where_card_is_owned_by_player =
+            vacant_places.map(|vp| remaining_possible_deals * vp as u128 / cards_left as u128);
+
+        let deals_where_card_is_owned_including_player: [u128; 4] = deals_where_card_is_owned_by_player
+            .iter()
+            .scan(0, |state, v| {
+                *state += v;
+                Some(*state)
+            })
+            .collect_vec()
+            .try_into()
+            .unwrap();
+
+        if relative_deal_index < deals_where_card_is_owned_including_player[0] {
             card_values[0][vacant_places[0] - 1] = card_index as u8;
             vacant_places[0] -= 1;
-            remaining_possible_deals = deals_where_north_owns_this_card;
+            relative_deal_index -= 0;
+            remaining_possible_deals = deals_where_card_is_owned_by_player[0];
+        } else if relative_deal_index < deals_where_card_is_owned_including_player[1] {
+            card_values[1][vacant_places[1] - 1] = card_index as u8;
+            vacant_places[1] -= 1;
+            relative_deal_index -= deals_where_card_is_owned_including_player[0];
+            remaining_possible_deals = deals_where_card_is_owned_by_player[1];
+        } else if relative_deal_index < deals_where_card_is_owned_including_player[2] {
+            card_values[2][vacant_places[2] - 1] = card_index as u8;
+            vacant_places[2] -= 1;
+            relative_deal_index -= deals_where_card_is_owned_including_player[1];
+            remaining_possible_deals = deals_where_card_is_owned_by_player[2];
         } else {
-            relative_deal_index -= deals_where_north_owns_this_card;
-            let deals_where_east_owns_this_card =
-                remaining_possible_deals * vacant_places[1] as u128 / cards_left as u128;
-            if relative_deal_index < deals_where_east_owns_this_card {
-                card_values[1][vacant_places[1] - 1] = card_index as u8;
-                vacant_places[1] -= 1;
-                remaining_possible_deals = deals_where_east_owns_this_card;
-            } else {
-                relative_deal_index -= deals_where_east_owns_this_card;
-                let deals_where_south_owns_this_card =
-                    remaining_possible_deals * vacant_places[2] as u128 / cards_left as u128;
-                if relative_deal_index < deals_where_south_owns_this_card {
-                    card_values[2][vacant_places[2] - 1] = card_index as u8;
-                    vacant_places[2] -= 1;
-                    remaining_possible_deals = deals_where_south_owns_this_card;
-                } else {
-                    relative_deal_index -= deals_where_south_owns_this_card;
-                    let deals_where_west_owns_this_card =
-                        remaining_possible_deals * vacant_places[3] as u128 / cards_left as u128;
-                    card_values[3][vacant_places[3] - 1] = card_index as u8;
-                    vacant_places[3] -= 1;
-                    remaining_possible_deals = deals_where_west_owns_this_card;
-                }
-            }
+            card_values[3][vacant_places[3] - 1] = card_index as u8;
+            vacant_places[3] -= 1;
+            relative_deal_index -= deals_where_card_is_owned_including_player[2];
+            remaining_possible_deals = deals_where_card_is_owned_by_player[3];
         }
     }
 
