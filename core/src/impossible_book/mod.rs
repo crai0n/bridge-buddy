@@ -220,27 +220,15 @@ pub fn deal_from_internal_pavlicek_page(page: u128) -> Deal<13> {
                 deals_where_card_is_before_player[i - 1] + deals_where_card_is_owned_by_player[i - 1]
         }
 
-        if relative_deal_index < deals_where_card_is_before_player[1] {
-            card_values[0][vacant_places[0] - 1] = card_index as u8;
-            vacant_places[0] -= 1;
-            relative_deal_index -= deals_where_card_is_before_player[0];
-            remaining_possible_deals = deals_where_card_is_owned_by_player[0];
-        } else if relative_deal_index < deals_where_card_is_before_player[2] {
-            card_values[1][vacant_places[1] - 1] = card_index as u8;
-            vacant_places[1] -= 1;
-            relative_deal_index -= deals_where_card_is_before_player[1];
-            remaining_possible_deals = deals_where_card_is_owned_by_player[1];
-        } else if relative_deal_index < deals_where_card_is_before_player[3] {
-            card_values[2][vacant_places[2] - 1] = card_index as u8;
-            vacant_places[2] -= 1;
-            relative_deal_index -= deals_where_card_is_before_player[2];
-            remaining_possible_deals = deals_where_card_is_owned_by_player[2];
-        } else {
-            card_values[3][vacant_places[3] - 1] = card_index as u8;
-            vacant_places[3] -= 1;
-            relative_deal_index -= deals_where_card_is_before_player[3];
-            remaining_possible_deals = deals_where_card_is_owned_by_player[3];
-        }
+        let player_who_gets_this_card = deals_where_card_is_before_player
+            .iter()
+            .rposition(|val| *val <= relative_deal_index)
+            .unwrap();
+
+        card_values[player_who_gets_this_card][vacant_places[player_who_gets_this_card] - 1] = card_index as u8;
+        vacant_places[player_who_gets_this_card] -= 1;
+        relative_deal_index -= deals_where_card_is_before_player[player_who_gets_this_card];
+        remaining_possible_deals = deals_where_card_is_owned_by_player[player_who_gets_this_card];
     }
 
     let cards = card_values.map(|x| x.map(u8_to_card));
