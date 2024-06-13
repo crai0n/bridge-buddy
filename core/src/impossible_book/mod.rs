@@ -202,41 +202,48 @@ pub fn deal_from_internal_pavlicek_page(page: u128) -> Deal<13> {
 
     assert!(page < N_PAGES);
 
-    let mut deals_remaining = N_PAGES;
-    let mut i = page;
+    let mut remaining_possible_deals = N_PAGES;
+    let mut relative_deal_index = page;
 
     let mut vacant_places = [13usize; 4];
-    let mut values = [[0; 13]; 4];
+    let mut card_values = [[0; 13]; 4];
 
-    for c in (1..=52usize).rev() {
-        let mut part_size = deals_remaining * vacant_places[0] as u128 / c as u128;
-        if i < part_size {
-            values[0][vacant_places[0] - 1] = 52 - c as u8;
+    for cards_left in (1..=52usize).rev() {
+        let card_index = 52 - cards_left;
+        let deals_where_north_owns_this_card = remaining_possible_deals * vacant_places[0] as u128 / cards_left as u128;
+        if relative_deal_index < deals_where_north_owns_this_card {
+            card_values[0][vacant_places[0] - 1] = card_index as u8;
             vacant_places[0] -= 1;
+            remaining_possible_deals = deals_where_north_owns_this_card;
         } else {
-            i -= part_size;
-            part_size = deals_remaining * vacant_places[1] as u128 / c as u128;
-            if i < part_size {
-                values[1][vacant_places[1] - 1] = 52 - c as u8;
+            relative_deal_index -= deals_where_north_owns_this_card;
+            let deals_where_east_owns_this_card =
+                remaining_possible_deals * vacant_places[1] as u128 / cards_left as u128;
+            if relative_deal_index < deals_where_east_owns_this_card {
+                card_values[1][vacant_places[1] - 1] = card_index as u8;
                 vacant_places[1] -= 1;
+                remaining_possible_deals = deals_where_east_owns_this_card;
             } else {
-                i -= part_size;
-                part_size = deals_remaining * vacant_places[2] as u128 / c as u128;
-                if i < part_size {
-                    values[2][vacant_places[2] - 1] = 52 - c as u8;
+                relative_deal_index -= deals_where_east_owns_this_card;
+                let deals_where_south_owns_this_card =
+                    remaining_possible_deals * vacant_places[2] as u128 / cards_left as u128;
+                if relative_deal_index < deals_where_south_owns_this_card {
+                    card_values[2][vacant_places[2] - 1] = card_index as u8;
                     vacant_places[2] -= 1;
+                    remaining_possible_deals = deals_where_south_owns_this_card;
                 } else {
-                    i -= part_size;
-                    part_size = deals_remaining * vacant_places[3] as u128 / c as u128;
-                    values[3][vacant_places[3] - 1] = 52 - c as u8;
+                    relative_deal_index -= deals_where_south_owns_this_card;
+                    let deals_where_west_owns_this_card =
+                        remaining_possible_deals * vacant_places[3] as u128 / cards_left as u128;
+                    card_values[3][vacant_places[3] - 1] = card_index as u8;
                     vacant_places[3] -= 1;
+                    remaining_possible_deals = deals_where_west_owns_this_card;
                 }
             }
         }
-        deals_remaining = part_size;
     }
 
-    let cards = values.map(|x| x.map(u8_to_card));
+    let cards = card_values.map(|x| x.map(u8_to_card));
 
     let hands = cards.map(|c| Hand::<13>::from_cards(&c).unwrap());
 
@@ -247,32 +254,35 @@ pub fn find_internal_page_number_for_deal_in_pavliceks_book(deal: Deal<13>) -> u
     let marked_deck = create_marked_deck_from_deal(deal);
 
     let mut vacant_places = [13u8; 4];
-    let mut possible_pages = N_PAGES;
+    let mut remaining_possible_deals = N_PAGES;
     let mut page_number = 0;
 
-    for (j, seat) in marked_deck.iter().enumerate() {
-        let card_index = 52 - j;
-        let mut part_size = possible_pages * vacant_places[0] as u128 / card_index as u128;
+    for (card_index, seat) in marked_deck.iter().enumerate() {
+        let cards_left = 52 - card_index;
+        let deals_where_north_owns_this_card = remaining_possible_deals * vacant_places[0] as u128 / cards_left as u128;
         if *seat == Seat::North {
             vacant_places[0] -= 1;
-            possible_pages = part_size;
+            remaining_possible_deals = deals_where_north_owns_this_card;
         } else {
-            page_number += part_size;
-            part_size = possible_pages * vacant_places[1] as u128 / card_index as u128;
+            page_number += deals_where_north_owns_this_card; // n doesn't own this card
+            let deals_where_east_owns_this_card =
+                remaining_possible_deals * vacant_places[1] as u128 / cards_left as u128;
             if *seat == Seat::East {
                 vacant_places[1] -= 1;
-                possible_pages = part_size;
+                remaining_possible_deals = deals_where_east_owns_this_card;
             } else {
-                page_number += part_size;
-                part_size = possible_pages * vacant_places[2] as u128 / card_index as u128;
+                page_number += deals_where_east_owns_this_card;
+                let deals_where_south_owns_this_card =
+                    remaining_possible_deals * vacant_places[2] as u128 / cards_left as u128;
                 if *seat == Seat::South {
                     vacant_places[2] -= 1;
-                    possible_pages = part_size;
+                    remaining_possible_deals = deals_where_south_owns_this_card;
                 } else {
-                    page_number += part_size;
-                    part_size = possible_pages * vacant_places[3] as u128 / card_index as u128;
+                    page_number += deals_where_south_owns_this_card;
+                    let deals_where_west_owns_this_card =
+                        remaining_possible_deals * vacant_places[3] as u128 / cards_left as u128;
                     vacant_places[3] -= 1;
-                    possible_pages = part_size;
+                    remaining_possible_deals = deals_where_west_owns_this_card;
                 }
             }
         }
