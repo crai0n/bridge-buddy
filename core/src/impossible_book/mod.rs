@@ -9,10 +9,47 @@ pub use pavlicek::*;
 
 pub const N_PAGES: u128 = 53644737765488792839237440000;
 
+#[derive(Eq, PartialEq, Debug, Copy, Clone)]
+pub struct HumanPageNumber(u128);
+
+impl HumanPageNumber {
+    pub fn new(n: u128) -> Self {
+        match n {
+            1..=N_PAGES => Self(n),
+            _ => panic!("This page number does not exist!"),
+        }
+    }
+}
+
+#[derive(Eq, PartialEq, Debug, Copy, Clone)]
+pub struct InternalPageNumber(u128);
+
+impl InternalPageNumber {
+    pub fn new(n: u128) -> Self {
+        const MAX: u128 = N_PAGES - 1;
+        match n {
+            0..=MAX => Self(n),
+            _ => panic!("This page number does not exist!"),
+        }
+    }
+}
+
+impl From<InternalPageNumber> for HumanPageNumber {
+    fn from(value: InternalPageNumber) -> Self {
+        Self::new(value.0 + 1)
+    }
+}
+
+impl From<HumanPageNumber> for InternalPageNumber {
+    fn from(value: HumanPageNumber) -> Self {
+        Self::new(value.0 - 1)
+    }
+}
+
 #[cfg(test)]
 mod test {
 
-    use crate::impossible_book::andrews;
+    use crate::impossible_book::{andrews, HumanPageNumber};
     use crate::primitives::{Deal, Hand};
     use std::str::FromStr;
     use test_case::test_case;
@@ -33,6 +70,7 @@ mod test {
         "♠:QJ75,♥:QT873,♦:Q8,♣:82"
     )]
     fn andrews_book(page: u128, north: &str, east: &str, south: &str, west: &str) {
+        let page = HumanPageNumber::new(page);
         let north = Hand::<13>::from_str(north).unwrap();
         let east = Hand::<13>::from_str(east).unwrap();
         let south = Hand::<13>::from_str(south).unwrap();
@@ -64,6 +102,7 @@ mod test {
         "♠:6,♥:AJ8,♦:QJ5,♣:AKT952"
     )]
     fn pavliceks_book(page: u128, north: &str, east: &str, south: &str, west: &str) {
+        let page = HumanPageNumber::new(page);
         let north = Hand::<13>::from_str(north).unwrap();
         let east = Hand::<13>::from_str(east).unwrap();
         let south = Hand::<13>::from_str(south).unwrap();
