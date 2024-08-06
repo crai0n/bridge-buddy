@@ -1,6 +1,6 @@
 use crate::impossible_book;
 use crate::impossible_book::helper::u8_to_card;
-use crate::impossible_book::{helper, N_PAGES};
+use crate::impossible_book::{helper, HumanPageNumber, InternalPageNumber};
 use crate::primitives::deal::seat::SEAT_ARRAY;
 use crate::primitives::deal::Seat;
 use crate::primitives::{Deal, Hand};
@@ -9,13 +9,11 @@ const NORTH_MAX: u128 = 635013559600; // 52 choose 13
 const EAST_MAX: u128 = 8122425444; // 39 choose 13
 const SOUTH_MAX: u128 = 10400600; // 26 choose 13
 
-pub fn deal_from_human_andrews_page(page: u128) -> Deal<13> {
-    // this uses numbers in Range 1..=N_PAGES
-    assert!(page > 0, "This page does not exist.");
-    impossible_book::deal_from_internal_andrews_page(page - 1)
+pub fn deal_from_human_andrews_page(page: HumanPageNumber) -> Deal<13> {
+    impossible_book::deal_from_internal_andrews_page(page.into())
 }
 
-pub fn find_internal_page_number_for_deal_in_andrews_book(deal: Deal<13>) -> u128 {
+pub fn find_internal_page_number_for_deal_in_andrews_book(deal: Deal<13>) -> InternalPageNumber {
     // println!("Going backwards");
 
     let marked_deck = helper::create_marked_deck_from_deal(deal);
@@ -37,8 +35,8 @@ pub fn find_internal_page_number_for_deal_in_andrews_book(deal: Deal<13>) -> u12
     indexes_to_page(indexes)
 }
 
-pub fn find_human_page_number_for_deal_in_andrews_book(deal: Deal<13>) -> u128 {
-    find_internal_page_number_for_deal_in_andrews_book(deal) + 1
+pub fn find_human_page_number_for_deal_in_andrews_book(deal: Deal<13>) -> HumanPageNumber {
+    find_internal_page_number_for_deal_in_andrews_book(deal).into()
 }
 
 fn create_sequences_from_marked_deck(marked_deck: [Seat; 52]) -> [[usize; 13]; 3] {
@@ -65,12 +63,10 @@ fn create_sequences_from_marked_deck(marked_deck: [Seat; 52]) -> [[usize; 13]; 3
     sequences
 }
 
-pub fn deal_from_internal_andrews_page(page: u128) -> Deal<13> {
+pub fn deal_from_internal_andrews_page(page: InternalPageNumber) -> Deal<13> {
     // This calculates the deal according to Thomas Andrews' Algorithm
     // https://bridge.thomasoandrews.com/bridge/impossible/algorithm.html
     // using page in  0..<N_PAGES
-
-    assert!(page < N_PAGES, "This page does not exist.");
 
     // println!("Going forwards:");
     //
@@ -143,17 +139,17 @@ fn distribute_cards(result: [Seat; 52]) -> [Hand<13>; 4] {
     cards.map(|c| Hand::<13>::from_cards(&c).unwrap())
 }
 
-fn page_to_indexes(page: u128) -> [u128; 3] {
-    let s_index = page % SOUTH_MAX;
-    let temp = page / SOUTH_MAX;
+fn page_to_indexes(page: InternalPageNumber) -> [u128; 3] {
+    let s_index = page.0 % SOUTH_MAX;
+    let temp = page.0 / SOUTH_MAX;
     let e_index = temp % EAST_MAX;
     let n_index = temp / EAST_MAX % NORTH_MAX; // temp / EAST_MAX < NORTH_MAX iff page < N_PAGES !
 
     [n_index, e_index, s_index]
 }
 
-fn indexes_to_page(indexes: [u128; 3]) -> u128 {
-    indexes[0] * EAST_MAX * SOUTH_MAX + indexes[1] * SOUTH_MAX + indexes[2]
+fn indexes_to_page(indexes: [u128; 3]) -> InternalPageNumber {
+    InternalPageNumber::new(indexes[0] * EAST_MAX * SOUTH_MAX + indexes[1] * SOUTH_MAX + indexes[2])
 }
 
 pub fn sequence_to_index(seq: [usize; 13]) -> u128 {

@@ -1,25 +1,23 @@
 use crate::impossible_book;
-use crate::impossible_book::{helper, N_PAGES};
+use crate::impossible_book::{helper, HumanPageNumber, InternalPageNumber, N_PAGES};
 use crate::primitives::deal::seat::SEAT_ARRAY;
 use crate::primitives::{Deal, Hand};
 
-pub fn find_human_page_number_for_deal_in_pavliceks_book(deal: Deal<13>) -> u128 {
-    impossible_book::find_internal_page_number_for_deal_in_pavliceks_book(deal) + 1
+pub fn find_human_page_number_for_deal_in_pavliceks_book(deal: Deal<13>) -> HumanPageNumber {
+    let internal_page = impossible_book::find_internal_page_number_for_deal_in_pavliceks_book(deal);
+    internal_page.into()
 }
 
-pub fn deal_from_human_pavlicek_page(page: u128) -> Deal<13> {
-    assert!(page > 0, "This page does not exist.");
-    deal_from_internal_pavlicek_page(page - 1)
+pub fn deal_from_human_pavlicek_page(page: HumanPageNumber) -> Deal<13> {
+    deal_from_internal_pavlicek_page(page.into())
 }
 
-pub fn deal_from_internal_pavlicek_page(page: u128) -> Deal<13> {
+pub fn deal_from_internal_pavlicek_page(page: InternalPageNumber) -> Deal<13> {
     // This calculates the deal according to Richard Pavlicek's Algorithm
     // http://www.rpbridge.net/7z68.htm
 
-    assert!(page < N_PAGES, "This page does not exist.");
-
     let mut remaining_possible_deals = N_PAGES;
-    let mut relative_deal_index = page;
+    let mut relative_deal_index = page.0;
 
     let mut vacant_places = [13usize; 4];
     let mut card_values = [[0; 13]; 4];
@@ -51,7 +49,7 @@ pub fn deal_from_internal_pavlicek_page(page: u128) -> Deal<13> {
     Deal::<13>::from_hands(hands)
 }
 
-pub fn find_internal_page_number_for_deal_in_pavliceks_book(deal: Deal<13>) -> u128 {
+pub fn find_internal_page_number_for_deal_in_pavliceks_book(deal: Deal<13>) -> InternalPageNumber {
     let marked_deck = helper::create_marked_deck_from_deal(deal);
 
     let mut vacant_places = [13u8; 4];
@@ -72,5 +70,5 @@ pub fn find_internal_page_number_for_deal_in_pavliceks_book(deal: Deal<13>) -> u
             }
         }
     }
-    page_number
+    InternalPageNumber(page_number)
 }
