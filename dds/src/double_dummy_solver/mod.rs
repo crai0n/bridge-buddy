@@ -531,7 +531,7 @@ mod test {
     }
 
     #[ignore]
-    #[test_case( "S:8654,H:J964,D:75,C:K98", "S:J92,H:KT83,D:AK64,C:AQ", "S:AQ7,H:A7,D:QJ83,C:J764", "S:KT3, H:Q52,D:T92,C:T532", [0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0]; "Test A")]
+    #[test_case( "S:8654,H:J964,D:75,C:K98", "S:J92,H:KT83,D:AK64,C:AQ", "S:AQ7,H:A7,D:QJ83,C:J764", "S:KT3, H:Q52,D:T92,C:T532", [5, 4, 4, 4, 4, 8, 9, 9, 9, 9, 5, 4, 4, 4, 4, 7, 9, 9, 8, 9]; "Test A")]
     fn solve_explicit13(north: &str, east: &str, south: &str, west: &str, expected: [usize; 20]) {
         let north_hand = Hand::<13>::from_str(north).unwrap();
         let east_hand = Hand::<13>::from_str(east).unwrap();
