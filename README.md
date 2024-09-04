@@ -20,12 +20,13 @@ Bridge Buddy started as an evaluation tool, but has various other capabilities
 ### Command-Line Interface
 
 Bridge Buddy's CLI is the currenlty preferred tool for interacting with the various capabilities of Bridge Buddy. It's
-mostly glue code, which an be found in Code can be found in `./cli`
+mostly glue code, which can be found in `./cli`
 
 ### Game Management
 
 Bridge Buddy includes a state machine to manage the progress of a bridge game, including both bidding and card play.
-This state machine is built on the basic game primitives like cards and bids.
+This state machine is built on the basic game primitives like cards and bids, utilizing various unsigned integers to
+represent state for performance reasons.
 
 All of this code lives in `./core`
 
@@ -43,7 +44,8 @@ cargo run --bin bridge-buddy-cli play
 ### Hand Lookup
 
 Bridge Buddy implements two different systems for enumerating all possible bridge-hands, following the ["impossible
-bridge book"](https://bridge.thomasoandrews.com/impossible/). All hands can be represented by a 96-bit integer.
+bridge book"](https://bridge.thomasoandrews.com/impossible/). All possible hands can be represented by a 96-bit integer,
+minimizing storage cost.
 
 The code lives in `./core/impossible-book`.
 
@@ -55,7 +57,7 @@ by [Bo Haglund's DDS](https://github.com/dds-bridge/dds), but is implemented ind
 Code can be found in `./dds`, although it relies on the primitives from `./core`. It contains an alternate version of
 tracking remaining cards for performance reasons, which might be integrated into `core` at some point in the future.
 
-It's basic mechanism follows that of other game engines (like e.g. chess), visiting each possible state of play and
+Its basic mechanism follows that of other game engines (like e.g. chess), visiting each possible state of play and
 calculating if a better outcome than the currently optimal result can be achieved. If not, the branch is pruned from the
 game-tree.
 
@@ -80,7 +82,7 @@ this test anyway,
 cargo test --release --package bridge-buddy-dds double_dummy_solver::test::solve_explicit13::test_a -- --ignored 
 ```
 
-A single strain (no-trump vs trump) can be run in about 5 seconds using
+A single strain (no-trump or any of 4 trump strains) can be run in about 5 seconds using
 
 ```shell
 cargo test --release --package bridge-buddy-dds double_dummy_solver::test::solve_single13::test_a -- --ignored 
