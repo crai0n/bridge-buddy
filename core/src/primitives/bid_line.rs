@@ -7,7 +7,7 @@ use crate::game::bid_manager::BidManager;
 use crate::primitives::deal::Seat;
 use std::fmt::Display;
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, PartialOrd, Ord)]
 pub struct BidLine {
     bids: Vec<Bid>,
 }
@@ -73,6 +73,7 @@ impl Default for BidLine {
 #[cfg(test)]
 mod test {
     use crate::primitives::bid_line::BidLine;
+    use std::cmp::Ordering;
     use std::str::FromStr;
 
     use crate::error::BBError;
@@ -109,5 +110,15 @@ mod test {
         let bid_line = BidLine::from_str(input);
         let invalid_bid = Bid::from_str(invalid).unwrap();
         assert_eq!(bid_line, Err(BBError::InvalidBid(invalid_bid)))
+    }
+
+    #[test_case("P", "1C", Ordering::Less)]
+    #[test_case("1C", "1C-X", Ordering::Less)]
+    #[test_case("1C-P", "1C-X", Ordering::Less)]
+    #[test_case("1C-P-1S", "1C-X", Ordering::Less)] // this means that all bidlines starting with "1C-P-..." are  between "1C-P" and "1C-X", which makes a nice binary tree
+    fn ordering(one: &str, other: &str, expected: Ordering) {
+        let one_line = BidLine::from_str(one).unwrap();
+        let other_line = BidLine::from_str(other).unwrap();
+        assert_eq!(one_line.cmp(&other_line), expected)
     }
 }

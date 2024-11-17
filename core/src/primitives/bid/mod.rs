@@ -8,10 +8,10 @@ use crate::error::BBError;
 use std::fmt::Display;
 use std::str::FromStr;
 
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone, PartialOrd, Ord)]
 pub enum Bid {
-    Contract(ContractBid),
     Auxiliary(AuxiliaryBid),
+    Contract(ContractBid),
 }
 
 impl Display for Bid {

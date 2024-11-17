@@ -2,6 +2,7 @@ use crate::engine::subjective_game_view::SubjectiveGamePhaseStateView;
 use crate::game::game_phase_states::BiddingState;
 use crate::primitives::bid::Bid;
 
+mod bid_interpreter;
 pub mod mock_bidding_engine;
 
 pub trait SelectBid {

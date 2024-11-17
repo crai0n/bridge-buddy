@@ -1,6 +1,6 @@
 use strum::Display;
 
-#[derive(Debug, Display, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Display, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
 pub enum SuitQuality {
     #[strum(serialize = "weak")]
     Weak,
