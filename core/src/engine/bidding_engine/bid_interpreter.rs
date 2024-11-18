@@ -1,6 +1,8 @@
 use crate::primitives::bid_line::BidLine;
 use crate::primitives::hand_info::HandDescription;
+
 use itertools::Itertools;
+
 use std::collections::BTreeMap;
 use std::fmt::{Display, Formatter};
 

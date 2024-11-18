@@ -2,9 +2,10 @@ pub mod suit_quality;
 
 use crate::primitives::deal::hand::HandType;
 use crate::primitives::hand_info::suit_quality::SuitQuality;
-use crate::primitives::Suit;
 use crate::primitives::Suit::{Clubs, Diamonds, Hearts, Spades};
+use crate::primitives::{Hand, Suit};
 use itertools::Itertools;
+use std::cmp::Ordering;
 use std::fmt::{Display, Formatter};
 use strum::Display;
 
@@ -121,15 +122,57 @@ impl Display for HandInfo {
     }
 }
 
+#[allow(dead_code)]
+fn create_condition<'a, 'b, T>(
+    eval: fn(&'a Hand<13>) -> T,
+    ord: Ordering,
+    comp_value: T,
+) -> Box<dyn Fn(&'a Hand<13>) -> bool + 'b>
+where
+    T: 'b + PartialOrd + Copy,
+    'a: 'b,
+{
+    let clos = move |i| eval(i).partial_cmp(&comp_value) == Some(ord);
+    Box::new(clos)
+}
+
+#[allow(dead_code)]
+fn create_condition_with_param<'a, 'b, T: 'b + PartialOrd + Copy, U: 'b + Copy>(
+    eval: fn(U, &'a Hand<13>) -> T,
+    param: U,
+    ord: Ordering,
+    comp_value: T,
+) -> Box<dyn Fn(&'a Hand<13>) -> bool + 'b>
+where
+    'a: 'b,
+{
+    let clos = move |hand| eval(param, hand).partial_cmp(&comp_value) == Some(ord);
+    Box::new(clos)
+}
+
+#[allow(unused_macros)]
+macro_rules! condition {
+    ($x: expr, $y: expr, $z: expr) => {
+        create_condition($x, $y, $z)
+    }; //call function f1 when there's one variable
+    ($w: expr, $x: expr, $y: expr, $z: expr) => {
+        create_condition_with_param($w, $x, $y, $z)
+    }; //call f2 when there are two
+}
+
 #[cfg(test)]
 mod test {
-    use super::HandInfo;
-    use super::StrengthInfo;
     use super::StrengthUnit;
     use super::SuitInfo;
     use super::SuitQuality;
+    use super::{create_condition, HandInfo};
+    use super::{create_condition_with_param, StrengthInfo};
+    use crate::engine::hand_evaluation::ForumDPlus2015Evaluator;
     use crate::primitives::deal::hand::HandType;
+    use crate::primitives::Hand;
     use crate::primitives::Suit::*;
+    use std::cmp::Ordering;
+    use std::str::FromStr;
     use test_case::test_case;
 
     #[test_case(HandInfo::HandType(vec![HandType::Balanced(None)]), "balanced without a 5-card suit"; "Balanced Hand")]
@@ -150,5 +193,34 @@ mod test {
     fn display(input: HandInfo, expected: &str) {
         let string = format!("{}", input);
         assert_eq!(string, expected);
+    }
+
+    #[test]
+    fn condition_creation() {
+        let hand_str = "H:8JK, ♠:AJ2T6, ♦: AJ36, C: 4";
+        let hand = Hand::<13>::from_str(hand_str).unwrap();
+        let func = |hnd| ForumDPlus2015Evaluator::hcp_in(Spades, hnd);
+        let cond = create_condition(func, Ordering::Greater, 3.0);
+
+        assert!(cond(&hand))
+    }
+
+    #[test]
+    fn condition_creation_with_param() {
+        let hand_str = "H:8JK, ♠:AJ2T6, ♦: AJ36, C: 4";
+        let hand = Hand::<13>::from_str(hand_str).unwrap();
+        let cond = create_condition_with_param(ForumDPlus2015Evaluator::hcp_in, Spades, Ordering::Greater, 3.0);
+        assert!(cond(&hand))
+    }
+
+    #[test]
+    fn condition_macro() {
+        let hand_str = "H:8JK, ♠:AJ2T6, ♦: AJ36, C: 4";
+        let hand = Hand::<13>::from_str(hand_str).unwrap();
+        let cond1 = condition!(ForumDPlus2015Evaluator::hcp, Ordering::Greater, 13.0);
+        let cond2 = condition!(ForumDPlus2015Evaluator::hcp_in, Spades, Ordering::Greater, 3.0);
+        assert!(cond1(&hand));
+        assert!(cond2(&hand));
+        assert!([&cond1, &cond2].iter().all(|cond| cond(&hand)))
     }
 }
